@@ -89,7 +89,12 @@ const AppointmentNew = () => {
         date: data.date.toISOString(),
         time: data.time,
         notes: data.notes,
-        address: data.address,
+        address: {
+          street: data.address.street,
+          city: data.address.city,
+          state: data.address.state,
+          zipCode: data.address.zipCode,
+        },
       });
       
       toast({
