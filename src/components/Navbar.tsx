@@ -50,6 +50,7 @@ const Navbar = () => {
             <Link to="/products" className="text-gray-600 hover:text-vaquah-blue">Products</Link>
             <Link to="/services" className="text-gray-600 hover:text-vaquah-blue">Services</Link>
             <Link to="/appointments" className="text-gray-600 hover:text-vaquah-blue">Appointments</Link>
+            <Link to="/contracts" className="text-gray-600 hover:text-vaquah-blue">Contracts</Link>
             <Link to="/cart" className="relative p-2">
               <ShoppingCart size={20} className="text-gray-700" />
               <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">0</span>
@@ -98,6 +99,7 @@ const Navbar = () => {
             <Link to="/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Products</Link>
             <Link to="/services" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Services</Link>
             <Link to="/appointments" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Appointments</Link>
+            <Link to="/contracts" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Contracts</Link>
             <Link to="/login" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Login</Link>
           </div>
         )}
