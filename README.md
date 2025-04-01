@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
 
-## Project info
+# VaquaH Cooling Service
 
-**URL**: https://lovable.dev/projects/c36f2c7c-1dbb-4b8a-a41d-07e5bf110ea3
+A full-stack MERN (MongoDB, Express, React, Node.js) application for an AC service and product company.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- User authentication (login/signup)
+- Product catalog with details
+- Shopping cart functionality
+- Service appointment scheduling
+- Order management
+- User dashboard
+- Contract management
+- Payment gateway integration (demo)
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c36f2c7c-1dbb-4b8a-a41d-07e5bf110ea3) and start prompting.
+- **Frontend:**
+  - React with TypeScript
+  - React Router for navigation
+  - React Hook Form for form handling
+  - Tailwind CSS for styling
+  - Shadcn UI component library
+  - TanStack Query for data fetching
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Backend:**
+  - Node.js with Express
+  - MongoDB for database
+  - Mongoose for object modeling
+  - JWT for authentication
+  - bcrypt for password hashing
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Create a `.env` file in the root directory with the following variables:
+   ```
+   MONGO_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   PORT=5000
+   ```
+4. Start the backend server:
+   ```
+   node server/server.js
+   ```
+5. In a separate terminal, start the frontend:
+   ```
+   npm run dev
+   ```
+6. Visit `http://localhost:8080` in your browser
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Project Structure
 
-Follow these steps:
+- `/server`: Backend Express.js server
+  - `/config`: Database configuration
+  - `/controllers`: Route controllers
+  - `/middleware`: Custom middleware
+  - `/models`: Mongoose data models
+  - `/routes`: API routes
+  - `/utils`: Utility functions
+- `/src`: Frontend React application
+  - `/components`: UI components
+  - `/context`: React context providers
+  - `/hooks`: Custom React hooks
+  - `/pages`: Page components
+  - `/services`: API service methods
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## API Endpoints
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **Authentication:**
+  - `POST /api/users/login`: User login
+  - `POST /api/users`: User registration
+  - `GET /api/users/profile`: Get user profile
+  - `PUT /api/users/profile`: Update user profile
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Products:**
+  - `GET /api/products`: Get all products
+  - `GET /api/products/:id`: Get a product by ID
+  - `POST /api/products`: Create a product (admin)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- **Orders:**
+  - `POST /api/orders`: Create a new order
+  - `GET /api/orders/:id`: Get an order by ID
+  - `PUT /api/orders/:id/pay`: Update order to paid
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c36f2c7c-1dbb-4b8a-a41d-07e5bf110ea3) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Appointments:**
+  - `POST /api/appointments`: Create a new appointment
+  - `GET /api/appointments/myappointments`: Get user's appointments
+  - `GET /api/appointments/:id`: Get an appointment by ID
+  - `PUT /api/appointments/:id/status`: Update appointment status (admin)
