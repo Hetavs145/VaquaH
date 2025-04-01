@@ -74,9 +74,9 @@ const Cart = () => {
                           <td className="py-4 px-6">
                             <div className="flex items-center">
                               <div className="w-16 h-16 flex-shrink-0 mr-4 bg-gray-100 rounded-md overflow-hidden">
-                                {item.images && item.images.length > 0 ? (
+                                {item.image ? (
                                   <img 
-                                    src={item.images[0]} 
+                                    src={item.image} 
                                     alt={item.name} 
                                     className="w-full h-full object-cover"
                                   />
