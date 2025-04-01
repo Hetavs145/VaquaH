@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight, RotateCw, Tool, Zap } from 'lucide-react';
+import { ArrowRight, RotateCw, Wrench, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -24,7 +24,7 @@ const ServiceSection = () => {
       id: 3,
       title: 'Repair Services',
       description: 'Quick and reliable repair services for all types of AC problems by experienced technicians.',
-      icon: <Tool size={40} className="text-vaquah-blue" />,
+      icon: <Wrench size={40} className="text-vaquah-blue" />,
       link: '/services/repair'
     }
   ];

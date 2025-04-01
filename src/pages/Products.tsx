@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Filter, ChevronDown, ChevronUp, Star, LayoutGrid, LayoutList } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp, Star, LayoutGrid, LayoutList, ShoppingCart } from 'lucide-react';
 import ProductCard, { ProductProps } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
