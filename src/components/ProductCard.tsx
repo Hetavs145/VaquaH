@@ -3,6 +3,8 @@ import React from 'react';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 export interface ProductProps {
   id: string;
@@ -30,6 +32,32 @@ const ProductCard: React.FC<ProductProps> = ({
   inverter,
 }) => {
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  
+  const handleAddToCart = () => {
+    // Create a product object from the props
+    const product = {
+      _id: id,
+      name,
+      brand,
+      price,
+      image,
+      rating,
+      energyRating,
+      tonnage,
+      inverter,
+    };
+    
+    // Add to cart with a quantity of 1
+    addToCart(product, 1);
+    
+    // Show success toast
+    toast({
+      title: "Added to cart",
+      description: `${name} has been added to your cart.`,
+    });
+  };
   
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4 relative">
@@ -105,7 +133,10 @@ const ProductCard: React.FC<ProductProps> = ({
       </div>
       
       {/* Call to action */}
-      <Button className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue">
+      <Button 
+        className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue"
+        onClick={handleAddToCart}
+      >
         <ShoppingCart size={16} className="mr-2" />
         Add to Cart
       </Button>

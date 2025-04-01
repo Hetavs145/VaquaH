@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Star,
@@ -18,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductCard, { ProductProps } from '@/components/ProductCard';
+import { useCart } from '@/context/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 // Sample product data (normally would come from an API)
 const productsData: ProductProps[] = [
@@ -175,6 +176,9 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [quantity, setQuantity] = useState(1);
   const [expandedFaqs, setExpandedFaqs] = useState<string[]>([]);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Find the product based on id
   const product = productsData.find(p => p.id === id) || productsData[0];
@@ -189,6 +193,34 @@ const ProductDetail = () => {
     } else {
       setExpandedFaqs([...expandedFaqs, question]);
     }
+  };
+
+  // Handle Add to Cart
+  const handleAddToCart = () => {
+    // Create a product object that matches the expected format
+    const cartProduct = {
+      _id: product.id,
+      name: product.name,
+      brand: product.brand,
+      price: product.price,
+      image: product.image,
+      rating: product.rating,
+      energyRating: product.energyRating,
+      tonnage: product.tonnage,
+      inverter: product.inverter,
+    };
+    
+    addToCart(cartProduct, quantity);
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+  
+  const handleBuyNow = () => {
+    handleAddToCart();
+    navigate('/cart');
   };
   
   // Related products (exclude current product)
@@ -283,13 +315,19 @@ const ProductDetail = () => {
               
               {/* CTA buttons */}
               <div className="flex flex-wrap gap-4 mb-6">
-                <Button className="flex-1 flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue">
+                <Button 
+                  className="flex-1 flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue"
+                  onClick={handleAddToCart}
+                >
                   <ShoppingCart size={16} className="mr-2" />
                   Add to Cart
                 </Button>
-                <Button variant="secondary" className="flex-1 flex items-center justify-center">
-                  <Heart size={16} className="mr-2" />
-                  Add to Wishlist
+                <Button 
+                  variant="secondary" 
+                  className="flex-1 flex items-center justify-center"
+                  onClick={handleBuyNow}
+                >
+                  Buy Now
                 </Button>
               </div>
               
