@@ -17,7 +17,14 @@ export interface Appointment {
 }
 
 export const appointmentService = {
-  createAppointment: async (appointmentData: Partial<Appointment>): Promise<Appointment> => {
+  createAppointment: async (appointmentData: Partial<Omit<Appointment, 'address'>> & {
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    }
+  }): Promise<Appointment> => {
     const { data } = await api.post('/appointments', appointmentData);
     return data;
   },
