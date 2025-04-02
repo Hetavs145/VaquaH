@@ -12,6 +12,10 @@ export interface Product {
   countInStock: number;
   rating: number;
   numReviews: number;
+  // Additional fields used in our application
+  energyRating?: string;
+  tonnage?: number;
+  inverter?: boolean;
 }
 
 export const productService = {

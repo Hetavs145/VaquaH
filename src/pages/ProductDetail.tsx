@@ -197,7 +197,7 @@ const ProductDetail = () => {
 
   // Handle Add to Cart
   const handleAddToCart = () => {
-    // Create a product object that matches the expected format
+    // Create a product object that matches the expected format with all required properties
     const cartProduct = {
       _id: product.id,
       name: product.name,
@@ -208,6 +208,10 @@ const ProductDetail = () => {
       energyRating: product.energyRating,
       tonnage: product.tonnage,
       inverter: product.inverter,
+      description: `${product.brand} ${product.name} ${product.tonnage} Ton ${product.inverter ? 'Inverter' : 'Non-Inverter'} AC`,
+      category: 'Air Conditioner',
+      countInStock: 10, // Default value
+      numReviews: 0,    // Default value
     };
     
     addToCart(cartProduct, quantity);

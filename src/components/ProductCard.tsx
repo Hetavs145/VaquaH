@@ -36,7 +36,7 @@ const ProductCard: React.FC<ProductProps> = ({
   const { toast } = useToast();
   
   const handleAddToCart = () => {
-    // Create a product object from the props
+    // Create a product object from the props with all required properties
     const product = {
       _id: id,
       name,
@@ -47,6 +47,11 @@ const ProductCard: React.FC<ProductProps> = ({
       energyRating,
       tonnage,
       inverter,
+      // Adding missing required properties
+      description: `${brand} ${name} ${tonnage} Ton ${inverter ? 'Inverter' : 'Non-Inverter'} AC`,
+      category: 'Air Conditioner',
+      countInStock: 10, // Default value
+      numReviews: 0,    // Default value
     };
     
     // Add to cart with a quantity of 1
