@@ -1,9 +1,12 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Snowflake, ShieldCheck, Clock } from 'lucide-react';
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-gradient-to-r from-vaquah-light-blue to-white">
       <div className="container mx-auto px-4 py-12 md:py-20">
@@ -18,10 +21,17 @@ const HeroSection = () => {
             </p>
             
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button className="bg-vaquah-blue hover:bg-vaquah-dark-blue text-white">
+              <Button 
+                className="bg-vaquah-blue hover:bg-vaquah-dark-blue text-white"
+                onClick={() => navigate('/products')}
+              >
                 Shop Now <ArrowRight size={16} className="ml-2" />
               </Button>
-              <Button variant="outline" className="border-vaquah-blue text-vaquah-blue hover:bg-vaquah-light-blue">
+              <Button 
+                variant="outline" 
+                className="border-vaquah-blue text-vaquah-blue hover:bg-vaquah-light-blue"
+                onClick={() => navigate('/appointments/new')}
+              >
                 Book a Service
               </Button>
             </div>
