@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, Menu, X, User, LogOut, Home } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import {
@@ -64,6 +64,10 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
+            <Link to="/" className="text-gray-600 hover:text-vaquah-blue flex items-center">
+              <Home size={18} className="mr-1" />
+              Home
+            </Link>
             <Link to="/products" className="text-gray-600 hover:text-vaquah-blue">Products</Link>
             <Link to="/appointments/new" className="text-gray-600 hover:text-vaquah-blue">Schedule Service</Link>
             <Link to="/contracts" className="text-gray-600 hover:text-vaquah-blue">Contracts</Link>
@@ -137,6 +141,10 @@ const Navbar = () => {
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t">
+            <Link to="/" className="flex items-center py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">
+              <Home size={18} className="mr-2" />
+              Home
+            </Link>
             <Link to="/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Products</Link>
             <Link to="/appointments/new" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Schedule Service</Link>
             <Link to="/contracts" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Contracts</Link>
