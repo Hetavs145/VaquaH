@@ -64,8 +64,8 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/" className="text-gray-600 hover:text-vaquah-blue flex items-center bg-vaquah-light-blue px-3 py-1 rounded-md">
-              <Home size={18} className="mr-1" />
+            <Link to="/" className="text-white hover:text-white flex items-center bg-vaquah-blue px-4 py-2 rounded-md font-medium">
+              <Home size={18} className="mr-2" />
               Home
             </Link>
             <Link to="/products" className="text-gray-600 hover:text-vaquah-blue">Products</Link>
@@ -108,7 +108,7 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <Link to="/" className="text-gray-600 hover:text-vaquah-blue mr-3 flex items-center bg-vaquah-light-blue px-2 py-1 rounded-md">
+            <Link to="/" className="text-white hover:text-white mr-3 flex items-center bg-vaquah-blue px-3 py-2 rounded-md">
               <Home size={18} />
             </Link>
             <Link to="/cart" className="relative p-2 mr-2">
