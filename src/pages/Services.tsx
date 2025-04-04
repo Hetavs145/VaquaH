@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
-  Tool, 
+  Wrench, 
   Thermometer, 
   Settings, 
   Clipboard, 
@@ -22,7 +22,7 @@ const Services = () => {
       id: 1,
       name: 'AC Installation',
       description: 'Professional installation service for all types of AC units with proper calibration and testing.',
-      icon: <Tool className="h-8 w-8 text-vaquah-blue" />,
+      icon: <Wrench className="h-8 w-8 text-vaquah-blue" />,
       price: '₹1,500 onwards',
     },
     {
