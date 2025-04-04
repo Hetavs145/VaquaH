@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -15,14 +14,13 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [expandedSpec, setExpandedSpec] = useState(false);
   const [expandedFeatures, setExpandedFeatures] = useState(false);
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
 
-  // Mock product data with all required Product type properties
   const mockProduct: Product = {
     _id: id || '1',
     name: 'Premium Split AC 1.5 Ton',
@@ -54,7 +52,6 @@ const ProductDetail = () => {
   };
 
   useEffect(() => {
-    // Simulate API call
     setTimeout(() => {
       setProduct(mockProduct);
       setLoading(false);
@@ -68,7 +65,7 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
+    if (!user) {
       toast({
         title: "Authentication required",
         description: "Please sign in to add items to your cart.",
@@ -117,7 +114,6 @@ const ProductDetail = () => {
       <main className="flex-grow py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Product Image */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <img 
                 src={product.image} 
@@ -127,7 +123,6 @@ const ProductDetail = () => {
               />
             </div>
 
-            {/* Product Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
               
@@ -194,7 +189,6 @@ const ProductDetail = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-            {/* Specifications */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div 
                 className="flex justify-between items-center cursor-pointer"
@@ -216,7 +210,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Features */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div 
                 className="flex justify-between items-center cursor-pointer"
