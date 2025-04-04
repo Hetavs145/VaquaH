@@ -16,7 +16,7 @@ const productData = [
     name: 'VaquaH Inverter Split AC 1.5 Ton',
     price: 32999,
     rating: 4.5,
-    image: '/products/ac1.jpg',
+    image: '/images/product1.jpg',
     description: 'Energy efficient inverter AC with cooling capacity of 1.5 tons. Suitable for medium-sized rooms.',
     features: ['3 Star Energy Rating', 'Copper Condenser Coil', 'Anti-dust Filter', 'Auto Restart']
   },
@@ -25,7 +25,7 @@ const productData = [
     name: 'VaquaH Inverter Split AC 2 Ton',
     price: 41999,
     rating: 4.7,
-    image: '/products/ac2.jpg',
+    image: '/images/product2.jpg',
     description: 'High capacity inverter AC for large rooms with superior cooling performance and low noise operation.',
     features: ['4 Star Energy Rating', 'Dual Inverter', 'PM 2.5 Filter', '100% Copper with Ocean Black Protection']
   },
@@ -34,7 +34,7 @@ const productData = [
     name: 'VaquaH Window AC 1 Ton',
     price: 23999,
     rating: 4.2,
-    image: '/products/ac3.jpg',
+    image: '/images/product3.jpg',
     description: 'Compact window AC suitable for small rooms. Easy installation and maintenance.',
     features: ['3 Star Energy Rating', 'Auto Clean Function', 'Anti-bacterial Filter', 'LED Display']
   },
@@ -43,7 +43,7 @@ const productData = [
     name: 'VaquaH Portable AC 1 Ton',
     price: 18999,
     rating: 4.0,
-    image: '/products/ac4.jpg',
+    image: '/images/product4.jpg',
     description: 'Versatile portable AC that can be moved between rooms. No installation required.',
     features: ['Self-Evaporative System', 'Dehumidifier Function', 'Remote Control', 'Sleep Mode']
   }

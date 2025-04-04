@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -26,7 +27,7 @@ const ProductDetail = () => {
     name: 'Premium Split AC 1.5 Ton',
     price: 34999,
     rating: 4.5,
-    image: '/placeholder.svg',
+    image: '/images/product1.jpg',
     description: 'Energy efficient split AC with advanced cooling technology and smart controls.',
     features: [
       'Inverter technology for energy savings',

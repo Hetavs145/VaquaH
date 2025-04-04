@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -24,6 +23,7 @@ const Services = () => {
       description: 'Professional installation service for all types of AC units with proper calibration and testing.',
       icon: <Wrench className="h-8 w-8 text-vaquah-blue" />,
       price: '₹1,500 onwards',
+      image: '/images/service1.jpg'
     },
     {
       id: 2,
@@ -31,6 +31,7 @@ const Services = () => {
       description: 'Complete AC service including cleaning, filter replacement, and performance check.',
       icon: <Settings className="h-8 w-8 text-vaquah-blue" />,
       price: '₹899 onwards',
+      image: '/images/service2.jpg'
     },
     {
       id: 3,
@@ -38,6 +39,7 @@ const Services = () => {
       description: 'Expert diagnosis and repair for all AC issues with genuine spare parts.',
       icon: <Thermometer className="h-8 w-8 text-vaquah-blue" />,
       price: '₹599 onwards (+ parts)',
+      image: '/images/service3.jpg'
     },
     {
       id: 4,
@@ -45,6 +47,7 @@ const Services = () => {
       description: 'Year-round protection with scheduled servicing and priority support.',
       icon: <Clipboard className="h-8 w-8 text-vaquah-blue" />,
       price: '₹2,999/year',
+      image: '/images/service4.jpg'
     },
     {
       id: 5,
@@ -52,6 +55,7 @@ const Services = () => {
       description: 'Proper gas refilling with leak detection and system pressure testing.',
       icon: <Zap className="h-8 w-8 text-vaquah-blue" />,
       price: '₹1,299 onwards',
+      image: '/images/service5.jpg'
     },
     {
       id: 6,
@@ -59,6 +63,7 @@ const Services = () => {
       description: 'Safe uninstallation, transportation, and reinstallation of your AC unit.',
       icon: <RefreshCcw className="h-8 w-8 text-vaquah-blue" />,
       price: '₹2,999 onwards',
+      image: '/images/service6.jpg'
     },
     {
       id: 7,
@@ -66,6 +71,7 @@ const Services = () => {
       description: 'Extended protection beyond manufacturer warranty with comprehensive coverage.',
       icon: <Shield className="h-8 w-8 text-vaquah-blue" />,
       price: '₹1,999/year',
+      image: '/images/service7.jpg'
     },
     {
       id: 8,
@@ -73,6 +79,7 @@ const Services = () => {
       description: '24/7 emergency repair service with priority attendance.',
       icon: <Clock className="h-8 w-8 text-vaquah-blue" />,
       price: '₹1,099 onwards',
+      image: '/images/service8.jpg'
     }
   ];
 
@@ -133,6 +140,16 @@ const Services = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {services.map((service) => (
                 <div key={service.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="mb-4 h-48 overflow-hidden rounded-lg">
+                    <img 
+                      src={service.image} 
+                      alt={service.name} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                      }}
+                    />
+                  </div>
                   <div className="mb-4">{service.icon}</div>
                   <h3 className="text-xl font-bold mb-2">{service.name}</h3>
                   <p className="text-gray-600 mb-4">{service.description}</p>

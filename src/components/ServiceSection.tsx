@@ -11,21 +11,24 @@ const ServiceSection = () => {
       title: 'AC Installation',
       description: 'Professional installation by certified technicians ensuring optimal performance and longevity.',
       icon: <Zap size={40} className="text-vaquah-blue" />,
-      link: '/services/installation'
+      link: '/services/installation',
+      image: '/images/service1.jpg'
     },
     {
       id: 2,
       title: 'Annual Maintenance',
       description: 'Regular servicing and maintenance to keep your AC running efficiently throughout the year.',
       icon: <RotateCw size={40} className="text-vaquah-blue" />,
-      link: '/services/maintenance'
+      link: '/services/maintenance',
+      image: '/images/service2.jpg'
     },
     {
       id: 3,
       title: 'Repair Services',
       description: 'Quick and reliable repair services for all types of AC problems by experienced technicians.',
       icon: <Wrench size={40} className="text-vaquah-blue" />,
-      link: '/services/repair'
+      link: '/services/repair',
+      image: '/images/service3.jpg'
     }
   ];
 
@@ -46,6 +49,16 @@ const ServiceSection = () => {
               key={service.id} 
               className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
             >
+              <div className="mb-4 h-48 overflow-hidden rounded-lg">
+                <img 
+                  src={service.image} 
+                  alt={service.title} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
+              </div>
               <div className="mb-5">{service.icon}</div>
               <h3 className="text-xl font-bold mb-3">{service.title}</h3>
               <p className="text-gray-600 mb-4">{service.description}</p>
