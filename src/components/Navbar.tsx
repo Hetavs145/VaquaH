@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Search, ShoppingCart, Menu, X, User, LogOut, Home } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, Home } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import SearchBar from './SearchBar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,19 +16,12 @@ import {
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const { user, logout } = useAuth();
   const { state: cartState } = useCart();
   const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Search for:', searchQuery);
-    // Later we'll implement actual search functionality
   };
 
   const handleLogout = () => {
@@ -37,7 +31,7 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="container-custom">
+      <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
@@ -46,20 +40,7 @@ const Navbar = () => {
 
           {/* Search bar - hidden on mobile */}
           <div className="hidden md:flex flex-1 mx-8">
-            <form onSubmit={handleSearch} className="w-full max-w-xl">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search for split ACs..."
-                  className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-vaquah-blue"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-vaquah-blue">
-                  <Search size={20} />
-                </button>
-              </div>
-            </form>
+            <SearchBar className="w-full max-w-xl" />
           </div>
 
           {/* Desktop Navigation */}
@@ -125,20 +106,7 @@ const Navbar = () => {
 
         {/* Mobile Search Bar */}
         <div className="md:hidden pb-2">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search for split ACs..."
-                className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-vaquah-blue"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-vaquah-blue">
-                <Search size={20} />
-              </button>
-            </div>
-          </form>
+          <SearchBar isMobile={true} />
         </div>
 
         {/* Mobile Navigation Menu */}

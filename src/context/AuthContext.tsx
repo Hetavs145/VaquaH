@@ -10,6 +10,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +27,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     loadUser();
+
+    // Initialize Google Sign-In
+    const loadGoogleSignIn = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    };
+
+    loadGoogleSignIn();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -99,6 +115,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
     }
   };
+  
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      // In a real implementation, this would call your backend API
+      // For demo purposes, we'll create a mock user
+      const mockGoogleUser = {
+        _id: 'google-' + Math.random().toString(36).substring(2, 11),
+        name: 'Google User',
+        email: 'googleuser@example.com',
+        isAdmin: false,
+        token: 'mock-google-token-' + Math.random().toString(36).substring(2, 15)
+      };
+      
+      // Store in local storage similar to regular login
+      localStorage.setItem('userToken', mockGoogleUser.token);
+      localStorage.setItem('userInfo', JSON.stringify(mockGoogleUser));
+      
+      // Update state
+      setUser(mockGoogleUser);
+      
+      toast({
+        title: "Google login successful",
+        description: `Welcome, ${mockGoogleUser.name}!`,
+      });
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      toast({
+        variant: "destructive",
+        title: "Google login failed",
+        description: "Unable to sign in with Google",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -108,7 +161,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         register,
         logout,
-        updateProfile
+        updateProfile,
+        signInWithGoogle
       }}
     >
       {children}

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CreditCard, Calendar, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 interface PaymentGatewayProps {
   amount: number;
@@ -12,190 +13,147 @@ interface PaymentGatewayProps {
   onCancel: () => void;
 }
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCancel }) => {
   const { toast } = useToast();
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    if (!cardNumber.trim() || cardNumber.replace(/\s/g, '').length !== 16) {
-      newErrors.cardNumber = 'Please enter a valid 16-digit card number';
-    }
-    
-    if (!cardName.trim()) {
-      newErrors.cardName = 'Please enter the name on your card';
-    }
-    
-    if (!expiry.trim() || !expiry.match(/^\d{2}\/\d{2}$/)) {
-      newErrors.expiry = 'Please enter a valid expiry date (MM/YY)';
-    }
-    
-    if (!cvv.trim() || cvv.length < 3) {
-      newErrors.cvv = 'Please enter a valid CVV';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const loadRazorpayScript = () => {
+    return new Promise<boolean>((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
+  const handlePayment = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to make a payment",
+        variant: "destructive",
+      });
       return;
     }
-    
-    setProcessing(true);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setProcessing(false);
-      
-      // Generate a random transaction ID
-      const transactionId = 'TXN' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      
+
+    setLoading(true);
+
+    // Load Razorpay script
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
       toast({
-        title: "Payment Successful",
-        description: `Your payment of $${amount.toFixed(2)} was processed successfully.`,
+        title: "Payment failed",
+        description: "Failed to load payment gateway",
+        variant: "destructive",
       });
-      
-      onSuccess(transactionId);
-    }, 2000);
-  };
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
+      setLoading(false);
+      return;
     }
 
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
+    // Create a new order and get order ID from server
+    // In a real implementation, this would be an API call to your backend
+    const orderData = {
+      amount: amount * 100, // Razorpay takes amount in paise
+      currency: "INR",
+      receipt: "order_" + Math.floor(Math.random() * 1000000)
+    };
+    
+    // Mock order ID for demo purposes
+    const orderId = "order_" + Math.floor(Math.random() * 1000000);
+
+    const options = {
+      key: "rzp_test_V8Yj1Nj0XlKI9N", // Enter your test key here
+      amount: amount * 100,
+      currency: "INR",
+      name: "VaquaH",
+      description: "AC Purchase",
+      order_id: orderId,
+      handler: function (response: any) {
+        setLoading(false);
+        // Handle successful payment
+        onSuccess(response.razorpay_payment_id);
+      },
+      prefill: {
+        name: user.name,
+        email: user.email,
+        contact: user.phone || ""
+      },
+      notes: {
+        address: "VaquaH Corporate Office"
+      },
+      theme: {
+        color: "#3399cc"
+      },
+      modal: {
+        ondismiss: function () {
+          setLoading(false);
+          onCancel();
+        }
+      }
+    };
+
+    try {
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      console.error("Razorpay error:", error);
+      toast({
+        title: "Payment failed",
+        description: "Something went wrong with the payment gateway",
+        variant: "destructive",
+      });
+      setLoading(false);
     }
   };
 
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedValue = formatCardNumber(e.target.value);
-    setCardNumber(formattedValue);
-  };
-
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    
-    // Remove any non-digit characters
-    value = value.replace(/\D/g, '');
-    
-    // Insert a slash after the second digit
-    if (value.length > 2) {
-      value = value.slice(0, 2) + '/' + value.slice(2, 4);
-    }
-    
-    setExpiry(value);
+  const handleCreditCardPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    handlePayment();
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Payment Details</h2>
-        <p className="text-gray-600">Amount to pay: <span className="font-bold">${amount.toFixed(2)}</span></p>
+        <p className="text-gray-600">Amount to pay: <span className="font-bold">₹{amount.toFixed(2)}</span></p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+          <p className="text-sm text-blue-700">
+            We use Razorpay for secure payment processing. Click the "Pay Now" button to proceed with payment.
+          </p>
+        </div>
+
+        <Button 
+          onClick={handlePayment} 
+          className="w-full bg-vaquah-blue hover:bg-vaquah-dark-blue"
+          disabled={loading}
+        >
+          {loading ? 'Processing...' : `Pay ₹${amount.toFixed(2)} with Razorpay`}
+        </Button>
+
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel}
+          className="w-full mt-2"
+          disabled={loading}
+        >
+          Cancel
+        </Button>
       </div>
       
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="card-number">Card Number</Label>
-            <div className="relative">
-              <Input 
-                id="card-number" 
-                value={cardNumber}
-                onChange={handleCardNumberChange}
-                placeholder="1234 5678 9012 3456"
-                maxLength={19}
-                className={errors.cardNumber ? "border-red-500" : ""}
-              />
-              <CreditCard className="absolute right-3 top-2.5 text-gray-400" size={16} />
-            </div>
-            {errors.cardNumber && <p className="text-red-500 text-sm mt-1 flex items-center"><AlertCircle size={12} className="mr-1" /> {errors.cardNumber}</p>}
-          </div>
-          
-          <div>
-            <Label htmlFor="card-name">Name on Card</Label>
-            <Input 
-              id="card-name" 
-              value={cardName}
-              onChange={(e) => setCardName(e.target.value)}
-              placeholder="John Doe"
-              className={errors.cardName ? "border-red-500" : ""}
-            />
-            {errors.cardName && <p className="text-red-500 text-sm mt-1 flex items-center"><AlertCircle size={12} className="mr-1" /> {errors.cardName}</p>}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="expiry">Expiry Date</Label>
-              <div className="relative">
-                <Input 
-                  id="expiry" 
-                  value={expiry}
-                  onChange={handleExpiryChange}
-                  placeholder="MM/YY"
-                  maxLength={5}
-                  className={errors.expiry ? "border-red-500" : ""}
-                />
-                <Calendar className="absolute right-3 top-2.5 text-gray-400" size={16} />
-              </div>
-              {errors.expiry && <p className="text-red-500 text-sm mt-1 flex items-center"><AlertCircle size={12} className="mr-1" /> {errors.expiry}</p>}
-            </div>
-            
-            <div>
-              <Label htmlFor="cvv">CVV</Label>
-              <Input 
-                id="cvv" 
-                value={cvv}
-                onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                placeholder="123"
-                maxLength={4}
-                type="password"
-                className={errors.cvv ? "border-red-500" : ""}
-              />
-              {errors.cvv && <p className="text-red-500 text-sm mt-1 flex items-center"><AlertCircle size={12} className="mr-1" /> {errors.cvv}</p>}
-            </div>
-          </div>
-          
-          <div className="pt-4 space-x-4 flex">
-            <Button 
-              type="submit" 
-              className="bg-vaquah-blue hover:bg-vaquah-dark-blue flex-1" 
-              disabled={processing}
-            >
-              {processing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              disabled={processing}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </form>
-      
       <div className="mt-6 text-center text-sm text-gray-500">
-        <p>This is a demo payment gateway for testing.</p>
+        <p>This is using Razorpay Test Mode.</p>
         <p>No actual payments will be processed.</p>
       </div>
     </div>

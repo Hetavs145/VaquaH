@@ -16,6 +16,13 @@ export interface User {
   email: string;
   isAdmin: boolean;
   token: string;
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
 }
 
 export const userService = {
@@ -51,4 +58,22 @@ export const userService = {
     }));
     return data;
   },
+
+  // Mock Google authentication
+  googleAuthenticate: async (credential: string): Promise<User> => {
+    // In a real application, you'd send the credential to your backend
+    // For now, we'll create a mock user
+    const mockUser = {
+      _id: 'google-user-' + Math.random().toString(36).substring(2, 11),
+      name: 'Google User',
+      email: 'user@gmail.com',
+      isAdmin: false,
+      token: 'google-auth-token-' + Math.random().toString(36).substring(2, 15)
+    };
+    
+    localStorage.setItem('userToken', mockUser.token);
+    localStorage.setItem('userInfo', JSON.stringify(mockUser));
+    
+    return mockUser;
+  }
 };

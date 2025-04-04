@@ -13,7 +13,7 @@ const Footer = () => {
           <div className="col-span-1">
             <h2 className="text-2xl font-bold text-white mb-4">VaquaH</h2>
             <p className="mb-4">
-              Premium Split AC solutions for homes and businesses. Quality products, expert installation, and reliable services.
+              Premium Split AC solutions for Indian homes and businesses. Quality products, expert installation, and reliable services.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-white"><Facebook size={20} /></a>
@@ -29,7 +29,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/products" className="hover:text-white">Products</Link></li>
               <li><Link to="/services" className="hover:text-white">Services</Link></li>
-              <li><Link to="/appointments" className="hover:text-white">Appointment</Link></li>
+              <li><Link to="/appointments/new" className="hover:text-white">Book Appointment</Link></li>
               <li><Link to="/about-us" className="hover:text-white">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
             </ul>
@@ -55,12 +55,12 @@ const Footer = () => {
                 <Phone size={18} className="mr-2 mt-1" />
                 <div>
                   <p>+91 98765 43210</p>
-                  <p className="text-xs text-gray-400">Mon-Sat: 9AM - 8PM</p>
+                  <p className="text-xs text-gray-400">Mon-Sat: 10AM - 7PM IST</p>
                 </div>
               </div>
               <div className="flex items-start">
                 <Mail size={18} className="mr-2 mt-1" />
-                <span>support@vaquah.com</span>
+                <span>vaquah.contact@gmail.com</span>
               </div>
               <div className="flex items-start">
                 <MapPin size={18} className="mr-2 mt-1" />
@@ -76,18 +76,18 @@ const Footer = () => {
             <div className="mb-4 md:mb-0">
               <p className="text-sm">Accept Payments Via</p>
               <div className="flex space-x-2 mt-2">
+                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">UPI</div>
+                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">RuPay</div>
                 <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">Visa</div>
                 <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">MasterCard</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">PayPal</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">UPI</div>
               </div>
             </div>
             <div>
               <p className="text-sm">Certified By</p>
               <div className="flex space-x-2 mt-2">
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">ISO 9001</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">Energy Star</div>
                 <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">BEE</div>
+                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">ISO 9001</div>
+                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">ISI</div>
               </div>
             </div>
           </div>
@@ -95,7 +95,7 @@ const Footer = () => {
         
         {/* Copyright */}
         <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
-          <p>© 2023 VaquaH. All Rights Reserved.</p>
+          <p>© 2025 VaquaH. All Rights Reserved.</p>
           <div className="mt-2">
             <Link to="/privacy-policy" className="hover:text-white mr-4">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white">Terms of Service</Link>
