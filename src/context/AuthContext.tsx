@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { userService, User } from '../services/userService';
 import { toast } from '@/hooks/use-toast';
@@ -57,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       script.onload = () => {
         if (window.google) {
           window.google.accounts.id.initialize({
-            client_id: '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com', // Correct Google Client ID
+            client_id: '491747382327-c98c7cgc0cqkfhi5o7u07r51om936jrn.apps.googleusercontent.com', // Updated client ID
             callback: handleGoogleCredentialResponse,
             auto_select: false,
             cancel_on_tap_outside: true,

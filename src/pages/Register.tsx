@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useForm } from 'react-hook-form';
@@ -33,7 +33,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
-  const { register, signInWithGoogle } = useAuth();
+  const { register: registerUser, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<RegisterFormValues>({
@@ -48,7 +48,7 @@ const Register = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      await register(data.name, data.email, data.password);
+      await registerUser(data.name, data.email, data.password);
       navigate('/dashboard');
     } catch (error) {
       console.error('Registration failed:', error);

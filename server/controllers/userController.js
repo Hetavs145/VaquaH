@@ -1,10 +1,9 @@
-
 const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
 
-// Create a client for Google OAuth
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com');
+// Create a client for Google OAuth - Update the client ID
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '491747382327-c98c7cgc0cqkfhi5o7u07r51om936jrn.apps.googleusercontent.com');
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -42,11 +41,14 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
     const userExists = await User.findOne({ email });
 
     if (userExists) {
-      res.status(400);
-      throw new Error('User already exists');
+      return res.status(400).json({ message: 'User already exists with this email' });
     }
 
     const user = await User.create({
@@ -56,7 +58,7 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
-      res.status(201).json({
+      return res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
@@ -66,12 +68,14 @@ const registerUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(400);
-      throw new Error('Invalid user data');
+      return res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(400).json({ message: error.message || 'Registration failed' });
+    return res.status(400).json({ 
+      message: error.message || 'Registration failed',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -85,7 +89,7 @@ const googleAuth = async (req, res) => {
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID || '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com',
+      audience: process.env.GOOGLE_CLIENT_ID || '491747382327-c98c7cgc0cqkfhi5o7u07r51om936jrn.apps.googleusercontent.com',
     });
 
     const payload = ticket.getPayload();

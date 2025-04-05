@@ -27,17 +27,27 @@ export interface User {
 
 export const userService = {
   login: async (credentials: LoginCredentials): Promise<User> => {
-    const { data } = await api.post('/users/login', credentials);
-    localStorage.setItem('userToken', data.token);
-    localStorage.setItem('userInfo', JSON.stringify(data));
-    return data;
+    try {
+      const { data } = await api.post('/users/login', credentials);
+      localStorage.setItem('userToken', data.token);
+      localStorage.setItem('userInfo', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
 
   register: async (userData: RegisterData): Promise<User> => {
-    const { data } = await api.post('/users/register', userData);
-    localStorage.setItem('userToken', data.token);
-    localStorage.setItem('userInfo', JSON.stringify(data));
-    return data;
+    try {
+      const { data } = await api.post('/users', userData);
+      localStorage.setItem('userToken', data.token);
+      localStorage.setItem('userInfo', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   },
 
   logout: (): void => {
@@ -51,18 +61,28 @@ export const userService = {
   },
 
   updateProfile: async (userData: Partial<User>): Promise<User> => {
-    const { data } = await api.put('/users/profile', userData);
-    const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    const updatedUser = { ...currentUser, ...data };
-    localStorage.setItem('userInfo', JSON.stringify(updatedUser));
-    return updatedUser;
+    try {
+      const { data } = await api.put('/users/profile', userData);
+      const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      const updatedUser = { ...currentUser, ...data };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch (error) {
+      console.error('Profile update error:', error);
+      throw error;
+    }
   },
 
-  // Real Google authentication
+  // Updated Google authentication method
   googleAuthenticate: async (credential: string): Promise<User> => {
-    const { data } = await api.post('/users/google', { credential });
-    localStorage.setItem('userToken', data.token);
-    localStorage.setItem('userInfo', JSON.stringify(data));
-    return data;
+    try {
+      const { data } = await api.post('/users/google', { credential });
+      localStorage.setItem('userToken', data.token);
+      localStorage.setItem('userInfo', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      console.error('Google auth error:', error);
+      throw error;
+    }
   }
 };
