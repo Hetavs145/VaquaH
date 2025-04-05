@@ -1,6 +1,10 @@
 
 const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
+const { OAuth2Client } = require('google-auth-library');
+
+// Create a client for Google OAuth
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -65,34 +69,56 @@ const registerUser = async (req, res) => {
 // @route   POST /api/users/google
 // @access  Public
 const googleAuth = async (req, res) => {
-  const { email, name, googleId } = req.body;
+  const { credential } = req.body;
 
-  // Check if user already exists
-  let user = await User.findOne({ email });
-
-  if (!user) {
-    // Create a new user with Google info
-    user = await User.create({
-      name,
-      email,
-      password: googleId + Date.now(), // Create a unique password they won't use
-      isGoogle: true,
+  try {
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
-  }
 
-  if (user) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      phone: user.phone,
-      address: user.address,
-      token: generateToken(user._id),
-    });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
+      res.status(400);
+      throw new Error('Invalid Google token');
+    }
+    
+    const { email, name, sub: googleId } = payload;
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create a new user with Google info
+      const randomPassword = googleId + Math.random().toString(36).substring(2, 12);
+      user = await User.create({
+        name,
+        email,
+        password: randomPassword, // Create a random password they won't use
+        isGoogle: true,
+      });
+    }
+
+    if (user) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        phone: user.phone,
+        address: user.address,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(400);
+      throw new Error('Invalid user data');
+    }
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(401);
+    throw new Error('Invalid Google token or authentication error');
   }
 };
 

@@ -10,7 +10,25 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => void;
+}
+
+interface GoogleCredentialResponse {
+  credential: string;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, options: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,8 +54,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       script.defer = true;
       document.body.appendChild(script);
 
-      window.onload = () => {
-        console.log("Google Sign-In script loaded");
+      script.onload = () => {
+        if (window.google) {
+          window.google.accounts.id.initialize({
+            client_id: '1097909557-v24vd6kp4gfnsgv3cfclcvfaoj9t9ik8.apps.googleusercontent.com', // Replace with your Google Client ID
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+        }
       };
 
       return () => {
@@ -47,6 +72,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     loadGoogleSignIn();
   }, []);
+
+  const handleGoogleCredentialResponse = async (response: GoogleCredentialResponse) => {
+    try {
+      setLoading(true);
+      const userData = await userService.googleAuthenticate(response.credential);
+      setUser(userData);
+      
+      toast({
+        title: "Google login successful",
+        description: `Welcome, ${userData.name}!`,
+      });
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      toast({
+        variant: "destructive",
+        title: "Google login failed",
+        description: error.response?.data?.message || "Unable to sign in with Google",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -120,27 +167,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      // Call the googleAuthenticate method from userService
-      const userData = await userService.googleAuthenticate("google-auth-token");
-      setUser(userData);
-      
-      toast({
-        title: "Google login successful",
-        description: `Welcome, ${userData.name}!`,
-      });
-    } catch (error: any) {
-      console.error('Google sign in error:', error);
+  const signInWithGoogle = () => {
+    if (window.google) {
+      window.google.accounts.id.prompt();
+    } else {
       toast({
         variant: "destructive",
-        title: "Google login failed",
-        description: "Unable to sign in with Google",
+        title: "Google Sign-In Error",
+        description: "Google Sign-In could not be initialized. Please try again later.",
       });
-      throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
