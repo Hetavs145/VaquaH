@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import PaymentGateway from '@/components/PaymentGateway';
-import { Check, CreditCard } from 'lucide-react';
+import { Check, CreditCard, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 // Mock cart items for demonstration
 const sampleCartItems = [
@@ -29,10 +30,23 @@ const sampleCartItems = [
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [showPayment, setShowPayment] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
+  
+  // Check if user is logged in
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to proceed with checkout",
+        variant: "destructive",
+      });
+      navigate('/login', { state: { from: '/checkout' } });
+    }
+  }, [user, navigate]);
   
   // Calculate totals
   const subtotal = sampleCartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -51,12 +65,41 @@ const Checkout = () => {
   };
   
   const proceedToPayment = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to proceed with payment",
+        variant: "destructive",
+      });
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
     setShowPayment(true);
   };
   
   const handleContinueShopping = () => {
     navigate('/products');
   };
+
+  // Don't render checkout page if user is not logged in
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow bg-gray-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-md max-w-md mx-auto text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
+            <p className="mb-6">Please login to view checkout page</p>
+            <Button onClick={() => navigate('/login')} className="bg-vaquah-blue">
+              Go to Login
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -84,7 +127,6 @@ const Checkout = () => {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Left Column - Order Summary */}
               <div className="md:col-span-2">
                 {showPayment ? (
                   <PaymentGateway 
@@ -99,41 +141,41 @@ const Checkout = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <div>
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input id="firstName" placeholder="John" />
+                        <Input id="firstName" placeholder="John" defaultValue={user?.name.split(' ')[0] || ''} />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input id="lastName" placeholder="Doe" />
+                        <Input id="lastName" placeholder="Doe" defaultValue={user?.name.split(' ')[1] || ''} />
                       </div>
                       <div>
                         <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" placeholder="john@example.com" />
+                        <Input id="email" type="email" placeholder="john@example.com" defaultValue={user?.email || ''} />
                       </div>
                       <div>
                         <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" placeholder="+1 234 567 8901" />
+                        <Input id="phone" placeholder="+1 234 567 8901" defaultValue={user?.phone || ''} />
                       </div>
                     </div>
                     
                     <div className="space-y-4 mb-6">
                       <div>
                         <Label htmlFor="address">Street Address</Label>
-                        <Input id="address" placeholder="123 Main St" />
+                        <Input id="address" placeholder="123 Main St" defaultValue={user?.address?.street || ''} />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="city">City</Label>
-                          <Input id="city" placeholder="New York" />
+                          <Input id="city" placeholder="New York" defaultValue={user?.address?.city || ''} />
                         </div>
                         <div>
                           <Label htmlFor="state">State</Label>
-                          <Input id="state" placeholder="NY" />
+                          <Input id="state" placeholder="NY" defaultValue={user?.address?.state || ''} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="zip">Zip Code</Label>
-                          <Input id="zip" placeholder="10001" />
+                          <Input id="zip" placeholder="10001" defaultValue={user?.address?.zipCode || ''} />
                         </div>
                         <div>
                           <Label htmlFor="country">Country</Label>
@@ -171,7 +213,6 @@ const Checkout = () => {
                 )}
               </div>
               
-              {/* Right Column - Order Summary */}
               <div className="md:col-span-1">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-xl font-bold mb-4">Order Summary</h2>

@@ -4,29 +4,34 @@ const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
 
 // Create a client for Google OAuth
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com');
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
 const authUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      phone: user.phone,
-      address: user.address,
-      token: generateToken(user._id),
-    });
-  } else {
-    res.status(401);
-    throw new Error('Invalid email or password');
+    if (user && (await user.matchPassword(password))) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        phone: user.phone,
+        address: user.address,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(401);
+      throw new Error('Invalid email or password');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ message: error.message || 'Invalid email or password' });
   }
 };
 
@@ -34,34 +39,39 @@ const authUser = async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email });
 
-  if (userExists) {
-    res.status(400);
-    throw new Error('User already exists');
-  }
+    if (userExists) {
+      res.status(400);
+      throw new Error('User already exists');
+    }
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-  });
-
-  if (user) {
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      phone: user.phone,
-      address: user.address,
-      token: generateToken(user._id),
+    const user = await User.create({
+      name,
+      email,
+      password,
     });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+
+    if (user) {
+      res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        phone: user.phone,
+        address: user.address,
+        token: generateToken(user._id),
+      });
+    } else {
+      res.status(400);
+      throw new Error('Invalid user data');
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(400).json({ message: error.message || 'Registration failed' });
   }
 };
 
@@ -75,7 +85,7 @@ const googleAuth = async (req, res) => {
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: process.env.GOOGLE_CLIENT_ID || '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com',
     });
 
     const payload = ticket.getPayload();
@@ -117,8 +127,7 @@ const googleAuth = async (req, res) => {
     }
   } catch (error) {
     console.error('Google auth error:', error);
-    res.status(401);
-    throw new Error('Invalid Google token or authentication error');
+    res.status(401).json({ message: error.message || 'Invalid Google token or authentication error' });
   }
 };
 

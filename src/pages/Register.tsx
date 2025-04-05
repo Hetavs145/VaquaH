@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useForm } from 'react-hook-form';
@@ -35,22 +35,6 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Register = () => {
   const { register, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Render Google Sign-In button when the component mounts
-    if (googleButtonRef.current && window.google) {
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        type: 'standard',
-        theme: 'outline',
-        size: 'large',
-        text: 'signup_with',
-        shape: 'rectangular',
-        logo_alignment: 'left',
-        width: 280
-      });
-    }
-  }, [googleButtonRef.current, window.google]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -84,10 +68,6 @@ const Register = () => {
           </CardHeader>
 
           <CardContent>
-            <div className="w-full flex justify-center mb-4">
-              <div ref={googleButtonRef} className="google-signin-button"></div>
-            </div>
-
             <Button
               onClick={signInWithGoogle}
               variant="outline"

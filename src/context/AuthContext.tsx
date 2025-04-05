@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       script.onload = () => {
         if (window.google) {
           window.google.accounts.id.initialize({
-            client_id: '1097909557-v24vd6kp4gfnsgv3cfclcvfaoj9t9ik8.apps.googleusercontent.com', // Replace with your Google Client ID
+            client_id: '491747382327-sntc9mlqfm7bvfrvk5k5a5gdvnaq5cuf.apps.googleusercontent.com', // Correct Google Client ID
             callback: handleGoogleCredentialResponse,
             auto_select: false,
             cancel_on_tap_outside: true,

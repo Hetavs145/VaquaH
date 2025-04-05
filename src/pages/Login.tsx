@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,24 +31,8 @@ const Login = () => {
   const { login, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
   
   const redirectPath = location.state?.from || '/dashboard';
-
-  useEffect(() => {
-    // Render Google Sign-In button when the component mounts
-    if (googleButtonRef.current && window.google) {
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        type: 'standard',
-        theme: 'outline',
-        size: 'large',
-        text: 'signin_with',
-        shape: 'rectangular',
-        logo_alignment: 'left',
-        width: 280
-      });
-    }
-  }, [googleButtonRef.current, window.google]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -80,10 +64,6 @@ const Login = () => {
           </CardHeader>
 
           <CardContent>
-            <div className="w-full flex justify-center mb-4">
-              <div ref={googleButtonRef} className="google-signin-button"></div>
-            </div>
-
             <Button
               onClick={signInWithGoogle}
               variant="outline"
