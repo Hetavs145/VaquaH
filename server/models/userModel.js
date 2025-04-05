@@ -22,6 +22,10 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    isGoogle: {
+      type: Boolean,
+      default: false,
+    },
     phone: {
       type: String,
     },

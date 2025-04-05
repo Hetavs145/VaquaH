@@ -1,11 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CreditCard, Calendar, AlertCircle } from 'lucide-react';
+import { CreditCard, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface PaymentGatewayProps {
   amount: number;
@@ -23,6 +22,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCa
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
@@ -41,6 +41,8 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCa
         description: "Please sign in to make a payment",
         variant: "destructive",
       });
+      // Redirect to login page, storing the return path
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
 
@@ -87,7 +89,7 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCa
         contact: user.phone || ""
       },
       notes: {
-        address: "VaquaH Corporate Office"
+        address: "VaquaH Corporate Office, Mumbai"
       },
       theme: {
         color: "#3399cc"
@@ -114,11 +116,6 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCa
     }
   };
 
-  const handleCreditCardPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    handlePayment();
-  };
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="mb-6">
@@ -128,8 +125,12 @@ const PaymentGateway: React.FC<PaymentGatewayProps> = ({ amount, onSuccess, onCa
 
       <div className="space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-          <p className="text-sm text-blue-700">
-            We use Razorpay for secure payment processing. Click the "Pay Now" button to proceed with payment.
+          <p className="text-sm text-blue-700 flex items-start">
+            <AlertCircle size={16} className="mr-2 mt-0.5" />
+            {user ? 
+              "We use Razorpay for secure payment processing. Click the 'Pay Now' button to proceed with payment." : 
+              "Please sign in to continue with payment."
+            }
           </p>
         </div>
 

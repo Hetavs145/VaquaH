@@ -52,28 +52,33 @@ export const userService = {
 
   updateProfile: async (userData: Partial<User>): Promise<User> => {
     const { data } = await api.put('/users/profile', userData);
-    localStorage.setItem('userInfo', JSON.stringify({
-      ...JSON.parse(localStorage.getItem('userInfo') || '{}'),
-      ...data,
-    }));
-    return data;
+    const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const updatedUser = { ...currentUser, ...data };
+    localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+    return updatedUser;
   },
 
-  // Mock Google authentication
+  // Google authentication
   googleAuthenticate: async (credential: string): Promise<User> => {
-    // In a real application, you'd send the credential to your backend
-    // For now, we'll create a mock user
-    const mockUser = {
-      _id: 'google-user-' + Math.random().toString(36).substring(2, 11),
-      name: 'Google User',
-      email: 'user@gmail.com',
-      isAdmin: false,
-      token: 'google-auth-token-' + Math.random().toString(36).substring(2, 15)
-    };
-    
-    localStorage.setItem('userToken', mockUser.token);
-    localStorage.setItem('userInfo', JSON.stringify(mockUser));
-    
-    return mockUser;
+    try {
+      // In a real implementation, the credential would be sent to your backend
+      // For now we'll use a mock implementation
+      const mockUser = {
+        _id: 'google-user-' + Math.random().toString(36).substring(2, 11),
+        name: 'Google User',
+        email: 'user@gmail.com',
+        isAdmin: false,
+        token: 'google-auth-token-' + Math.random().toString(36).substring(2, 15),
+        isGoogle: true
+      };
+      
+      localStorage.setItem('userToken', mockUser.token);
+      localStorage.setItem('userInfo', JSON.stringify(mockUser));
+      
+      return mockUser;
+    } catch (error) {
+      console.error("Google auth error:", error);
+      throw error;
+    }
   }
 };

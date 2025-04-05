@@ -16,6 +16,8 @@ const authUser = async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      phone: user.phone,
+      address: user.address,
       token: generateToken(user._id),
     });
   } else {
@@ -49,6 +51,43 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      phone: user.phone,
+      address: user.address,
+      token: generateToken(user._id),
+    });
+  } else {
+    res.status(400);
+    throw new Error('Invalid user data');
+  }
+};
+
+// @desc    Google authentication
+// @route   POST /api/users/google
+// @access  Public
+const googleAuth = async (req, res) => {
+  const { email, name, googleId } = req.body;
+
+  // Check if user already exists
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    // Create a new user with Google info
+    user = await User.create({
+      name,
+      email,
+      password: googleId + Date.now(), // Create a unique password they won't use
+      isGoogle: true,
+    });
+  }
+
+  if (user) {
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      phone: user.phone,
+      address: user.address,
       token: generateToken(user._id),
     });
   } else {
@@ -69,6 +108,8 @@ const getUserProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      phone: user.phone,
+      address: user.address,
     });
   } else {
     res.status(404);
@@ -86,7 +127,7 @@ const updateUserProfile = async (req, res) => {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     
-    if (req.body.password) {
+    if (req.body.password && !user.isGoogle) {
       user.password = req.body.password;
     }
 
@@ -105,6 +146,8 @@ const updateUserProfile = async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
+      phone: updatedUser.phone,
+      address: updatedUser.address,
       token: generateToken(updatedUser._id),
     });
   } else {
@@ -118,4 +161,5 @@ module.exports = {
   registerUser,
   getUserProfile,
   updateUserProfile,
+  googleAuth,
 };

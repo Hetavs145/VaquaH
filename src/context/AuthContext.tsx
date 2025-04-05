@@ -36,6 +36,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       script.defer = true;
       document.body.appendChild(script);
 
+      window.onload = () => {
+        console.log("Google Sign-In script loaded");
+      };
+
       return () => {
         document.body.removeChild(script);
       };
@@ -119,26 +123,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      // In a real implementation, this would call your backend API
-      // For demo purposes, we'll create a mock user
-      const mockGoogleUser = {
-        _id: 'google-' + Math.random().toString(36).substring(2, 11),
-        name: 'Google User',
-        email: 'googleuser@example.com',
-        isAdmin: false,
-        token: 'mock-google-token-' + Math.random().toString(36).substring(2, 15)
-      };
-      
-      // Store in local storage similar to regular login
-      localStorage.setItem('userToken', mockGoogleUser.token);
-      localStorage.setItem('userInfo', JSON.stringify(mockGoogleUser));
-      
-      // Update state
-      setUser(mockGoogleUser);
+      // Call the googleAuthenticate method from userService
+      const userData = await userService.googleAuthenticate("google-auth-token");
+      setUser(userData);
       
       toast({
         title: "Google login successful",
-        description: `Welcome, ${mockGoogleUser.name}!`,
+        description: `Welcome, ${userData.name}!`,
       });
     } catch (error: any) {
       console.error('Google sign in error:', error);
