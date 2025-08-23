@@ -9,11 +9,254 @@ import {
   where, 
   orderBy, 
   serverTimestamp,
-  addDoc
+  addDoc,
+  getFirestore
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app from '../lib/firebase';
+
+const functions = getFunctions(app);
 
 class AdminService {
+  // Initialize required collections for admin services panel
+  async initializeAdminCollections() {
+    try {
+      // Try to use Firebase function first
+      try {
+        const initializeCollections = httpsCallable(functions, 'initializeAdminCollections');
+        const result = await initializeCollections();
+        return result.data;
+      } catch (functionError) {
+        console.log('Firebase function not available, creating collections directly:', functionError);
+        
+        // Fallback: Create collections directly in frontend
+        return await this.createCollectionsDirectly();
+      }
+    } catch (error) {
+      console.error('Error initializing admin collections:', error);
+      throw error;
+    }
+  }
+
+  // Fallback method to create collections directly
+  async createCollectionsDirectly() {
+    try {
+      const { getFirestore, collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const db = getFirestore(app);
+      
+      // Sample data for agents
+      const sampleAgents = [
+        {
+          uid: 'sample-agent-1',
+          email: 'agent1@example.com',
+          name: 'John Doe',
+          phone: '+1234567890',
+          address: '123 Main St',
+          city: 'New York',
+          state: 'NY',
+          pincode: '10001',
+          services: ['AC Repair', 'AC Installation'],
+          experience: '5 years',
+          documents: ['license.pdf', 'insurance.pdf'],
+          status: 'active',
+          rating: 4.5,
+          totalServices: 25,
+          totalEarnings: 2500,
+          location: {
+            latitude: 40.7128,
+            longitude: -74.0060,
+            lastUpdated: serverTimestamp()
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        },
+        {
+          uid: 'sample-agent-2',
+          email: 'agent2@example.com',
+          name: 'Jane Smith',
+          phone: '+1234567891',
+          address: '456 Oak Ave',
+          city: 'Los Angeles',
+          state: 'CA',
+          pincode: '90210',
+          services: ['AC Maintenance', 'AC Cleaning'],
+          experience: '3 years',
+          documents: ['certification.pdf', 'background-check.pdf'],
+          status: 'active',
+          rating: 4.8,
+          totalServices: 18,
+          totalEarnings: 1800,
+          location: {
+            latitude: 34.0522,
+            longitude: -118.2437,
+            lastUpdated: serverTimestamp()
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+      ];
+
+      // Sample data for agent applications
+      const sampleApplications = [
+        {
+          uid: 'sample-app-1',
+          email: 'applicant1@example.com',
+          name: 'Mike Johnson',
+          phone: '+1234567892',
+          address: '789 Pine St',
+          city: 'Chicago',
+          state: 'IL',
+          pincode: '60601',
+          services: ['AC Repair', 'Heating Repair'],
+          experience: '4 years',
+          documents: ['resume.pdf', 'references.pdf'],
+          status: 'pending',
+          appliedAt: serverTimestamp(),
+          reviewedBy: null,
+          reviewedAt: null,
+          notes: ''
+        },
+        {
+          uid: 'sample-app-2',
+          email: 'applicant2@example.com',
+          name: 'Sarah Wilson',
+          phone: '+1234567893',
+          address: '321 Elm St',
+          city: 'Houston',
+          state: 'TX',
+          pincode: '77001',
+          services: ['AC Installation', 'AC Maintenance'],
+          experience: '6 years',
+          documents: ['certification.pdf', 'portfolio.pdf'],
+          status: 'pending',
+          appliedAt: serverTimestamp(),
+          reviewedBy: null,
+          reviewedAt: null,
+          notes: ''
+        }
+      ];
+
+      // Sample data for service requests
+      const sampleRequests = [
+        {
+          userId: 'sample-user-1',
+          userName: 'Customer One',
+          userEmail: 'customer1@example.com',
+          userPhone: '+1234567894',
+          serviceType: 'AC Repair',
+          description: 'AC not cooling properly, making strange noises',
+          address: '123 Customer St',
+          city: 'Miami',
+          state: 'FL',
+          pincode: '33101',
+          preferredDate: '2024-01-15',
+          preferredTime: '10:00 AM',
+          status: 'pending',
+          priority: 'medium',
+          estimatedPrice: 150,
+          adminCut: 0.15,
+          agentCut: 0.85,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        },
+        {
+          userId: 'sample-user-2',
+          userName: 'Customer Two',
+          userEmail: 'customer2@example.com',
+          userPhone: '+1234567895',
+          serviceType: 'AC Installation',
+          description: 'Need new AC unit installed in living room',
+          address: '456 Customer Ave',
+          city: 'Phoenix',
+          state: 'AZ',
+          pincode: '85001',
+          preferredDate: '2024-01-20',
+          preferredTime: '2:00 PM',
+          status: 'assigned',
+          priority: 'high',
+          estimatedPrice: 800,
+          adminCut: 0.15,
+          agentCut: 0.85,
+          agentId: 'sample-agent-1',
+          assignedAgent: 'John Doe',
+          assignedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }
+      ];
+
+      // Create collections with sample data
+      const batch = [];
+      
+      // Add sample agents
+      sampleAgents.forEach(agent => {
+        batch.push(setDoc(doc(db, 'agents', agent.uid), agent));
+      });
+
+      // Add sample applications
+      sampleApplications.forEach(app => {
+        batch.push(setDoc(doc(db, 'agentApplications', app.uid), app));
+      });
+
+      // Add sample service requests
+      sampleRequests.forEach((request, index) => {
+        batch.push(setDoc(doc(db, 'serviceRequests', `sample-request-${index + 1}`), request));
+      });
+
+      // Execute all operations
+      await Promise.all(batch);
+
+      return {
+        success: true,
+        message: 'Admin collections initialized successfully (direct method)',
+        collectionsCreated: ['agents', 'agentApplications', 'serviceRequests'],
+        sampleDataAdded: {
+          agents: sampleAgents.length,
+          applications: sampleApplications.length,
+          requests: sampleRequests.length
+        }
+      };
+
+    } catch (error) {
+      console.error('Error creating collections directly:', error);
+      throw error;
+    }
+  }
+
+  // Check if collections exist and have data
+  async checkCollectionsStatus() {
+    try {
+      const db = getFirestore(app);
+      
+      const collections = ['agents', 'agentApplications', 'serviceRequests'];
+      const status = {};
+      
+      for (const collectionName of collections) {
+        try {
+          const querySnapshot = await getDocs(collection(db, collectionName));
+          status[collectionName] = {
+            exists: true,
+            count: querySnapshot.size,
+            hasData: querySnapshot.size > 0
+          };
+        } catch (error) {
+          status[collectionName] = {
+            exists: false,
+            count: 0,
+            hasData: false,
+            error: error.message
+          };
+        }
+      }
+      
+      return status;
+    } catch (error) {
+      console.error('Error checking collections status:', error);
+      throw error;
+    }
+  }
+
   // Ensure user document exists and has correct role
   async ensureUserDocument(userId, userEmail, userName) {
     try {
