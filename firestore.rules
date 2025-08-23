@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(uid) { 
+      return request.auth != null && request.auth.uid == uid; 
+    }
+    
+    // Treat a user as admin if either:
+    // - Custom claim role == 'admin' (for future backend usage)
+    // - OR Firestore users/{uid}.role == 'admin' (frontend-only Hostinger setup)
+    function isAdmin() { 
+      return request.auth != null && (
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      ); 
+    }
+    
+    function isOwnerOrAdmin(uid) {
+      return isOwner(uid) || isAdmin();
+    }
+
+    // Orders collection
+    match /orders/{docId} {
+      allow read, write: if isSignedIn() && isOwnerOrAdmin(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      
+      // Timeline subcollection
+      match /timeline/{timelineDocId} {
+        allow read, write: if isSignedIn() && isOwnerOrAdmin(get(/databases/$(database)/documents/orders/$(docId)).data.userId);
+      }
+    }
+
+    // Appointments collection
+    match /appointments/{docId} {
+      allow read, write: if isSignedIn() && isOwnerOrAdmin(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+    }
+
+    // Users collection
+    match /users/{docId} {
+      // Users can read their own record; Admins can read any
+      allow read: if isOwner(docId) || isAdmin();
+      // Users can create their own record; Admins can create/update any
+      allow create: if isSignedIn() && (isOwner(docId) || isAdmin());
+      allow update: if isSignedIn() && (isOwner(docId) || isAdmin());
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // Products collection (read-only for everyone)
+    match /products/{docId} {
+      allow read: if true;
+      allow write: if false; // Only admins via console/backends
+    }
+
+    // Admin requests collection (only admins can read, users can create their own)
+    match /adminRequests/{docId} {
+      allow read: if isSignedIn() && (isOwner(docId) || isAdmin());
+      allow create: if isSignedIn() && isOwner(docId);
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Admin logs collection (only admins can read/write)
+    match /adminLogs/{docId} {
+      allow read, write: if isSignedIn() && isAdmin();
+    }
+
+    // Services collection (read-only for everyone)
+    match /services/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

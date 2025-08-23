@@ -1,0 +1,228 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Package, 
+  Users, 
+  ShoppingCart, 
+  Settings, 
+  TrendingUp,
+  Shield,
+  AlertTriangle
+} from 'lucide-react';
+import { adminService } from '@/services/adminService';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+
+const AdminDashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [adminStatus, setAdminStatus] = useState(null);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalProducts: 0,
+    totalUsers: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, [user]);
+
+  const checkAdminAccess = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const status = await adminService.checkAdminStatus(user.uid);
+      setAdminStatus(status);
+      
+      if (status.isAdmin) {
+        // Load admin stats
+        await loadAdminStats();
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAdminStats = async () => {
+    try {
+      const orders = await adminService.getAllOrders();
+      const products = await adminService.getAllProducts();
+      const users = await adminService.getAllUsers();
+      
+      setStats({
+        totalOrders: orders.length,
+        pendingOrders: orders.filter(o => ['created', 'payment_pending', 'cod_pending'].includes(o.status)).length,
+        totalProducts: products.length,
+        totalUsers: users.length
+      });
+    } catch (error) {
+      console.error('Error loading admin stats:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="container-custom py-8 flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!adminStatus?.isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="container-custom py-8 flex-1">
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+              <CardTitle>Access Denied</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-600 mb-4">
+                You need admin access to view this page. Contact an existing admin to request access.
+              </p>
+              <Button 
+                onClick={() => navigate('/admin/setup')} 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Request Admin Access
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const adminPages = [
+    {
+      title: 'Orders Management',
+      description: 'View and manage customer orders, update statuses',
+      icon: ShoppingCart,
+      path: '/admin/orders',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Products Management',
+      description: 'Add, edit, and manage products and pricing',
+      icon: Package,
+      path: '/admin/products',
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Users Management',
+      description: 'Manage customer accounts and admin roles',
+      icon: Users,
+      path: '/admin/users',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Offers & Discounts',
+      description: 'Manage promotions, discounts, and special offers',
+      icon: TrendingUp,
+      path: '/admin/offers',
+      color: 'bg-orange-500'
+    },
+    {
+      title: 'Admin Management',
+      description: 'Manage admin access requests and roles',
+      icon: Shield,
+      path: '/admin/management',
+      color: 'bg-red-500'
+    }
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="container-custom py-8 flex-1">
+        <div className="flex items-center gap-3 mb-8">
+          <Shield className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Admin Pages Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {adminPages.map((page) => (
+            <Card key={page.path} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(page.path)}>
+              <CardHeader>
+                <div className={`w-12 h-12 rounded-lg ${page.color} flex items-center justify-center mb-4`}>
+                  <page.icon className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle className="text-lg">{page.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm mb-4">{page.description}</p>
+                <Button variant="outline" className="w-full">
+                  Access {page.title}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default AdminDashboard;
