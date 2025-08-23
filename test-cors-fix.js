@@ -1,94 +1,134 @@
-// Test script to verify CORS fixes
-console.log('🧪 Testing CORS Fixes...');
+// Test script to verify CORS fix for Firebase Functions
+const https = require('https');
 
-// Test 1: Check if Cloud Function endpoint is accessible
-async function testCloudFunction() {
-  try {
-    const response = await fetch(
-      'https://us-central1-vaquah-react.cloudfunctions.net/healthCheck',
-      {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Cloud Function accessible:', data);
-      return true;
-    } else {
-      console.log('❌ Cloud Function failed:', response.status, response.statusText);
-      return false;
+// Test the health check endpoint first (no auth required)
+function testHealthCheck() {
+  console.log('Testing health check endpoint...');
+  
+  const options = {
+    hostname: 'us-central1-vaquah-react.cloudfunctions.net',
+    port: 443,
+    path: '/healthCheck',
+    method: 'GET',
+    headers: {
+      'Origin': 'http://localhost:8080',
+      'Access-Control-Request-Method': 'GET',
+      'Access-Control-Request-Headers': 'Content-Type'
     }
-  } catch (error) {
-    console.log('❌ Cloud Function error:', error.message);
-    return false;
-  }
-}
+  };
 
-// Test 2: Check CORS headers
-async function testCORSHeaders() {
-  try {
-    const response = await fetch(
-      'https://us-central1-vaquah-react.cloudfunctions.net/healthCheck',
-      {
-        method: 'OPTIONS',
-        mode: 'cors',
-        headers: {
-          'Origin': 'http://localhost:8080',
-          'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'Content-Type,Authorization'
-        }
+  const req = https.request(options, (res) => {
+    console.log(`Health Check Status: ${res.statusCode}`);
+    console.log('CORS Headers:');
+    console.log('  Access-Control-Allow-Origin:', res.headers['access-control-allow-origin']);
+    console.log('  Access-Control-Allow-Methods:', res.headers['access-control-allow-methods']);
+    console.log('  Access-Control-Allow-Headers:', res.headers['access-control-allow-headers']);
+    
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    res.on('end', () => {
+      try {
+        const response = JSON.parse(data);
+        console.log('Response:', response);
+      } catch (e) {
+        console.log('Raw response:', data);
       }
-    );
-    
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
-      'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
-      'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
-    };
-    
-    console.log('🔍 CORS Headers:', corsHeaders);
-    
-    if (corsHeaders['Access-Control-Allow-Origin']) {
-      console.log('✅ CORS headers present');
-      return true;
-    } else {
-      console.log('❌ CORS headers missing');
-      return false;
+    });
+  });
+
+  req.on('error', (e) => {
+    console.error('Health Check Error:', e.message);
+  });
+
+  req.end();
+}
+
+// Test the initializeAdminCollections endpoint (requires auth)
+function testAdminCollections() {
+  console.log('\nTesting admin collections endpoint...');
+  console.log('Note: This will fail with 401 Unauthorized without a valid token');
+  
+  const options = {
+    hostname: 'us-central1-vaquah-react.cloudfunctions.net',
+    port: 443,
+    path: '/initializeAdminCollections',
+    method: 'POST',
+    headers: {
+      'Origin': 'http://localhost:8080',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer INVALID_TOKEN_FOR_TESTING'
     }
-  } catch (error) {
-    console.log('❌ CORS test error:', error.message);
-    return false;
-  }
+  };
+
+  const req = https.request(options, (res) => {
+    console.log(`Admin Collections Status: ${res.statusCode}`);
+    console.log('CORS Headers:');
+    console.log('  Access-Control-Allow-Origin:', res.headers['access-control-allow-origin']);
+    console.log('  Access-Control-Allow-Methods:', res.headers['access-control-allow-methods']);
+    console.log('  Access-Control-Allow-Headers:', res.headers['access-control-allow-headers']);
+    
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    res.on('end', () => {
+      try {
+        const response = JSON.parse(data);
+        console.log('Response:', response);
+      } catch (e) {
+        console.log('Raw response:', data);
+      }
+    });
+  });
+
+  req.on('error', (e) => {
+    console.error('Admin Collections Error:', e.message);
+  });
+
+  // Send empty body
+  req.write('{}');
+  req.end();
 }
 
-// Run tests
-async function runTests() {
-  console.log('\n🚀 Running CORS Tests...\n');
+// Test OPTIONS request (preflight)
+function testPreflight() {
+  console.log('\nTesting OPTIONS preflight request...');
   
-  const functionTest = await testCloudFunction();
-  const corsTest = await testCORSHeaders();
-  
-  console.log('\n📊 Test Results:');
-  console.log(`Cloud Function Access: ${functionTest ? '✅ PASS' : '❌ FAIL'}`);
-  console.log(`CORS Headers: ${corsTest ? '✅ PASS' : '❌ FAIL'}`);
-  
-  if (functionTest && corsTest) {
-    console.log('\n🎉 All tests passed! CORS issues should be resolved.');
-  } else {
-    console.log('\n⚠️  Some tests failed. Check the deployment and configuration.');
-  }
+  const options = {
+    hostname: 'us-central1-vaquah-react.cloudfunctions.net',
+    port: 443,
+    path: '/initializeAdminCollections',
+    method: 'OPTIONS',
+    headers: {
+      'Origin': 'http://localhost:8080',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'Content-Type, Authorization'
+    }
+  };
+
+  const req = https.request(options, (res) => {
+    console.log(`Preflight Status: ${res.statusCode}`);
+    console.log('CORS Headers:');
+    console.log('  Access-Control-Allow-Origin:', res.headers['access-control-allow-origin']);
+    console.log('  Access-Control-Allow-Methods:', res.headers['access-control-allow-methods']);
+    console.log('  Access-Control-Allow-Headers:', res.headers['access-control-allow-headers']);
+    console.log('  Access-Control-Allow-Credentials:', res.headers['access-control-allow-credentials']);
+  });
+
+  req.on('error', (e) => {
+    console.error('Preflight Error:', e.message);
+  });
+
+  req.end();
 }
 
-// Run tests if this file is executed directly
-if (typeof window === 'undefined') {
-  runTests();
-} else {
-  // Browser environment
-  window.testCORSFixes = runTests;
-  console.log('🌐 Browser environment detected. Run window.testCORSFixes() to test.');
-}
+// Run all tests
+console.log('Testing Firebase Functions CORS Configuration...\n');
+
+testHealthCheck();
+setTimeout(testAdminCollections, 1000);
+setTimeout(testPreflight, 2000);
