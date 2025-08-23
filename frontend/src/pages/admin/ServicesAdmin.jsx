@@ -92,10 +92,11 @@ const ServicesAdmin = () => {
             description: 'Admin collections have been set up successfully!',
           });
         } catch (error) {
-          console.error('Error initializing collections:', error);
+          // Log error for debugging but don't expose to user
+          console.warn('Error initializing collections:', error.message);
           toast({
             title: 'Initialization Error',
-            description: 'Failed to initialize collections. Please try again.',
+            description: 'Failed to initialize collections. Please check your permissions and try again.',
             variant: 'destructive'
           });
         }
@@ -109,7 +110,8 @@ const ServicesAdmin = () => {
       try {
         agentsData = await agentService.getAllAgents();
       } catch (error) {
-        console.error('Error loading agents:', error);
+        // Log error for debugging but don't expose to user
+        console.warn('Error loading agents:', error.message);
         if (error.code === 'permission-denied') {
           toast({
             title: 'Permission Error',
@@ -122,7 +124,8 @@ const ServicesAdmin = () => {
       try {
         applicationsData = await agentService.getAllAgentApplications();
       } catch (error) {
-        console.error('Error loading agent applications:', error);
+        // Log error for debugging but don't expose to user
+        console.warn('Error loading agent applications:', error.message);
         if (error.code === 'permission-denied') {
           toast({
             title: 'Permission Error',
@@ -135,7 +138,8 @@ const ServicesAdmin = () => {
       try {
         requestsData = await agentService.getAllServiceRequests();
       } catch (error) {
-        console.error('Error loading service requests:', error);
+        // Log error for debugging but don't expose to user
+        console.warn('Error loading service requests:', error.message);
         if (error.code === 'permission-denied') {
           toast({
             title: 'Permission Error',
@@ -157,10 +161,11 @@ const ServicesAdmin = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      // Log error for debugging but don't expose to user
+      console.warn('Error loading data:', error.message);
       toast({
         title: 'Error',
-        description: 'Failed to load data',
+        description: 'Failed to load data. Please try again later.',
         variant: 'destructive'
       });
     } finally {
