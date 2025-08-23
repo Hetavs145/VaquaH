@@ -68,15 +68,62 @@ const ServicesAdmin = () => {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      const [agentsData, applicationsData, requestsData] = await Promise.all([
-        agentService.getAllAgents(),
-        agentService.getAllAgentApplications(),
-        agentService.getAllServiceRequests()
-      ]);
+      
+      // Load data with individual error handling
+      let agentsData = [];
+      let applicationsData = [];
+      let requestsData = [];
+      
+      try {
+        agentsData = await agentService.getAllAgents();
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        if (error.code === 'permission-denied') {
+          toast({
+            title: 'Permission Error',
+            description: 'You do not have permission to view agents. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        }
+      }
+      
+      try {
+        applicationsData = await agentService.getAllAgentApplications();
+      } catch (error) {
+        console.error('Error loading agent applications:', error);
+        if (error.code === 'permission-denied') {
+          toast({
+            title: 'Permission Error',
+            description: 'You do not have permission to view agent applications. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        }
+      }
+      
+      try {
+        requestsData = await agentService.getAllServiceRequests();
+      } catch (error) {
+        console.error('Error loading service requests:', error);
+        if (error.code === 'permission-denied') {
+          toast({
+            title: 'Permission Error',
+            description: 'You do not have permission to view service requests. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        }
+      }
       
       setAgents(agentsData);
       setAgentApplications(applicationsData);
       setServiceRequests(requestsData);
+      
+      // Show success message if any data was loaded
+      if (agentsData.length > 0 || applicationsData.length > 0 || requestsData.length > 0) {
+        toast({
+          title: 'Data Loaded',
+          description: `Loaded ${agentsData.length} agents, ${applicationsData.length} applications, ${requestsData.length} requests`,
+        });
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       toast({

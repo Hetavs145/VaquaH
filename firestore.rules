@@ -28,6 +28,15 @@ service cloud.firestore {
       return isAdmin() || isAdminByUserDoc();
     }
     
+    // Enhanced admin check that also verifies the user document exists and has admin role
+    function isVerifiedAdmin() {
+      return request.auth != null && (
+        request.auth.token.role == 'admin' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'))
+      );
+    }
+    
     function isOwnerOrAdmin(uid) {
       return isOwner(uid) || isAdminCombined();
     }
@@ -111,18 +120,18 @@ service cloud.firestore {
 
     // Agent applications collection
     match /agentApplications/{docId} {
-      allow read: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow read: if isSignedIn() && (isOwner(docId) || isVerifiedAdmin());
       allow create: if isSignedIn() && isOwner(docId);
-      allow update: if isSignedIn() && isAdminCombined();
-      allow delete: if isSignedIn() && isAdminCombined();
+      allow update: if isSignedIn() && isVerifiedAdmin();
+      allow delete: if isSignedIn() && isVerifiedAdmin();
     }
 
     // Agents collection
     match /agents/{docId} {
-      allow read: if isSignedIn() && (isOwner(docId) || isAdminCombined());
-      allow create: if isSignedIn() && isAdminCombined();
-      allow update: if isSignedIn() && (isOwner(docId) || isAdminCombined());
-      allow delete: if isSignedIn() && isAdminCombined();
+      allow read: if isSignedIn() && (isOwner(docId) || isVerifiedAdmin());
+      allow create: if isSignedIn() && isVerifiedAdmin();
+      allow update: if isSignedIn() && (isOwner(docId) || isVerifiedAdmin());
+      allow delete: if isSignedIn() && isVerifiedAdmin();
     }
 
     // Service requests collection
@@ -130,18 +139,18 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
         (resource != null && resource.data.agentId != null && isOwnerOrAdmin(resource.data.agentId)) ||
-        isAdminCombined()
+        isVerifiedAdmin()
       );
       allow create: if isSignedIn() && (
         isOwner(request.resource.data.userId) || 
-        isAdminCombined()
+        isVerifiedAdmin()
       );
       allow update: if isSignedIn() && (
         (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
         (resource != null && resource.data.agentId != null && isOwnerOrAdmin(resource.data.agentId)) ||
-        isAdminCombined()
+        isVerifiedAdmin()
       );
-      allow delete: if isSignedIn() && isAdminCombined();
+      allow delete: if isSignedIn() && isVerifiedAdmin();
     }
   }
 }
