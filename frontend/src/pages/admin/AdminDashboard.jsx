@@ -29,6 +29,7 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -52,6 +53,17 @@ const AdminDashboard = () => {
       setError('Failed to verify admin access. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const debugAdminAccess = async () => {
+    try {
+      const debugData = await adminService.debugAdminAccess();
+      setDebugInfo(debugData);
+      console.log('Debug Admin Access:', debugData);
+    } catch (error) {
+      console.error('Error debugging admin access:', error);
+      setDebugInfo({ error: error.message });
     }
   };
 
@@ -194,9 +206,31 @@ const AdminDashboard = () => {
               <AlertTriangle className="w-5 h-5 text-red-600" />
               <p className="text-red-800">{error}</p>
             </div>
-
           </div>
         )}
+
+        {/* Debug Section */}
+        <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-800">Debug Admin Access</h3>
+            <Button 
+              onClick={debugAdminAccess} 
+              variant="outline" 
+              size="sm"
+              className="bg-blue-50 hover:bg-blue-100"
+            >
+              Debug Access
+            </Button>
+          </div>
+          
+          {debugInfo && (
+            <div className="bg-white p-3 rounded border text-sm">
+              <pre className="whitespace-pre-wrap text-xs">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
