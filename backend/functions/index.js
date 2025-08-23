@@ -387,3 +387,139 @@ exports.processDeletionTasks = functions.pubsub.schedule('every 1 minutes').onRu
   }
 });
 
+// 8. Initialize first admin user and collections (run once manually)
+exports.initializeFirstAdmin = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { adminEmail, adminPassword } = data;
+  
+  if (!adminEmail || !adminPassword) {
+    throw new functions.https.HttpsError('invalid-argument', 'Admin email and password are required');
+  }
+
+  try {
+    // Create the first admin user
+    const userRecord = await admin.auth().createUser({
+      email: adminEmail,
+      password: adminPassword,
+      displayName: 'System Administrator'
+    });
+
+    // Set admin role
+    await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'admin' });
+
+    // Create user document
+    await admin.firestore().collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email: adminEmail,
+      name: 'System Administrator',
+      role: 'admin',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Initialize collections with sample data
+    await initializeCollections();
+
+    return {
+      success: true,
+      message: 'First admin user created and collections initialized successfully',
+      adminUid: userRecord.uid,
+      adminEmail: adminEmail
+    };
+  } catch (error) {
+    console.error('Error creating first admin:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to create first admin user');
+  }
+});
+
+// Helper function to initialize collections
+async function initializeCollections() {
+  try {
+    // Create sample agents collection
+    const agentsRef = admin.firestore().collection('agents');
+    await agentsRef.doc('sample-agent-1').set({
+      uid: 'sample-agent-1',
+      email: 'agent1@example.com',
+      name: 'Sample Agent 1',
+      phone: '+1234567890',
+      services: ['AC Repair', 'AC Maintenance'],
+      status: 'active',
+      rating: 4.5,
+      location: {
+        latitude: 40.7128,
+        longitude: -74.0060,
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      },
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Create sample agent applications collection
+    const applicationsRef = admin.firestore().collection('agentApplications');
+    await applicationsRef.doc('sample-application-1').set({
+      uid: 'sample-applicant-1',
+      email: 'applicant1@example.com',
+      name: 'Sample Applicant 1',
+      phone: '+1234567891',
+      services: ['AC Installation', 'AC Repair'],
+      experience: '5 years in HVAC',
+      status: 'pending',
+      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedBy: null,
+      reviewedAt: null,
+      notes: 'Sample application for testing'
+    });
+
+    // Create sample service requests collection
+    const requestsRef = admin.firestore().collection('serviceRequests');
+    await requestsRef.doc('sample-request-1').set({
+      userId: 'sample-user-1',
+      agentId: 'sample-agent-1',
+      serviceType: 'AC Repair',
+      description: 'AC not cooling properly',
+      status: 'pending',
+      priority: 'medium',
+      location: {
+        address: '123 Sample St, Sample City',
+        latitude: 40.7128,
+        longitude: -74.0060
+      },
+      requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+      scheduledFor: null,
+      completedAt: null,
+      notes: 'Sample service request for testing'
+    });
+
+    // Create admin logs collection
+    const logsRef = admin.firestore().collection('adminLogs');
+    await logsRef.doc('initial-setup').set({
+      action: 'system_initialization',
+      performedBy: 'system',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      details: 'Collections initialized with sample data'
+    });
+
+    console.log('Collections initialized successfully');
+  } catch (error) {
+    console.error('Error initializing collections:', error);
+    throw error;
+  }
+}
+
+// 9. Quick setup function for development (creates collections without admin user)
+exports.quickSetup = functions.https.onCall(async (data, context) => {
+  try {
+    await initializeCollections();
+    return {
+      success: true,
+      message: 'Collections initialized successfully'
+    };
+  } catch (error) {
+    console.error('Error in quick setup:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to initialize collections');
+  }
+});
+
