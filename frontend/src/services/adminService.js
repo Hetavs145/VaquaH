@@ -62,43 +62,7 @@ class AdminService {
     }
   }
 
-  // Manually verify and set admin status (for debugging/fixing permission issues)
-  async verifyAndSetAdminStatus(userId, userEmail, shouldBeAdmin = false) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userRef);
-      
-      if (!userDoc.exists()) {
-        // Create user document if it doesn't exist
-        await setDoc(userRef, {
-          uid: userId,
-          email: userEmail,
-          name: userEmail?.split('@')[0] || 'User',
-          role: shouldBeAdmin ? 'admin' : 'user',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      } else {
-        // Update existing user document
-        await updateDoc(userRef, {
-          role: shouldBeAdmin ? 'admin' : 'user',
-          updatedAt: serverTimestamp()
-        });
-      }
-      
-      return {
-        success: true,
-        role: shouldBeAdmin ? 'admin' : 'user',
-        isAdmin: shouldBeAdmin
-      };
-    } catch (error) {
-      console.error('Error verifying admin status:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
+
 
   async requestAdminAccess(userId, userEmail) {
     try {

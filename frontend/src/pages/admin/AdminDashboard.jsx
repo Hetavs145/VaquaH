@@ -11,8 +11,7 @@ import {
   Settings, 
   TrendingUp,
   Shield,
-  AlertTriangle,
-  UserCheck
+  AlertTriangle
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import Navbar from '@/components/Navbar';
@@ -63,7 +62,7 @@ const AdminDashboard = () => {
         adminService.getAllOrders().catch(err => {
           console.error('Error fetching orders:', err);
           if (err.message.includes('Insufficient permissions')) {
-            setError('Admin permissions issue detected. Please visit the Admin Verification page to fix this.');
+            setError('Admin permissions issue detected. Please contact an administrator to grant you admin access.');
           }
           return [];
         }),
@@ -74,7 +73,7 @@ const AdminDashboard = () => {
         adminService.getAllUsers().catch(err => {
           console.error('Error fetching users:', err);
           if (err.message.includes('Insufficient permissions')) {
-            setError('Admin permissions issue detected. Please visit the Admin Verification page to fix this.');
+            setError('Admin permissions issue detected. Please contact an administrator to grant you admin access.');
           }
           return [];
         })
@@ -175,13 +174,7 @@ const AdminDashboard = () => {
       path: '/admin/management',
       color: 'bg-red-500'
     },
-    {
-      title: 'Admin Verification',
-      description: 'Verify and fix admin permission issues',
-      icon: UserCheck,
-      path: '/admin/verification',
-      color: 'bg-indigo-500'
-    }
+
   ];
 
   return (
@@ -201,15 +194,7 @@ const AdminDashboard = () => {
               <AlertTriangle className="w-5 h-5 text-red-600" />
               <p className="text-red-800">{error}</p>
             </div>
-            {error.includes('Admin permissions issue') && (
-              <Button 
-                onClick={() => navigate('/admin/verification')}
-                className="bg-red-600 hover:bg-red-700 text-white"
-                size="sm"
-              >
-                Fix Admin Permissions
-              </Button>
-            )}
+
           </div>
         )}
 
