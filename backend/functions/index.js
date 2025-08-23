@@ -523,3 +523,22 @@ exports.quickSetup = functions.https.onCall(async (data, context) => {
   }
 });
 
+// 10. Quick fix for /admin/services route - just initialize collections
+exports.fixServicesRoute = functions.https.onCall(async (data, context) => {
+  try {
+    console.log('🔧 Fixing /admin/services route by initializing collections...');
+    
+    // Initialize collections with sample data
+    await initializeCollections();
+    
+    return {
+      success: true,
+      message: 'Collections initialized successfully. Your /admin/services route should now work!',
+      collectionsCreated: ['agents', 'agentApplications', 'serviceRequests']
+    };
+  } catch (error) {
+    console.error('Error fixing services route:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to initialize collections');
+  }
+});
+
