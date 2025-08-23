@@ -28,6 +28,7 @@ const AdminDashboard = () => {
     totalUsers: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
     
     try {
       setLoading(true);
+      setError(null);
       const status = await adminService.checkAdminStatus(user.uid);
       setAdminStatus(status);
       
@@ -47,6 +49,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
+      setError('Failed to verify admin access. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,9 +57,21 @@ const AdminDashboard = () => {
 
   const loadAdminStats = async () => {
     try {
-      const orders = await adminService.getAllOrders();
-      const products = await adminService.getAllProducts();
-      const users = await adminService.getAllUsers();
+      // Use Promise.all to fetch data in parallel for better performance
+      const [orders, products, users] = await Promise.all([
+        adminService.getAllOrders().catch(err => {
+          console.error('Error fetching orders:', err);
+          return [];
+        }),
+        adminService.getAllProducts().catch(err => {
+          console.error('Error fetching products:', err);
+          return [];
+        }),
+        adminService.getAllUsers().catch(err => {
+          console.error('Error fetching users:', err);
+          return [];
+        })
+      ]);
       
       setStats({
         totalOrders: orders.length,
@@ -66,6 +81,14 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error('Error loading admin stats:', error);
+      setError('Failed to load dashboard statistics. Some data may be unavailable.');
+      // Set default stats on error to prevent UI issues
+      setStats({
+        totalOrders: 0,
+        pendingOrders: 0,
+        totalProducts: 0,
+        totalUsers: 0
+      });
     }
   };
 
@@ -156,6 +179,16 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <p className="text-red-800">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

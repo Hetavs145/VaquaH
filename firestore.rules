@@ -26,14 +26,16 @@ service cloud.firestore {
 
     // Orders collection
     match /orders/{docId} {
-      allow read, write: if isSignedIn() && isOwnerOrAdmin(resource.data.userId);
+      allow read, write: if isSignedIn() && (isOwnerOrAdmin(resource.data.userId) || isAdmin());
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
       
       // Timeline subcollection
       match /timeline/{timelineDocId} {
-        allow read, write: if isSignedIn() && isOwnerOrAdmin(get(/databases/$(database)/documents/orders/$(docId)).data.userId);
+        allow read, write: if isSignedIn() && (isOwnerOrAdmin(get(/databases/$(database)/documents/orders/$(docId)).data.userId) || isAdmin());
       }
     }
+
+
 
     // Appointments collection
     match /appointments/{docId} {
@@ -52,10 +54,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Products collection (read-only for everyone)
+    // Products collection (read-only for everyone, write for admins)
     match /products/{docId} {
       allow read: if true;
-      allow write: if false; // Only admins via console/backends
+      allow write: if isSignedIn() && isAdmin();
     }
 
     // Admin requests collection (only admins can read, users can create their own)

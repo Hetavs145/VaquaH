@@ -163,7 +163,10 @@ class AdminService {
       return orders;
     } catch (error) {
       console.error('Error fetching admin orders:', error);
-      throw new Error('Failed to fetch orders');
+      if (error.code === 'permission-denied') {
+        throw new Error('Insufficient permissions to access orders. Please contact an administrator.');
+      }
+      throw new Error('Failed to fetch orders. Please try again.');
     }
   }
 
@@ -177,7 +180,10 @@ class AdminService {
       return products;
     } catch (error) {
       console.error('Error fetching admin products:', error);
-      throw new Error('Failed to fetch products');
+      if (error.code === 'permission-denied') {
+        throw new Error('Insufficient permissions to access products. Please contact an administrator.');
+      }
+      throw new Error('Failed to fetch products. Please try again.');
     }
   }
 
@@ -191,7 +197,10 @@ class AdminService {
       return users;
     } catch (error) {
       console.error('Error fetching admin users:', error);
-      throw new Error('Failed to fetch users');
+      if (error.code === 'permission-denied') {
+        throw new Error('Insufficient permissions to access users. Please contact an administrator.');
+      }
+      throw new Error('Failed to fetch users. Please try again.');
     }
   }
 
