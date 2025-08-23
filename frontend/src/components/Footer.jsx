@@ -51,18 +51,18 @@ const Footer = () => {
             <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Contact Us</h3>
             <div className="space-y-3">
               <div className="flex items-start">
-                <Phone size={16} className="mr-2 mt-1 sm:w-4 sm:h-5" />
+                <Phone size={16} className="mr-2 mt-1 sm:w-4 sm:h-5 flex-shrink-0" />
                 <div>
                   <p className="text-sm sm:text-base">+91 98765 43210</p>
                   <p className="text-xs text-gray-400">Mon-Sat: 10AM - 7PM IST</p>
                 </div>
               </div>
               <div className="flex items-start">
-                <Mail size={16} className="mr-2 mt-1 sm:w-4 sm:h-5" />
-                <span className="text-sm sm:text-base">vaquah.contact@gmail.com</span>
+                <Mail size={16} className="mr-2 mt-1 sm:w-4 sm:h-5 flex-shrink-0" />
+                <span className="text-sm sm:text-base break-all">vaquah.contact@gmail.com</span>
               </div>
               <div className="flex items-start">
-                <MapPin size={16} className="mr-2 mt-1 sm:w-4 sm:h-5" />
+                <MapPin size={16} className="mr-2 mt-1 sm:w-4 sm:h-5 flex-shrink-0" />
                 <span className="text-sm sm:text-base">123 Cooling Street, Mumbai, Maharashtra - 400001, India</span>
               </div>
             </div>
@@ -71,22 +71,22 @@ const Footer = () => {
 
         {/* Payment and Trust badges */}
         <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-6 sm:pt-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div className="mb-4 sm:mb-0">
-              <p className="text-sm mb-2">Accept Payments Via</p>
-              <div className="flex flex-wrap gap-2">
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">UPI</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">RuPay</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">Visa</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">MasterCard</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+            <div className="text-center sm:text-left">
+              <p className="text-sm font-medium mb-3">Accept Payments Via</p>
+              <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">UPI</div>
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">RuPay</div>
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">Visa</div>
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">MasterCard</div>
               </div>
             </div>
-            <div>
-              <p className="text-sm mb-2">Certified By</p>
-              <div className="flex flex-wrap gap-2">
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">BEE</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">ISO 9001</div>
-                <div className="bg-white text-xs text-gray-800 px-2 py-1 rounded">ISI</div>
+            <div className="text-center sm:text-left">
+              <p className="text-sm font-medium mb-3">Certified By</p>
+              <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">BEE</div>
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">ISO 9001</div>
+                <div className="bg-white text-xs text-gray-800 px-3 py-1 rounded font-medium">ISI</div>
               </div>
             </div>
           </div>
