@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShoppingCart, RefreshCw, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
@@ -41,10 +41,35 @@ const OrdersAdmin = () => {
   const [userIdFilter, setUserIdFilter] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [adminStatus, setAdminStatus] = useState(null);
+  const [countdowns, setCountdowns] = useState({});
 
   useEffect(() => {
     checkAdminAccess();
   }, [user]);
+
+  // Countdown timer for orders marked as success
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const newCountdowns = {};
+      
+      orders.forEach(order => {
+        if (order.status === 'success' && order.updatedAt) {
+          const updatedTime = order.updatedAt.toDate ? order.updatedAt.toDate() : new Date(order.updatedAt);
+          const elapsed = now - updatedTime.getTime();
+          const remaining = Math.max(0, 600000 - elapsed); // 10 minutes in milliseconds
+          
+          if (remaining > 0) {
+            newCountdowns[order.id] = Math.ceil(remaining / 1000);
+          }
+        }
+      });
+      
+      setCountdowns(newCountdowns);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [orders]);
 
   const checkAdminAccess = async () => {
     if (!user) return;
@@ -136,6 +161,15 @@ const OrdersAdmin = () => {
           <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
         </div>
 
+        {/* Auto-deletion warning */}
+        <Alert className="mb-6 border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
+            <strong>Note:</strong> Orders marked as "success" will be automatically deleted after 10 minutes. 
+            This helps maintain a clean order history and improves system performance.
+          </AlertDescription>
+        </Alert>
+
         {/* Filters */}
         <Card className="mb-6">
           <CardHeader>
@@ -203,9 +237,17 @@ const OrdersAdmin = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold">₹{Number(order.totalPrice || 0).toFixed(2)}</div>
-                        <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
-                          {order.status || 'created'}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
+                            {order.status || 'created'}
+                          </Badge>
+                          {order.status === 'success' && countdowns[order.id] !== undefined && (
+                            <div className="flex items-center gap-1 text-xs text-orange-600 font-medium">
+                              <Clock className="w-3 h-3" />
+                              Deletes in: {Math.floor(countdowns[order.id] / 60)}:{(countdowns[order.id] % 60).toString().padStart(2, '0')}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
