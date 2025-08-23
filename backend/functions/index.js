@@ -99,28 +99,20 @@ exports.grantAdminRole = functions.https.onCall(async (data, context) => {
     // Grant admin role
     await admin.auth().setCustomUserClaims(targetUser.uid, { role: 'admin' });
 
-    // Update admin request status
-    const adminRequestsRef = admin.firestore().collection('adminRequests');
-    await adminRequestsRef.doc(targetUser.uid).update({
-      status: 'approved',
-      reviewedBy: context.auth.uid,
-      reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
-      notes: 'Approved by existing admin'
-    });
-
-    // Log the action
-    await admin.firestore().collection('adminLogs').add({
-      action: 'admin_granted',
-      grantedTo: targetUser.uid,
-      grantedBy: context.auth.uid,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      targetEmail: targetUser.email
-    });
+    // Update user document in Firestore
+    const userRef = admin.firestore().collection('users').doc(targetUser.uid);
+    await userRef.set({
+      uid: targetUser.uid,
+      email: targetUser.email,
+      name: targetUser.displayName || targetUser.email?.split('@')[0] || 'User',
+      role: 'admin',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
     return {
       success: true,
       message: `Admin role granted to ${targetUser.email}`,
-      uid: targetUser.uid
+      targetUid: targetUser.uid
     };
   } catch (error) {
     console.error('Error granting admin role:', error);
@@ -233,6 +225,165 @@ exports.removeAdminRole = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Error removing admin role:', error);
     throw new functions.https.HttpsError('internal', 'Failed to remove admin role');
+  }
+});
+
+// 5. Automatic order deletion after 10 minutes of success status
+exports.scheduleOrderDeletion = functions.firestore
+  .document('orders/{orderId}')
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const previousData = change.before.data();
+    const orderId = context.params.orderId;
+
+    // Check if status changed to 'success'
+    if (newData.status === 'success' && previousData.status !== 'success') {
+      console.log(`Order ${orderId} marked as success, scheduling deletion in 10 minutes`);
+      
+      // Schedule deletion after 10 minutes (600,000 milliseconds)
+      const deletionTime = Date.now() + 600000;
+      
+      try {
+        // Create a scheduled task document
+        await admin.firestore().collection('scheduledTasks').doc(orderId).set({
+          orderId: orderId,
+          type: 'orderDeletion',
+          scheduledFor: new Date(deletionTime),
+          status: 'pending',
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Set up a Cloud Function trigger to run after 10 minutes
+        const scheduledFunction = functions.pubsub.schedule('10 minutes').onRun(async (context) => {
+          try {
+            // Delete the order
+            await admin.firestore().collection('orders').doc(orderId).delete();
+            
+            // Delete the scheduled task
+            await admin.firestore().collection('scheduledTasks').doc(orderId).delete();
+            
+            console.log(`Order ${orderId} automatically deleted after 10 minutes`);
+            
+            // Also delete the timeline subcollection if it exists
+            const timelineRef = admin.firestore().collection('orders').doc(orderId).collection('timeline');
+            const timelineDocs = await timelineRef.get();
+            const deletePromises = timelineDocs.docs.map(doc => doc.ref.delete());
+            await Promise.all(deletePromises);
+            
+          } catch (error) {
+            console.error(`Error deleting order ${orderId}:`, error);
+          }
+        });
+
+        return { success: true, scheduledFor: new Date(deletionTime) };
+      } catch (error) {
+        console.error(`Error scheduling order deletion for ${orderId}:`, error);
+        throw error;
+      }
+    }
+
+    return null;
+  });
+
+// 6. Alternative approach using Cloud Tasks (more reliable for production)
+exports.createOrderDeletionTask = functions.firestore
+  .document('orders/{orderId}')
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const previousData = change.before.data();
+    const orderId = context.params.orderId;
+
+    // Check if status changed to 'success'
+    if (newData.status === 'success' && previousData.status !== 'success') {
+      console.log(`Order ${orderId} marked as success, creating deletion task`);
+      
+      try {
+        // Create a task document that will be processed by a scheduled function
+        await admin.firestore().collection('deletionTasks').doc(orderId).set({
+          orderId: orderId,
+          status: 'pending',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          scheduledFor: admin.firestore.FieldValue.serverTimestamp(),
+          type: 'orderDeletion'
+        });
+
+        return { success: true, taskCreated: true };
+      } catch (error) {
+        console.error(`Error creating deletion task for order ${orderId}:`, error);
+        throw error;
+      }
+    }
+
+    return null;
+  });
+
+// 7. Scheduled function to process deletion tasks every minute
+exports.processDeletionTasks = functions.pubsub.schedule('every 1 minutes').onRun(async (context) => {
+  try {
+    const now = admin.firestore.Timestamp.now();
+    const tenMinutesAgo = new Date(now.toMillis() - 600000); // 10 minutes ago
+    
+    // Find all pending deletion tasks that are older than 10 minutes
+    const tasksRef = admin.firestore().collection('deletionTasks');
+    const query = tasksRef
+      .where('status', '==', 'pending')
+      .where('createdAt', '<=', tenMinutesAgo);
+    
+    const snapshot = await query.get();
+    
+    if (snapshot.empty) {
+      console.log('No deletion tasks to process');
+      return null;
+    }
+    
+    console.log(`Processing ${snapshot.size} deletion tasks`);
+    
+    const deletionPromises = snapshot.docs.map(async (doc) => {
+      const task = doc.data();
+      
+      try {
+        // Delete the order
+        await admin.firestore().collection('orders').doc(task.orderId).delete();
+        
+        // Delete the timeline subcollection
+        const timelineRef = admin.firestore().collection('orders').doc(task.orderId).collection('timeline');
+        const timelineDocs = await timelineRef.get();
+        const timelineDeletePromises = timelineDocs.docs.map(timelineDoc => timelineDoc.ref.delete());
+        await Promise.all(timelineDeletePromises);
+        
+        // Mark task as completed
+        await doc.ref.update({
+          status: 'completed',
+          completedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        console.log(`Order ${task.orderId} deleted successfully`);
+        return { success: true, orderId: task.orderId };
+      } catch (error) {
+        console.error(`Error deleting order ${task.orderId}:`, error);
+        
+        // Mark task as failed
+        await doc.ref.update({
+          status: 'failed',
+          error: error.message,
+          failedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        return { success: false, orderId: task.orderId, error: error.message };
+      }
+    });
+    
+    const results = await Promise.all(deletionPromises);
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+    
+    console.log(`Deletion task processing completed: ${successful} successful, ${failed} failed`);
+    
+    return { successful, failed, total: results.length };
+    
+  } catch (error) {
+    console.error('Error processing deletion tasks:', error);
+    throw error;
   }
 });
 

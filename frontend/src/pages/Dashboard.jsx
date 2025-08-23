@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from 'react-router-dom';
 import { appointmentService, orderService } from '@/services/firestoreService';
-import { Calendar, ShoppingBag, Clock, User } from 'lucide-react';
+import { Calendar, ShoppingBag, Clock, User, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -16,6 +18,7 @@ const Dashboard = () => {
   const [orders, setOrders] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,21 +38,90 @@ const Dashboard = () => {
         } finally {
           setAppointmentsLoading(false);
         }
-
-        try {
-          setOrdersLoading(true);
-          const ordersData = await orderService.getUserOrders(user.uid);
-          setOrders(ordersData || []);
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        } finally {
-          setOrdersLoading(false);
-        }
       }
     };
 
     fetchUserData();
   }, [user]);
+
+  // Add real-time listener for orders
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up real-time listener for user's orders
+    const ordersQuery = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+      const ordersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Check for status changes and create notifications
+      const newNotifications = [];
+      ordersData.forEach(newOrder => {
+        const oldOrder = orders.find(o => o.id === newOrder.id);
+        if (oldOrder && oldOrder.status !== newOrder.status) {
+          newNotifications.push({
+            id: `order-${newOrder.id}-${Date.now()}`,
+            type: 'order_status',
+            message: `Order #${newOrder.id} status updated to ${newOrder.status.replace(/_/g, ' ')}`,
+            orderId: newOrder.id,
+            timestamp: new Date()
+          });
+        }
+      });
+      
+      if (newNotifications.length > 0) {
+        setNotifications(prev => [...prev, ...newNotifications]);
+        
+        // Auto-remove notifications after 5 seconds
+        newNotifications.forEach(notification => {
+          setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== notification.id));
+          }, 5000);
+        });
+      }
+      
+      setOrders(ordersData);
+      setOrdersLoading(false);
+    }, (error) => {
+      console.error('Error listening to orders:', error);
+      setOrdersLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [user, orders]);
+
+  // Countdown timer for orders marked as success
+  const [countdowns, setCountdowns] = useState({});
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const newCountdowns = {};
+      
+      orders.forEach(order => {
+        if (order.status === 'success' && order.updatedAt) {
+          const updatedTime = order.updatedAt.toDate ? order.updatedAt.toDate() : new Date(order.updatedAt);
+          const elapsed = now - updatedTime.getTime();
+          const remaining = Math.max(0, 600000 - elapsed); // 10 minutes in milliseconds
+          
+          if (remaining > 0) {
+            newCountdowns[order.id] = Math.ceil(remaining / 1000);
+          }
+        }
+      });
+      
+      setCountdowns(newCountdowns);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [orders]);
 
   if (loading) {
     return (
@@ -66,6 +138,21 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold mb-6 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
           Dashboard
         </h1>
+        
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                <span className="text-blue-800">{notification.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
         
         {user && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -189,10 +276,14 @@ const Dashboard = () => {
                           const orderId = order.id || order._id;
                           const orderDate = new Date((order.createdAt && order.createdAt.toDate ? order.createdAt.toDate() : order.createdAt) || Date.now()).toLocaleDateString();
                           const totalFormatted = `₹${Number(order.totalPrice || 0).toFixed(2)}`;
-                          const isPaid = order.status === 'paid' || order.isPaid;
-                          const isAdvance = order.status === 'advance_paid';
-                          const statusLabel = isPaid ? 'Paid' : (isAdvance ? 'Advance Paid' : 'Pending');
-                          const statusClass = isPaid ? 'bg-green-100 text-green-800' : (isAdvance ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800');
+                          const status = order.status || 'created';
+                          const statusLabel = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          const statusClass = 
+                            status === 'success' || status === 'delivered' ? 'bg-green-100 text-green-800' :
+                            status === 'paid' || status === 'advance_paid' ? 'bg-blue-100 text-blue-800' :
+                            status === 'cancelled' || status === 'refunded' ? 'bg-red-100 text-red-800' :
+                            status === 'shipping' || status === 'out_for_delivery' ? 'bg-purple-100 text-purple-800' :
+                            'bg-yellow-100 text-yellow-800';
                           return (
                             <div key={orderId} className="grid grid-cols-1 md:grid-cols-4 p-4 gap-3 md:gap-0">
                               {/* Order ID */}
@@ -213,7 +304,14 @@ const Dashboard = () => {
                               {/* Status */}
                               <div>
                                 <div className="md:hidden text-xs text-gray-500">Status</div>
-                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${statusClass}`}>{statusLabel}</span>
+                                <div className="flex flex-col gap-1">
+                                  <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${statusClass}`}>{statusLabel}</span>
+                                  {status === 'success' && countdowns[orderId] !== undefined && (
+                                    <div className="text-xs text-orange-600 font-medium">
+                                      Deletes in: {Math.floor(countdowns[orderId] / 60)}:{(countdowns[orderId] % 60).toString().padStart(2, '0')}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
