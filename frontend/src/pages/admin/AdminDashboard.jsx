@@ -190,6 +190,22 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Firestore Rules Notice */}
+        {stats.totalOrders === 0 && stats.totalProducts === 0 && stats.totalUsers === 0 && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-blue-800 font-medium">Firestore Rules Pending Deployment</p>
+                <p className="text-blue-700 text-sm mt-1">
+                  The admin dashboard is currently showing placeholder data. To see real statistics, 
+                  deploy the updated Firestore rules using: <code className="bg-blue-100 px-2 py-1 rounded">firebase deploy --only firestore:rules</code>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
