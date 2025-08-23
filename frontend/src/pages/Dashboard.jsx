@@ -35,20 +35,30 @@ const Dashboard = () => {
         } finally {
           setAppointmentsLoading(false);
         }
-
-        try {
-          setOrdersLoading(true);
-          const ordersData = await orderService.getUserOrders(user.uid);
-          setOrders(ordersData || []);
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        } finally {
-          setOrdersLoading(false);
-        }
       }
     };
 
     fetchUserData();
+  }, [user]);
+
+  // Real-time listener for orders
+  useEffect(() => {
+    if (!user) return;
+
+    setOrdersLoading(true);
+    
+    // Subscribe to real-time updates for user orders
+    const unsubscribe = orderService.subscribeToUserOrders(user.uid, (ordersData) => {
+      setOrders(ordersData || []);
+      setOrdersLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [user]);
 
   if (loading) {
@@ -189,10 +199,29 @@ const Dashboard = () => {
                           const orderId = order.id || order._id;
                           const orderDate = new Date((order.createdAt && order.createdAt.toDate ? order.createdAt.toDate() : order.createdAt) || Date.now()).toLocaleDateString();
                           const totalFormatted = `₹${Number(order.totalPrice || 0).toFixed(2)}`;
-                          const isPaid = order.status === 'paid' || order.isPaid;
-                          const isAdvance = order.status === 'advance_paid';
-                          const statusLabel = isPaid ? 'Paid' : (isAdvance ? 'Advance Paid' : 'Pending');
-                          const statusClass = isPaid ? 'bg-green-100 text-green-800' : (isAdvance ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800');
+                          
+                          // Get the actual order status and format it for display
+                          const orderStatus = order.status || 'created';
+                          const statusLabel = orderStatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          
+                          // Status color mapping (same as admin panel)
+                          const statusColors = {
+                            created: 'bg-gray-100 text-gray-800',
+                            payment_pending: 'bg-yellow-100 text-yellow-800',
+                            paid: 'bg-blue-100 text-blue-800',
+                            success: 'bg-green-100 text-green-800',
+                            shipping: 'bg-purple-100 text-purple-800',
+                            out_for_delivery: 'bg-indigo-100 text-indigo-800',
+                            delivered: 'bg-green-100 text-green-800',
+                            cod_pending: 'bg-orange-100 text-orange-800',
+                            awaiting_advance: 'bg-red-100 text-red-800',
+                            advance_paid: 'bg-blue-100 text-blue-800',
+                            cancelled: 'bg-red-100 text-red-800',
+                            refunded: 'bg-gray-100 text-gray-800'
+                          };
+                          
+                          const statusClass = statusColors[orderStatus] || 'bg-gray-100 text-gray-800';
+                          
                           return (
                             <div key={orderId} className="grid grid-cols-1 md:grid-cols-4 p-4 gap-3 md:gap-0">
                               {/* Order ID */}

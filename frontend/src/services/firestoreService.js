@@ -10,7 +10,8 @@ import {
   where, 
   orderBy, 
   limit,
-  serverTimestamp 
+  serverTimestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -190,6 +191,23 @@ export const orderService = {
     return await firestoreService.find('orders', [
       { field: 'userId', operator: '==', value: userId }
     ]);
+  },
+
+  // Real-time listener for user orders
+  subscribeToUserOrders(userId, callback) {
+    const q = fsQuery(
+      collection(db, 'orders'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const orders = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(orders);
+    });
   },
 
   async updateOrder(id, orderData) {
