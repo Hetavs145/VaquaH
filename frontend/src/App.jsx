@@ -21,6 +21,8 @@ import ProductsAdmin from "./pages/admin/ProductsAdmin.jsx";
 
 import AppointmentNew from "./pages/AppointmentNew.jsx";
 import Services from "./pages/Services.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import Terms from "./pages/Terms.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 
@@ -117,6 +119,8 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
           <Route path="/services" element={<Services />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
