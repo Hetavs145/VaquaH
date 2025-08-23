@@ -12,6 +12,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // Added missing import for auth
 
 class AdminService {
   // Ensure user document exists and has correct role
@@ -176,9 +177,63 @@ class AdminService {
     }
   }
 
+  // Debug method to troubleshoot admin access issues
+  async debugAdminAccess() {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return {
+          authenticated: false,
+          uid: null,
+          error: 'No authenticated user'
+        };
+      }
+
+      // Get user document
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (!userDoc.exists()) {
+        return {
+          authenticated: true,
+          uid: currentUser.uid,
+          userDocExists: false,
+          error: 'User document does not exist'
+        };
+      }
+
+      const userData = userDoc.data();
+      return {
+        authenticated: true,
+        uid: currentUser.uid,
+        userDocExists: true,
+        userRole: userData.role,
+        isAdmin: userData.role === 'admin',
+        userData: userData
+      };
+    } catch (error) {
+      return {
+        authenticated: auth.currentUser !== null,
+        uid: auth.currentUser?.uid,
+        error: error.message,
+        errorCode: error.code
+      };
+    }
+  }
+
   // Get all orders (admin only)
   async getAllOrders(statusFilter = null, userIdFilter = null) {
     try {
+      // First verify admin status to ensure we have permission
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check admin status before attempting to fetch orders
+      const adminStatus = await this.checkAdminStatus(currentUser.uid);
+      if (!adminStatus.isAdmin) {
+        throw new Error('Insufficient permissions. Admin access required.');
+      }
+
       let ordersRef = collection(db, 'orders');
       let q = ordersRef;
 
@@ -195,9 +250,17 @@ class AdminService {
       return orders;
     } catch (error) {
       console.error('Error fetching admin orders:', error);
+      
+      // Handle specific Firebase permission errors
       if (error.code === 'permission-denied') {
-        throw new Error('Insufficient permissions to access orders. Please contact an administrator.');
+        console.error('Firebase permission denied. This usually means the Firestore rules need to be updated.');
+        throw new Error('Firebase permission denied. Please ensure Firestore rules allow admin access to orders collection.');
       }
+      
+      if (error.message.includes('Insufficient permissions')) {
+        throw error; // Re-throw our custom permission errors
+      }
+      
       throw new Error('Failed to fetch orders. Please try again.');
     }
   }
@@ -205,6 +268,18 @@ class AdminService {
   // Get all products (admin only)
   async getAllProducts() {
     try {
+      // First verify admin status to ensure we have permission
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check admin status before attempting to fetch products
+      const adminStatus = await this.checkAdminStatus(currentUser.uid);
+      if (!adminStatus.isAdmin) {
+        throw new Error('Insufficient permissions. Admin access required.');
+      }
+
       const productsRef = collection(db, 'products');
       const q = query(productsRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
@@ -212,9 +287,17 @@ class AdminService {
       return products;
     } catch (error) {
       console.error('Error fetching admin products:', error);
+      
+      // Handle specific Firebase permission errors
       if (error.code === 'permission-denied') {
-        throw new Error('Insufficient permissions to access products. Please contact an administrator.');
+        console.error('Firebase permission denied. This usually means the Firestore rules need to be updated.');
+        throw new Error('Firebase permission denied. Please ensure Firestore rules allow admin access to products collection.');
       }
+      
+      if (error.message.includes('Insufficient permissions')) {
+        throw error; // Re-throw our custom permission errors
+      }
+      
       throw new Error('Failed to fetch products. Please try again.');
     }
   }
@@ -222,6 +305,18 @@ class AdminService {
   // Get all users (admin only)
   async getAllUsers() {
     try {
+      // First verify admin status to ensure we have permission
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check admin status before attempting to fetch users
+      const adminStatus = await this.checkAdminStatus(currentUser.uid);
+      if (!adminStatus.isAdmin) {
+        throw new Error('Insufficient permissions. Admin access required.');
+      }
+
       const usersRef = collection(db, 'users');
       const q = query(usersRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
@@ -229,9 +324,17 @@ class AdminService {
       return users;
     } catch (error) {
       console.error('Error fetching admin users:', error);
+      
+      // Handle specific Firebase permission errors
       if (error.code === 'permission-denied') {
-        throw new Error('Insufficient permissions to access users. Please contact an administrator.');
+        console.error('Firebase permission denied. This usually means the Firestore rules need to be updated.');
+        throw new Error('Firebase permission denied. Please ensure Firestore rules allow admin access to users collection.');
       }
+      
+      if (error.message.includes('Insufficient permissions')) {
+        throw error; // Re-throw our custom permission errors
+      }
+      
       throw new Error('Failed to fetch users. Please try again.');
     }
   }
