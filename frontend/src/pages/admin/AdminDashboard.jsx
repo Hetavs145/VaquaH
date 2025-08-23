@@ -14,6 +14,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
+import { agentService } from '@/services/agentService';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -25,7 +26,11 @@ const AdminDashboard = () => {
     totalOrders: 0,
     pendingOrders: 0,
     totalProducts: 0,
-    totalUsers: 0
+    totalUsers: 0,
+    totalAgents: 0,
+    pendingAgentApplications: 0,
+    totalServiceRequests: 0,
+    activeServiceRequests: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,7 +75,7 @@ const AdminDashboard = () => {
   const loadAdminStats = async () => {
     try {
       // Use Promise.all to fetch data in parallel for better performance
-      const [orders, products, users] = await Promise.all([
+      const [orders, products, users, agents, applications, serviceRequests] = await Promise.all([
         adminService.getAllOrders().catch(err => {
           console.error('Error fetching orders:', err);
           if (err.message.includes('Insufficient permissions')) {
@@ -88,6 +93,18 @@ const AdminDashboard = () => {
             setError('Admin permissions issue detected. Please contact an administrator to grant you admin access.');
           }
           return [];
+        }),
+        agentService.getAllAgents().catch(err => {
+          console.error('Error fetching agents:', err);
+          return [];
+        }),
+        agentService.getAllAgentApplications().catch(err => {
+          console.error('Error fetching agent applications:', err);
+          return [];
+        }),
+        agentService.getAllServiceRequests().catch(err => {
+          console.error('Error fetching service requests:', err);
+          return [];
         })
       ]);
       
@@ -95,7 +112,11 @@ const AdminDashboard = () => {
         totalOrders: orders.length,
         pendingOrders: orders.filter(o => ['created', 'payment_pending', 'cod_pending'].includes(o.status)).length,
         totalProducts: products.length,
-        totalUsers: users.length
+        totalUsers: users.length,
+        totalAgents: agents.length,
+        pendingAgentApplications: applications.filter(app => app.status === 'pending').length,
+        totalServiceRequests: serviceRequests.length,
+        activeServiceRequests: serviceRequests.filter(req => ['pending', 'assigned', 'in_progress'].includes(req.status)).length
       });
     } catch (error) {
       console.error('Error loading admin stats:', error);
@@ -105,7 +126,11 @@ const AdminDashboard = () => {
         totalOrders: 0,
         pendingOrders: 0,
         totalProducts: 0,
-        totalUsers: 0
+        totalUsers: 0,
+        totalAgents: 0,
+        pendingAgentApplications: 0,
+        totalServiceRequests: 0,
+        activeServiceRequests: 0
       });
     }
   };
@@ -185,6 +210,13 @@ const AdminDashboard = () => {
       icon: Shield,
       path: '/admin/management',
       color: 'bg-red-500'
+    },
+    {
+      title: 'Services Management',
+      description: 'Manage agents, applications, and service requests',
+      icon: Wrench,
+      path: '/admin/services',
+      color: 'bg-indigo-500'
     },
 
   ];
@@ -271,6 +303,49 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">{stats.totalUsers}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Stats for Services */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Agents</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalAgents}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Pending Applications</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{stats.pendingAgentApplications}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Service Requests</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">{stats.totalServiceRequests}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Active Services</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.activeServiceRequests}</div>
             </CardContent>
           </Card>
         </div>

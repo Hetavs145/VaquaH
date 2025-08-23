@@ -108,5 +108,40 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // Agent applications collection
+    match /agentApplications/{docId} {
+      allow read: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow create: if isSignedIn() && isOwner(docId);
+      allow update: if isSignedIn() && isAdminCombined();
+      allow delete: if isSignedIn() && isAdminCombined();
+    }
+
+    // Agents collection
+    match /agents/{docId} {
+      allow read: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow create: if isSignedIn() && isAdminCombined();
+      allow update: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow delete: if isSignedIn() && isAdminCombined();
+    }
+
+    // Service requests collection
+    match /serviceRequests/{docId} {
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        (resource != null && resource.data.agentId != null && isOwnerOrAdmin(resource.data.agentId)) ||
+        isAdminCombined()
+      );
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
+      allow update: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        (resource != null && resource.data.agentId != null && isOwnerOrAdmin(resource.data.agentId)) ||
+        isAdminCombined()
+      );
+      allow delete: if isSignedIn() && isAdminCombined();
+    }
   }
 }
