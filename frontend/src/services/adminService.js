@@ -10,7 +10,8 @@ import {
   orderBy, 
   serverTimestamp,
   addDoc,
-  getFirestore
+  getFirestore,
+  writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -83,8 +84,8 @@ class AdminService {
         throw new Error('Only administrators can initialize admin collections');
       }
 
-      const { getFirestore, collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-      const db = getFirestore(app);
+      // Use the already imported db instance instead of creating a new one
+      const firestoreDb = db;
       
       // Sample data for agents
       const sampleAgents = [
@@ -227,26 +228,29 @@ class AdminService {
         }
       ];
 
-      // Create collections with sample data
-      const batch = [];
+      // Create collections with sample data using writeBatch
+      const batch = writeBatch(firestoreDb);
       
       // Add sample agents
       sampleAgents.forEach(agent => {
-        batch.push(setDoc(doc(db, 'agents', agent.uid), agent));
+        const docRef = doc(firestoreDb, 'agents', agent.uid);
+        batch.set(docRef, agent);
       });
 
       // Add sample applications
       sampleApplications.forEach(app => {
-        batch.push(setDoc(doc(db, 'agentApplications', app.uid), app));
+        const docRef = doc(firestoreDb, 'agentApplications', app.uid);
+        batch.set(docRef, app);
       });
 
       // Add sample service requests
       sampleRequests.forEach((request, index) => {
-        batch.push(setDoc(doc(db, 'serviceRequests', `sample-request-${index + 1}`), request));
+        const docRef = doc(firestoreDb, 'serviceRequests', `sample-request-${index + 1}`);
+        batch.set(docRef, request);
       });
 
       // Execute all operations
-      await Promise.all(batch);
+      await batch.commit();
 
       return {
         success: true,
@@ -269,14 +273,15 @@ class AdminService {
   // Check if collections exist and have data
   async checkCollectionsStatus() {
     try {
-      const db = getFirestore(app);
+      // Use the already imported db instance
+      const firestoreDb = db;
       
       const collections = ['agents', 'agentApplications', 'serviceRequests'];
       const status = {};
       
       for (const collectionName of collections) {
         try {
-          const querySnapshot = await getDocs(collection(db, collectionName));
+          const querySnapshot = await getDocs(collection(firestoreDb, collectionName));
           status[collectionName] = {
             exists: true,
             count: querySnapshot.size,
