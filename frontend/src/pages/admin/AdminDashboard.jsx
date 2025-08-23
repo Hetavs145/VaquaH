@@ -192,11 +192,14 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container-custom py-8 flex-1">
-        <div className="flex items-center gap-3 mb-8">
-          <Shield className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
+      <div className="container-custom py-4 sm:py-6 lg:py-8 flex-1">
+        {/* Responsive Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+          </div>
+          <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
         </div>
 
         {/* Error Display */}
@@ -204,20 +207,20 @@ const AdminDashboard = () => {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-5 h-5 text-red-600" />
-              <p className="text-red-800">{error}</p>
+              <p className="text-red-800 text-sm sm:text-base">{error}</p>
             </div>
           </div>
         )}
 
         {/* Debug Section */}
         <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">Debug Admin Access</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Debug Admin Access</h3>
             <Button 
               onClick={debugAdminAccess} 
               variant="outline" 
               size="sm"
-              className="bg-blue-50 hover:bg-blue-100"
+              className="bg-blue-50 hover:bg-blue-100 w-full sm:w-auto"
             >
               Debug Access
             </Button>
@@ -225,7 +228,7 @@ const AdminDashboard = () => {
           
           {debugInfo && (
             <div className="bg-white p-3 rounded border text-sm">
-              <pre className="whitespace-pre-wrap text-xs">
+              <pre className="whitespace-pre-wrap text-xs overflow-x-auto">
                 {JSON.stringify(debugInfo, null, 2)}
               </pre>
             </div>
@@ -233,14 +236,14 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalOrders}</div>
             </CardContent>
           </Card>
           
@@ -250,7 +253,7 @@ const AdminDashboard = () => {
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
             </CardContent>
           </Card>
           
@@ -260,7 +263,7 @@ const AdminDashboard = () => {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalProducts}</div>
             </CardContent>
           </Card>
           
@@ -270,24 +273,24 @@ const AdminDashboard = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalUsers}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Admin Pages Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {adminPages.map((page) => (
             <Card key={page.path} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(page.path)}>
               <CardHeader>
-                <div className={`w-12 h-12 rounded-lg ${page.color} flex items-center justify-center mb-4`}>
-                  <page.icon className="w-6 h-6 text-white" />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${page.color} flex items-center justify-center mb-3 sm:mb-4`}>
+                  <page.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <CardTitle className="text-lg">{page.title}</CardTitle>
+                <CardTitle className="text-base sm:text-lg">{page.title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 text-sm mb-4">{page.description}</p>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full text-sm">
                   Access {page.title}
                 </Button>
               </CardContent>

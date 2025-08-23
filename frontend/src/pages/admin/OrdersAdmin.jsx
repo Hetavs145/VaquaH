@@ -154,17 +154,20 @@ const OrdersAdmin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container-custom py-8 flex-1">
-        <div className="flex items-center gap-3 mb-6">
-          <ShoppingCart className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Orders Management</h1>
-          <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
+      <div className="container-custom py-4 sm:py-6 lg:py-8 flex-1">
+        {/* Responsive Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold">Orders Management</h1>
+          </div>
+          <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
         </div>
 
         {/* Auto-deletion warning */}
         <Alert className="mb-6 border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
+          <AlertDescription className="text-orange-800 text-sm sm:text-base">
             <strong>Note:</strong> Orders marked as "success" will be automatically deleted after 10 minutes. 
             This helps maintain a clean order history and improves system performance.
           </AlertDescription>
@@ -173,10 +176,10 @@ const OrdersAdmin = () => {
         {/* Filters */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">User ID Filter</label>
                 <Input
@@ -214,7 +217,7 @@ const OrdersAdmin = () => {
         {/* Orders List */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Orders ({orders.length})</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Orders ({orders.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -226,18 +229,18 @@ const OrdersAdmin = () => {
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">Order #{order.id}</h3>
+                  <div key={order.id} className="border rounded-lg p-3 sm:p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base sm:text-lg">Order #{order.id}</h3>
                         <p className="text-sm text-gray-600">User: {order.userId}</p>
                         <p className="text-sm text-gray-600">
                           Created: {order.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <div className="text-lg font-bold">₹{Number(order.totalPrice || 0).toFixed(2)}</div>
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex flex-col items-start sm:items-end gap-1">
                           <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
                             {order.status || 'created'}
                           </Badge>
@@ -251,9 +254,9 @@ const OrdersAdmin = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Select onValueChange={(value) => updateStatus(order.id, value)}>
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-full sm:w-48">
                           <SelectValue placeholder="Update status..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -267,7 +270,7 @@ const OrdersAdmin = () => {
                       <Button 
                         disabled={updatingId === order.id}
                         onClick={() => updateStatus(order.id, 'success')}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                       >
                         {updatingId === order.id ? 'Updating...' : 'Mark Ready'}
                       </Button>

@@ -104,15 +104,19 @@ const AdminManagement = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container-custom py-8 flex-1">
-        <div className="flex items-center gap-3 mb-6">
-          <Shield className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold">Admin Management</h1>
+      <div className="container-custom py-4 sm:py-6 lg:py-8 flex-1">
+        {/* Responsive Header */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-6">
+          <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Admin Management</h1>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" />Admin Access Requests</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+              Admin Access Requests
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -124,13 +128,15 @@ const AdminManagement = () => {
             ) : (
               <div className="space-y-4">
                 {adminRequests.map((request) => (
-                  <div key={request.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{request.email}</h3>
+                  <div key={request.id} className="border rounded-lg p-3 sm:p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base sm:text-lg">{request.email}</h3>
                         <p className="text-sm text-gray-600">UID: {request.uid}</p>
                       </div>
-                      {getStatusBadge(request.status)}
+                      <div className="flex justify-start sm:justify-end">
+                        {getStatusBadge(request.status)}
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600">
                       <p>Requested: {formatDate(request.requestedAt)}</p>
@@ -138,17 +144,25 @@ const AdminManagement = () => {
                       {request.notes && <p>Notes: {request.notes}</p>}
                     </div>
                     {request.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button onClick={() => handleGrant(request)} disabled={actionLoading} className="bg-green-600 hover:bg-green-700">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button 
+                          onClick={() => handleGrant(request)} 
+                          disabled={actionLoading} 
+                          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                        >
                           {actionLoading ? 'Granting...' : 'Grant Admin'}
                         </Button>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" disabled={actionLoading} className="border-red-200 text-red-700 hover:bg-red-50">
+                            <Button 
+                              variant="outline" 
+                              disabled={actionLoading} 
+                              className="border-red-200 text-red-700 hover:bg-red-50 w-full sm:w-auto"
+                            >
                               Deny Request
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="w-[95vw] max-w-md">
                             <DialogHeader>
                               <DialogTitle>Deny Admin Request</DialogTitle>
                             </DialogHeader>
@@ -156,11 +170,26 @@ const AdminManagement = () => {
                               <p className="text-sm text-gray-600">Are you sure you want to deny admin access for {request.email}?</p>
                               <div>
                                 <label className="block text-sm font-medium mb-2">Reason for denial</label>
-                                <Textarea value={denyReason} onChange={(e) => setDenyReason(e.target.value)} placeholder="Enter reason..." rows={3} />
+                                <Textarea 
+                                  value={denyReason} 
+                                  onChange={(e) => setDenyReason(e.target.value)} 
+                                  placeholder="Enter reason..." 
+                                  rows={3} 
+                                />
                               </div>
-                              <div className="flex gap-2 justify-end">
-                                <Button variant="outline" onClick={() => { setSelectedRequest(null); setDenyReason(''); }}>Cancel</Button>
-                                <Button onClick={() => { setSelectedRequest(request); handleDeny(); }} disabled={!denyReason.trim() || actionLoading} className="bg-red-600 hover:bg-red-700">
+                              <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => { setSelectedRequest(null); setDenyReason(''); }}
+                                  className="w-full sm:w-auto"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  onClick={() => { setSelectedRequest(request); handleDeny(); }} 
+                                  disabled={!denyReason.trim() || actionLoading} 
+                                  className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                                >
                                   {actionLoading ? 'Denying...' : 'Deny Request'}
                                 </Button>
                               </div>

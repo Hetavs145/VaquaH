@@ -73,60 +73,60 @@ const Products = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        <section className="bg-gradient-to-r from-vaquah-light-blue to-blue-100 py-12">
+        <section className="bg-gradient-to-r from-vaquah-light-blue to-blue-100 py-8 sm:py-12">
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-center mb-4 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 sm:mb-4 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
               Our Products
             </h1>
-            <p className="text-gray-600 text-center max-w-3xl mx-auto text-lg">
+            <p className="text-gray-600 text-center max-w-3xl mx-auto text-base sm:text-lg">
               Discover our range of energy-efficient split ACs designed for Indian homes and climate.
               Built with advanced technology for optimal cooling and electricity savings.
             </p>
           </div>
         </section>
 
-        <section className="py-12">
+        <section className="py-8 sm:py-12">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {loading ? (
-                <div className="col-span-4 text-center text-gray-500 py-8">
+                <div className="col-span-full text-center text-gray-500 py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   Loading products...
                 </div>
               ) : products.length === 0 ? (
-                <div className="col-span-4 text-center text-gray-500 py-8">No products found.</div>
+                <div className="col-span-full text-center text-gray-500 py-8">No products found.</div>
               ) : products.map((product) => (
                 <div 
                   key={product._id || product.id} 
                   className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white"
                   onClick={() => handleProductClick(product._id)}
                 >
-                  <div className="aspect-w-16 aspect-h-9 bg-gray-100 h-48 flex items-center justify-center">
+                  <div className="aspect-w-16 aspect-h-9 bg-gray-100 h-40 sm:h-48 flex items-center justify-center">
                     <img 
                       src={product.image || "/placeholder.svg"} 
                       alt={product.name} 
-                      className="object-contain h-full w-full p-4"
+                      className="object-contain h-full w-full p-3 sm:p-4"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.svg";
                       }} 
                     />
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg mb-1">{product.name}</h3>
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-bold text-base sm:text-lg mb-1 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center mb-2">
-                      <div className="text-yellow-400">★★★★☆</div>
-                      <span className="text-sm text-gray-500 ml-1">{product.rating}</span>
+                      <div className="text-yellow-400 text-sm sm:text-base">★★★★☆</div>
+                      <span className="text-xs sm:text-sm text-gray-500 ml-1">{product.rating}</span>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-lg">₹{product.price.toLocaleString()}</span>
+                      <span className="font-bold text-base sm:text-lg">₹{product.price.toLocaleString()}</span>
                       <Button 
                         onClick={(e) => handleAddToCart(e, product)} 
                         size="sm" 
-                        className="bg-vaquah-blue hover:bg-vaquah-dark-blue"
+                        className="bg-vaquah-blue hover:bg-vaquah-dark-blue text-xs sm:text-sm"
                       >
-                        <ShoppingCart size={16} className="mr-1" />
+                        <ShoppingCart size={14} className="mr-1 sm:w-4 sm:h-4" />
                         Add
                       </Button>
                     </div>

@@ -168,29 +168,32 @@ const ProductsAdmin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container-custom py-8 flex-1">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Package className="w-8 h-8 text-green-600" />
-            <h1 className="text-3xl font-bold">Products Management</h1>
-            <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
+      <div className="container-custom py-4 sm:py-6 lg:py-8 flex-1">
+        {/* Responsive Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+              <h1 className="text-2xl sm:text-3xl font-bold">Products Management</h1>
+            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
           </div>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingProduct(null); resetForm(); }}>
+              <Button onClick={() => { setEditingProduct(null); resetForm(); }} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Product Name</label>
                     <Input
@@ -244,7 +247,7 @@ const ProductsAdmin = () => {
                   />
                 </div>
                 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
@@ -265,11 +268,11 @@ const ProductsAdmin = () => {
                   </label>
                 </div>
                 
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="w-full sm:w-auto">
                     {editingProduct ? 'Update Product' : 'Create Product'}
                   </Button>
                 </div>
@@ -291,7 +294,7 @@ const ProductsAdmin = () => {
             ) : products.length === 0 ? (
               <div className="text-center py-8 text-gray-500">No products found</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {products.map((product) => (
                   <Card key={product.id} className="overflow-hidden">
                     <div className="aspect-square overflow-hidden">
@@ -301,15 +304,15 @@ const ProductsAdmin = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{product.name}</h3>
-                        <div className="flex gap-1">
+                        <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{product.name}</h3>
+                        <div className="flex flex-col gap-1 ml-2">
                           {product.featured && (
-                            <Badge className="bg-yellow-100 text-yellow-800">Featured</Badge>
+                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">Featured</Badge>
                           )}
                           {!product.inStock && (
-                            <Badge className="bg-red-100 text-red-800">Out of Stock</Badge>
+                            <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
                           )}
                         </div>
                       </div>
@@ -322,18 +325,18 @@ const ProductsAdmin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(product)}
-                          className="flex-1"
+                          className="flex-1 text-xs sm:text-sm"
                         >
-                          <Edit className="w-4 h-4 mr-2" />
+                          <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                           Edit
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 text-xs sm:text-sm"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                       </div>
                     </CardContent>
