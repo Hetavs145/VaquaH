@@ -118,12 +118,9 @@ const AdminDashboard = () => {
               <p className="text-center text-gray-600 mb-4">
                 You need admin access to view this page. Contact an existing admin to request access.
               </p>
-              <Button 
-                onClick={() => navigate('/admin/setup')} 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Request Admin Access
-              </Button>
+              <p className="text-center text-gray-600">
+                Contact an existing admin to manually set your role to "admin" in Firestore.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -161,13 +158,7 @@ const AdminDashboard = () => {
       path: '/admin/offers',
       color: 'bg-orange-500'
     },
-    {
-      title: 'Admin Management',
-      description: 'Manage admin access requests and roles',
-      icon: Shield,
-      path: '/admin/management',
-      color: 'bg-red-500'
-    }
+
   ];
 
   return (
