@@ -154,35 +154,36 @@ const OrdersAdmin = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="container-custom py-8 flex-1">
-        <div className="flex items-center gap-3 mb-6">
-          <ShoppingCart className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Orders Management</h1>
-          <Badge className="bg-green-100 text-green-800 border-green-200">Admin</Badge>
+      <div className="container-custom py-4 sm:py-8 flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+          <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Orders Management</h1>
+          <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
         </div>
 
         {/* Auto-deletion warning */}
-        <Alert className="mb-6 border-orange-200 bg-orange-50">
+        <Alert className="mb-4 sm:mb-6 border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
+          <AlertDescription className="text-orange-800 text-sm sm:text-base">
             <strong>Note:</strong> Orders marked as "success" will be automatically deleted after 10 minutes. 
             This helps maintain a clean order history and improves system performance.
           </AlertDescription>
         </Alert>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">User ID Filter</label>
                 <Input
                   value={userIdFilter}
                   onChange={(e) => setUserIdFilter(e.target.value)}
                   placeholder="Filter by User ID"
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -201,8 +202,8 @@ const OrdersAdmin = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
-                <Button onClick={loadOrders} className="w-full">
+              <div className="flex items-end sm:col-span-2 lg:col-span-1">
+                <Button onClick={loadOrders} className="w-full text-sm sm:text-base">
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Apply Filters
                 </Button>
@@ -214,7 +215,7 @@ const OrdersAdmin = () => {
         {/* Orders List */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Orders ({orders.length})</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Orders ({orders.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -222,22 +223,22 @@ const OrdersAdmin = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
               </div>
             ) : orders.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">No orders found</div>
+              <div className="text-center py-8 text-gray-500 text-sm sm:text-base">No orders found</div>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">Order #{order.id}</h3>
-                        <p className="text-sm text-gray-600">User: {order.userId}</p>
-                        <p className="text-sm text-gray-600">
+                  <div key={order.id} className="border rounded-lg p-3 sm:p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm sm:text-base">Order #{order.id}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600">User: {order.userId}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">
                           Created: {order.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">₹{Number(order.totalPrice || 0).toFixed(2)}</div>
-                        <div className="flex flex-col items-end gap-1">
+                      <div className="text-left sm:text-right">
+                        <div className="text-base sm:text-lg font-bold">₹{Number(order.totalPrice || 0).toFixed(2)}</div>
+                        <div className="flex flex-col items-start sm:items-end gap-1">
                           <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
                             {order.status || 'created'}
                           </Badge>

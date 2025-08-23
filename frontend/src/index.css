@@ -93,10 +93,126 @@
   }
   
   .section-padding {
-    @apply py-12 md:py-20;
+    @apply py-8 sm:py-12 md:py-20;
   }
   
   .container-custom {
     @apply container mx-auto px-4;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-sm {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  .text-responsive-3xl {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  /* Responsive spacing utilities */
+  .space-responsive-sm {
+    @apply space-y-2 sm:space-y-3;
+  }
+
+  .space-responsive-md {
+    @apply space-y-3 sm:space-y-4;
+  }
+
+  .space-responsive-lg {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  /* Responsive padding utilities */
+  .p-responsive-sm {
+    @apply p-2 sm:p-3;
+  }
+
+  .p-responsive-md {
+    @apply p-3 sm:p-4;
+  }
+
+  .p-responsive-lg {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Responsive margin utilities */
+  .m-responsive-sm {
+    @apply m-2 sm:m-3;
+  }
+
+  .m-responsive-md {
+    @apply m-3 sm:m-4;
+  }
+
+  .m-responsive-lg {
+    @apply m-4 sm:m-6;
+  }
+
+  /* Responsive gap utilities */
+  .gap-responsive-sm {
+    @apply gap-2 sm:gap-3;
+  }
+
+  .gap-responsive-md {
+    @apply gap-3 sm:gap-4;
+  }
+
+  .gap-responsive-lg {
+    @apply gap-4 sm:gap-6;
+  }
+
+  /* Mobile-first responsive grid */
+  .grid-responsive-1 {
+    @apply grid-cols-1;
+  }
+
+  .grid-responsive-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Responsive flex utilities */
+  .flex-responsive-col {
+    @apply flex-col sm:flex-row;
+  }
+
+  .flex-responsive-center {
+    @apply justify-center sm:justify-start;
+  }
+
+  .flex-responsive-between {
+    @apply flex-col sm:flex-row sm:justify-between sm:items-center;
+  }
+
+  /* Responsive width utilities */
+  .w-responsive-full {
+    @apply w-full sm:w-auto;
+  }
+
+  .w-responsive-auto {
+    @apply w-auto sm:w-full;
   }
 }

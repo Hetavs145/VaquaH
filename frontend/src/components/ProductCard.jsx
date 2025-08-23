@@ -57,12 +57,12 @@ const ProductCard = ({
   
   return (
     <div
-      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4 relative cursor-pointer"
+      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 sm:p-4 relative cursor-pointer"
       onClick={() => navigate(`/products/${productId}`)}
     >
       {/* Wishlist button */}
       <button className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm hover:bg-gray-100">
-        <Heart size={18} className="text-gray-400 hover:text-vaquah-orange" />
+        <Heart size={16} className="text-gray-400 hover:text-vaquah-orange" />
       </button>
       
       {/* Discount tag */}
@@ -74,11 +74,11 @@ const ProductCard = ({
       
       {/* Product image */}
       <Link to={`/products/${productId}`}>
-        <div className="mb-3 p-4 flex justify-center">
+        <div className="mb-3 p-2 sm:p-4 flex justify-center">
           <img 
             src={image} 
             alt={name} 
-            className="h-48 object-contain hover:scale-105 transition-transform"
+            className="h-40 sm:h-48 object-contain hover:scale-105 transition-transform"
           />
         </div>
       </Link>
@@ -88,23 +88,23 @@ const ProductCard = ({
       
       {/* Product name */}
       <Link to={`/products/${productId}`} className="hover:text-vaquah-blue">
-        <h3 className="font-medium text-gray-800 mb-2 h-12 overflow-hidden">{name}</h3>
+        <h3 className="font-medium text-gray-800 mb-2 h-10 sm:h-12 overflow-hidden text-sm sm:text-base">{name}</h3>
       </Link>
       
       {/* Specifications */}
       <div className="grid grid-cols-2 gap-1 mb-3">
         <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded">
+          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
             {tonnage} Ton
           </span>
         </div>
         <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded">
+          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
             {energyRating} Star
           </span>
         </div>
         <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded">
+          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
             {inverter ? 'Inverter' : 'Non-Inverter'}
           </span>
         </div>
@@ -113,17 +113,17 @@ const ProductCard = ({
       {/* Rating */}
       <div className="flex items-center mb-2">
         <div className="bg-green-50 text-green-700 py-0.5 px-2 rounded flex items-center">
-          <Star size={14} fill="currentColor" className="mr-1" />
-          <span className="text-sm font-medium">{rating}</span>
+          <Star size={12} sm:size={14} fill="currentColor" className="mr-1" />
+          <span className="text-xs sm:text-sm font-medium">{rating}</span>
         </div>
       </div>
       
       {/* Price */}
       <div className="mb-3">
         <div className="flex items-center">
-          <span className="text-lg font-bold">₹{price.toLocaleString()}</span>
+          <span className="text-base sm:text-lg font-bold">₹{price.toLocaleString()}</span>
           {originalPrice && (
-            <span className="text-sm text-gray-400 line-through ml-2">
+            <span className="text-xs sm:text-sm text-gray-400 line-through ml-2">
               ₹{originalPrice.toLocaleString()}
             </span>
           )}
@@ -133,10 +133,10 @@ const ProductCard = ({
       
       {/* Call to action */}
       <Button 
-        className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue"
+        className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue text-sm sm:text-base"
         onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
       >
-        <ShoppingCart size={16} className="mr-2" />
+        <ShoppingCart size={14} sm:size={16} className="mr-2" />
         Add to Cart
       </Button>
     </div>

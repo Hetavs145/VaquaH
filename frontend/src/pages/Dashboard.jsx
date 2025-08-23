@@ -134,36 +134,36 @@ const Dashboard = () => {
   return (
     <>
       <Navbar />
-      <div className="container-custom py-8">
-        <h1 className="text-3xl font-bold mb-6 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
+      <div className="container-custom py-4 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
           Dashboard
         </h1>
         
         {/* Notifications */}
         {notifications.length > 0 && (
-          <div className="mb-6 space-y-2">
+          <div className="mb-4 sm:mb-6 space-y-2">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3"
+                className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 flex items-center gap-3"
               >
-                <AlertCircle className="w-5 h-5 text-blue-600" />
-                <span className="text-blue-800">{notification.message}</span>
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+                <span className="text-blue-800 text-sm sm:text-base">{notification.message}</span>
               </div>
             ))}
           </div>
         )}
         
         {user && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Profile</CardTitle>
                 <User className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{user.name}</div>
-                <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+                <div className="text-xl sm:text-2xl font-bold">{user.name}</div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">{user.email}</p>
               </CardContent>
             </Card>
             <Card>
@@ -172,8 +172,8 @@ const Dashboard = () => {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{appointmentsLoading ? '-' : appointments.length}</div>
-                <p className="text-sm text-muted-foreground mt-1">Total appointments</p>
+                <div className="text-xl sm:text-2xl font-bold">{appointmentsLoading ? '-' : appointments.length}</div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Total appointments</p>
               </CardContent>
             </Card>
             <Card>
@@ -182,15 +182,15 @@ const Dashboard = () => {
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{ordersLoading ? '-' : orders.length}</div>
-                <p className="text-sm text-muted-foreground mt-1">Total orders</p>
+                <div className="text-xl sm:text-2xl font-bold">{ordersLoading ? '-' : orders.length}</div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Total orders</p>
               </CardContent>
             </Card>
           </div>
         )}
 
-        <Tabs defaultValue="appointments" className="mt-6">
-          <TabsList>
+        <Tabs defaultValue="appointments" className="mt-4 sm:mt-6">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
           </TabsList>
@@ -206,26 +206,34 @@ const Dashboard = () => {
                   </div>
                 ) : appointments.length === 0 ? (
                   <div className="text-center py-8">
-                    <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                    <h3 className="text-lg font-medium">No appointments yet</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-3">Schedule a service appointment to get started</p>
-                    <Button onClick={() => navigate('/appointments/new')}>Schedule Service</Button>
+                    <Clock className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mb-3" />
+                    <h3 className="text-base sm:text-lg font-medium">No appointments yet</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-3">Schedule a service appointment to get started</p>
+                    <Button onClick={() => navigate('/appointments/new')} className="w-full sm:w-auto">Schedule Service</Button>
                   </div>
                 ) : (
                   <div>
                     {/* Render appointments list */}
                     <div className="rounded-md border">
-                      <div className="grid grid-cols-3 p-4 font-medium">
+                      {/* Header - hidden on small screens */}
+                      <div className="hidden sm:grid grid-cols-3 p-3 sm:p-4 font-medium text-sm">
                         <div>Service</div>
                         <div>Date & Time</div>
                         <div>Status</div>
                       </div>
                       <div className="divide-y">
                         {appointments.map((apt) => (
-                          <div key={apt.id || apt._id} className="grid grid-cols-3 p-4">
-                            <div>{apt.service || apt.serviceType}</div>
-                            <div>{new Date(apt.date || apt.appointmentDate || apt.createdAt?.toDate?.() || Date.now()).toLocaleDateString()} at {apt.time}</div>
+                          <div key={apt.id || apt._id} className="grid grid-cols-1 sm:grid-cols-3 p-3 sm:p-4 gap-2 sm:gap-0">
                             <div>
+                              <div className="sm:hidden text-xs text-gray-500 mb-1">Service</div>
+                              <div className="text-sm">{apt.service || apt.serviceType}</div>
+                            </div>
+                            <div>
+                              <div className="sm:hidden text-xs text-gray-500 mb-1">Date & Time</div>
+                              <div className="text-sm">{new Date(apt.date || apt.appointmentDate || apt.createdAt?.toDate?.() || Date.now()).toLocaleDateString()} at {apt.time}</div>
+                            </div>
+                            <div>
+                              <div className="sm:hidden text-xs text-gray-500 mb-1">Status</div>
                               <span className={`inline-flex rounded-full px-2 text-xs font-semibold 
                                 ${apt.status === 'completed' ? 'bg-green-100 text-green-800' : 
                                   apt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
@@ -255,17 +263,17 @@ const Dashboard = () => {
                   </div>
                 ) : orders.length === 0 ? (
                   <div className="text-center py-8">
-                    <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                    <h3 className="text-lg font-medium">No orders yet</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-3">Browse our products and make your first purchase</p>
-                    <Button onClick={() => navigate('/products')}>Shop Products</Button>
+                    <ShoppingBag className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mb-3" />
+                    <h3 className="text-base sm:text-lg font-medium">No orders yet</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-3">Browse our products and make your first purchase</p>
+                    <Button onClick={() => navigate('/products')} className="w-full sm:w-auto">Shop Products</Button>
                   </div>
                 ) : (
                   <div>
                     {/* Render orders list */}
                     <div className="rounded-md border">
                       {/* Header - hidden on small screens */}
-                      <div className="hidden md:grid grid-cols-4 p-4 font-medium">
+                      <div className="hidden md:grid grid-cols-4 p-3 sm:p-4 font-medium text-sm">
                         <div>Order ID</div>
                         <div>Date</div>
                         <div>Total</div>
@@ -285,25 +293,25 @@ const Dashboard = () => {
                             status === 'shipping' || status === 'out_for_delivery' ? 'bg-purple-100 text-purple-800' :
                             'bg-yellow-100 text-yellow-800';
                           return (
-                            <div key={orderId} className="grid grid-cols-1 md:grid-cols-4 p-4 gap-3 md:gap-0">
+                            <div key={orderId} className="grid grid-cols-1 md:grid-cols-4 p-3 sm:p-4 gap-3 md:gap-0">
                               {/* Order ID */}
                               <div className="min-w-0">
-                                <div className="md:hidden text-xs text-gray-500">Order ID</div>
+                                <div className="md:hidden text-xs text-gray-500 mb-1">Order ID</div>
                                 <div className="font-mono text-sm truncate">{orderId}</div>
                               </div>
                               {/* Date */}
                               <div>
-                                <div className="md:hidden text-xs text-gray-500">Date</div>
-                                <div>{orderDate}</div>
+                                <div className="md:hidden text-xs text-gray-500 mb-1">Date</div>
+                                <div className="text-sm">{orderDate}</div>
                               </div>
                               {/* Total */}
                               <div>
-                                <div className="md:hidden text-xs text-gray-500">Total</div>
-                                <div className="font-semibold">{totalFormatted}</div>
+                                <div className="md:hidden text-xs text-gray-500 mb-1">Total</div>
+                                <div className="font-semibold text-sm">{totalFormatted}</div>
                               </div>
                               {/* Status */}
                               <div>
-                                <div className="md:hidden text-xs text-gray-500">Status</div>
+                                <div className="md:hidden text-xs text-gray-500 mb-1">Status</div>
                                 <div className="flex flex-col gap-1">
                                   <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${statusClass}`}>{statusLabel}</span>
                                   {status === 'success' && countdowns[orderId] !== undefined && (
