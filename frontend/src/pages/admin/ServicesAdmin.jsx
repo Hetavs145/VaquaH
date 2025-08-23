@@ -69,6 +69,38 @@ const ServicesAdmin = () => {
     try {
       setLoading(true);
       
+      // First check if collections exist and have data
+      const collectionsStatus = await adminService.checkCollectionsStatus();
+      console.log('Collections status:', collectionsStatus);
+      
+      // If any collection doesn't exist or has no data, initialize them
+      const needsInitialization = Object.values(collectionsStatus).some(
+        status => !status.exists || !status.hasData
+      );
+      
+      if (needsInitialization) {
+        try {
+          toast({
+            title: 'Initializing Collections',
+            description: 'Setting up required collections for admin services...',
+          });
+          
+          await adminService.initializeAdminCollections();
+          
+          toast({
+            title: 'Collections Initialized',
+            description: 'Admin collections have been set up successfully!',
+          });
+        } catch (error) {
+          console.error('Error initializing collections:', error);
+          toast({
+            title: 'Initialization Error',
+            description: 'Failed to initialize collections. Please try again.',
+            variant: 'destructive'
+          });
+        }
+      }
+      
       // Load data with individual error handling
       let agentsData = [];
       let applicationsData = [];
@@ -264,53 +296,106 @@ const ServicesAdmin = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Agents</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{agents.length}</div>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Dashboard Overview</h2>
+            <div className="flex gap-2">
+              <Button onClick={loadAllData} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh Data
+              </Button>
+              {(agents.length === 0 && agentApplications.length === 0 && serviceRequests.length === 0) && (
+                <Button 
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      await adminService.initializeAdminCollections();
+                      toast({
+                        title: 'Success',
+                        description: 'Collections initialized successfully! Refreshing data...',
+                      });
+                      await loadAllData();
+                    } catch (error) {
+                      console.error('Error initializing collections:', error);
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to initialize collections. Please try again.',
+                        variant: 'destructive'
+                      });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Initializing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Initialize Collections
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Pending Applications</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-orange-600">
-                {agentApplications.filter(app => app.status === 'pending').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Active Services</CardTitle>
-              <Wrench className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                {serviceRequests.filter(service => ['pending', 'assigned', 'in_progress'].includes(service.status)).length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">Completed Services</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-green-600">
-                {serviceRequests.filter(service => service.status === 'completed').length}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Agents</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl sm:text-2xl font-bold">{agents.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium">Pending Applications</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                  {agentApplications.filter(app => app.status === 'pending').length}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium">Active Services</CardTitle>
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                  {serviceRequests.filter(service => ['pending', 'assigned', 'in_progress'].includes(service.status)).length}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium">Completed Services</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                  {serviceRequests.filter(service => service.status === 'completed').length}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
+
 
         {/* Search and Filters */}
         <Card className="mb-4 sm:mb-6">
