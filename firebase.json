@@ -5,7 +5,7 @@
   },
   "functions": [
     {
-      "source": "backend/functions",
+      "source": "functions",
       "codebase": "vaquah",
       "ignore": [
         "node_modules",
