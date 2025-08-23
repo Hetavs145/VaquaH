@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import SetupAdmin from "./pages/admin/SetupAdmin.jsx";
 import AdminManagement from "./pages/admin/AdminManagement.jsx";
 import ProductsAdmin from "./pages/admin/ProductsAdmin.jsx";
+import AdminVerification from "./pages/admin/AdminVerification.jsx";
 import AppointmentNew from "./pages/AppointmentNew.jsx";
 import Services from "./pages/Services.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -108,6 +109,7 @@ const AppContent = () => {
               <ProductsAdmin />
             </AdminRoute>
           } />
+          <Route path="/admin/verification" element={<AdminVerification />} />
           
           <Route path="/appointments/new" element={
             <ProtectedRoute>

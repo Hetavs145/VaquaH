@@ -22,19 +22,14 @@ export const AuthProvider = ({ children }) => {
   // Ensure users/{uid} exists
   const ensureUserDoc = async (firebaseUser) => {
     try {
-      const ref = doc(db, 'users', firebaseUser.uid);
-      const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        await setDoc(ref, {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          role: 'user',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      }
-    } catch (_) {}
+      await adminService.ensureUserDocument(
+        firebaseUser.uid, 
+        firebaseUser.email, 
+        firebaseUser.displayName
+      );
+    } catch (error) {
+      console.error('Error ensuring user document:', error);
+    }
   };
 
   // Check admin status from Firestore
