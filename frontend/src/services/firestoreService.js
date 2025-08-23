@@ -246,3 +246,126 @@ export const appointmentService = {
     return await firestoreService.delete('appointments', id);
   }
 };
+
+// Services for agents and service management
+export const agentService = {
+  async createAgent(agentData) {
+    return await firestoreService.create('agents', agentData);
+  },
+
+  async getAgentById(id) {
+    return await firestoreService.getById('agents', id);
+  },
+
+  async getAllAgents() {
+    return await firestoreService.getAll('agents');
+  },
+
+  async getActiveAgents() {
+    return await firestoreService.find('agents', [
+      { field: 'status', operator: '==', value: 'active' }
+    ]);
+  },
+
+  async updateAgent(id, agentData) {
+    return await firestoreService.update('agents', id, agentData);
+  },
+
+  async deleteAgent(id) {
+    return await firestoreService.delete('agents', id);
+  },
+
+  async getAgentsByService(serviceType) {
+    return await firestoreService.find('agents', [
+      { field: 'services', operator: 'array-contains', value: serviceType }
+    ]);
+  }
+};
+
+export const agentApplicationService = {
+  async createAgentApplication(applicationData) {
+    return await firestoreService.create('agentApplications', applicationData);
+  },
+
+  async getAgentApplicationById(id) {
+    return await firestoreService.getById('agentApplications', id);
+  },
+
+  async getAllAgentApplications() {
+    return await firestoreService.getAll('agentApplications');
+  },
+
+  async getPendingApplications() {
+    return await firestoreService.find('agentApplications', [
+      { field: 'status', operator: '==', value: 'pending' }
+    ]);
+  },
+
+  async updateAgentApplication(id, applicationData) {
+    return await firestoreService.update('agentApplications', id, applicationData);
+  },
+
+  async deleteAgentApplication(id) {
+    return await firestoreService.delete('agentApplications', id);
+  }
+};
+
+export const serviceRequestService = {
+  async createServiceRequest(requestData) {
+    return await firestoreService.create('serviceRequests', requestData);
+  },
+
+  async getServiceRequestById(id) {
+    return await firestoreService.getById('serviceRequests', id);
+  },
+
+  async getAllServiceRequests() {
+    return await firestoreService.getAll('serviceRequests');
+  },
+
+  async getUserServiceRequests(userId) {
+    return await firestoreService.find('serviceRequests', [
+      { field: 'userId', operator: '==', value: userId }
+    ]);
+  },
+
+  async getPendingServiceRequests() {
+    return await firestoreService.find('serviceRequests', [
+      { field: 'status', operator: '==', value: 'pending' }
+    ]);
+  },
+
+  async getAssignedServiceRequests(agentId) {
+    return await firestoreService.find('serviceRequests', [
+      { field: 'agentId', operator: '==', value: agentId }
+    ]);
+  },
+
+  async updateServiceRequest(id, requestData) {
+    return await firestoreService.update('serviceRequests', id, requestData);
+  },
+
+  async deleteServiceRequest(id) {
+    return await firestoreService.delete('serviceRequests', id);
+  },
+
+  // Update status and append timeline entry (similar to orders)
+  async updateServiceRequestStatus(requestId, nextStatus, byUserId, note = null) {
+    await firestoreService.update('serviceRequests', requestId, { status: nextStatus });
+    // Create timeline entry
+    try {
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      await addDoc(collection(db, `serviceRequests/${requestId}/timeline`), {
+        action: 'status_update',
+        toStatus: nextStatus,
+        byUserId,
+        note: note || null,
+        at: serverTimestamp(),
+      });
+    } catch (err) {
+      // Non-blocking
+      console.error('Failed to write timeline entry:', err);
+    }
+  }
+};

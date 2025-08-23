@@ -81,40 +81,7 @@ const ServicesAdmin = () => {
     try {
       setLoading(true);
       
-      // First check if collections exist and have data
-      const collectionsStatus = await adminService.checkCollectionsStatus();
-      console.log('Collections status:', collectionsStatus);
-      
-      // If any collection doesn't exist or has no data, initialize them
-      const needsInitialization = Object.values(collectionsStatus).some(
-        status => !status.exists || !status.hasData
-      );
-      
-      if (needsInitialization) {
-        try {
-          toast({
-            title: 'Initializing Collections',
-            description: 'Setting up required collections for admin services...',
-          });
-          
-          await adminService.initializeAdminCollections();
-          
-          toast({
-            title: 'Collections Initialized',
-            description: 'Admin collections have been set up successfully!',
-          });
-        } catch (error) {
-          console.error('Error initializing collections:', error);
-          toast({
-            title: 'Initialization Error',
-            description: error.message || 'Failed to initialize collections. Please check your permissions and try again.',
-            variant: 'destructive'
-          });
-          return; // Don't continue if initialization fails
-        }
-      }
-      
-      // Load data with individual error handling
+      // Load data directly - collections will be created automatically when needed
       let agentsData = [];
       let applicationsData = [];
       let requestsData = [];
@@ -338,45 +305,6 @@ const ServicesAdmin = () => {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh Data
               </Button>
-              {(agents.length === 0 && agentApplications.length === 0 && serviceRequests.length === 0) && (
-                <Button 
-                  onClick={async () => {
-                    try {
-                      setLoading(true);
-                      await adminService.initializeAdminCollections();
-                      toast({
-                        title: 'Success',
-                        description: 'Collections initialized successfully! Refreshing data...',
-                      });
-                      await loadAllData();
-                    } catch (error) {
-                      console.error('Error initializing collections:', error);
-                      toast({
-                        title: 'Error',
-                        description: 'Failed to initialize collections. Please try again.',
-                        variant: 'destructive'
-                      });
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Initializing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Initialize Collections
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
           </div>
           
