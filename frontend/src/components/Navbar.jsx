@@ -51,6 +51,7 @@ const Navbar = () => {
             <Link to="/products" className="text-gray-600 hover:text-vaquah-blue">Products</Link>
             <Link to="/appointments/new" className="text-gray-600 hover:text-vaquah-blue">Schedule Service</Link>
             <Link to="/contracts" className="text-gray-600 hover:text-vaquah-blue">Contracts</Link>
+            <Link to="/apply-agent" className="text-gray-600 hover:text-vaquah-blue">Apply as Agent</Link>
             <Link to="/cart" className="relative p-2">
               <ShoppingCart size={20} className="text-gray-700" />
               <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
@@ -70,6 +71,14 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     Dashboard
                   </DropdownMenuItem>
+                  {user.role === 'agent' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/agent-dashboard')}>
+                        Agent Dashboard
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   {user.isAdmin && (
                     <>
                       <DropdownMenuSeparator />
@@ -81,6 +90,9 @@ const Navbar = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate('/admin/products')}>
                         Manage Products
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/services')}>
+                        Manage Services
                       </DropdownMenuItem>
                     </>
                   )}
@@ -132,14 +144,19 @@ const Navbar = () => {
             <Link to="/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Products</Link>
             <Link to="/appointments/new" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Schedule Service</Link>
             <Link to="/contracts" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Contracts</Link>
+            <Link to="/apply-agent" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Apply as Agent</Link>
             {user ? (
               <>
                 <Link to="/dashboard" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Dashboard</Link>
+                {user.role === 'agent' && (
+                  <Link to="/agent-dashboard" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Agent Dashboard</Link>
+                )}
                 {user.isAdmin && (
                   <>
                     <Link to="/admin" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Admin Dashboard</Link>
                     <Link to="/admin/orders" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Manage Orders</Link>
                     <Link to="/admin/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Manage Products</Link>
+                    <Link to="/admin/services" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Manage Services</Link>
                   </>
                 )}
                 <button 
