@@ -11,7 +11,8 @@ import {
   Settings, 
   TrendingUp,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  UserCheck
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import Navbar from '@/components/Navbar';
@@ -61,6 +62,9 @@ const AdminDashboard = () => {
       const [orders, products, users] = await Promise.all([
         adminService.getAllOrders().catch(err => {
           console.error('Error fetching orders:', err);
+          if (err.message.includes('Insufficient permissions')) {
+            setError('Admin permissions issue detected. Please visit the Admin Verification page to fix this.');
+          }
           return [];
         }),
         adminService.getAllProducts().catch(err => {
@@ -69,6 +73,9 @@ const AdminDashboard = () => {
         }),
         adminService.getAllUsers().catch(err => {
           console.error('Error fetching users:', err);
+          if (err.message.includes('Insufficient permissions')) {
+            setError('Admin permissions issue detected. Please visit the Admin Verification page to fix this.');
+          }
           return [];
         })
       ]);
@@ -167,6 +174,13 @@ const AdminDashboard = () => {
       icon: Shield,
       path: '/admin/management',
       color: 'bg-red-500'
+    },
+    {
+      title: 'Admin Verification',
+      description: 'Verify and fix admin permission issues',
+      icon: UserCheck,
+      path: '/admin/verification',
+      color: 'bg-indigo-500'
     }
   ];
 
@@ -183,10 +197,19 @@ const AdminDashboard = () => {
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-5 h-5 text-red-600" />
               <p className="text-red-800">{error}</p>
             </div>
+            {error.includes('Admin permissions issue') && (
+              <Button 
+                onClick={() => navigate('/admin/verification')}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                size="sm"
+              >
+                Fix Admin Permissions
+              </Button>
+            )}
           </div>
         )}
 

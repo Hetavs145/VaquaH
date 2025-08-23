@@ -14,6 +14,36 @@ import {
 import { db } from '@/lib/firebase';
 
 class AdminService {
+  // Ensure user document exists and has correct role
+  async ensureUserDocument(userId, userEmail, userName) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create user document if it doesn't exist
+        await setDoc(userRef, {
+          uid: userId,
+          email: userEmail,
+          name: userName || userEmail?.split('@')[0] || 'User',
+          role: 'user',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        return { role: 'user', isAdmin: false };
+      }
+      
+      const userData = userDoc.data();
+      return {
+        role: userData.role || 'user',
+        isAdmin: userData.role === 'admin'
+      };
+    } catch (error) {
+      console.error('Error ensuring user document:', error);
+      return { role: 'user', isAdmin: false };
+    }
+  }
+
   async checkAdminStatus(userId) {
     try {
       const userDoc = await getDoc(doc(db, 'users', userId));
@@ -29,6 +59,44 @@ class AdminService {
     } catch (error) {
       console.error('Error checking admin status:', error);
       return { isAdmin: false, role: 'user' };
+    }
+  }
+
+  // Manually verify and set admin status (for debugging/fixing permission issues)
+  async verifyAndSetAdminStatus(userId, userEmail, shouldBeAdmin = false) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create user document if it doesn't exist
+        await setDoc(userRef, {
+          uid: userId,
+          email: userEmail,
+          name: userEmail?.split('@')[0] || 'User',
+          role: shouldBeAdmin ? 'admin' : 'user',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        // Update existing user document
+        await updateDoc(userRef, {
+          role: shouldBeAdmin ? 'admin' : 'user',
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      return {
+        success: true,
+        role: shouldBeAdmin ? 'admin' : 'user',
+        isAdmin: shouldBeAdmin
+      };
+    } catch (error) {
+      console.error('Error verifying admin status:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
