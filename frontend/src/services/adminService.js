@@ -37,7 +37,14 @@ class AdminService {
     } catch (error) {
       // Log error for debugging but don't expose to user
       console.warn('Error initializing admin collections:', error.message);
-      throw new Error('Failed to initialize admin collections. Please try again later.');
+      
+      // Return a graceful error response instead of throwing
+      return {
+        success: false,
+        message: 'Unable to initialize collections at this time. Please check your permissions or try again later.',
+        error: error.message,
+        requiresAdminRole: true
+      };
     }
   }
 
@@ -46,6 +53,21 @@ class AdminService {
     try {
       const { getFirestore, collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
       const db = getFirestore(app);
+      
+      // First, check if we have permission to read from Firestore
+      try {
+        const testQuery = await getDocs(collection(db, 'users'));
+        console.log('Firestore access confirmed');
+      } catch (permissionError) {
+        console.warn('Permission check failed:', permissionError.message);
+        return {
+          success: false,
+          message: 'You do not have permission to access Firestore. Please ensure you have admin privileges.',
+          error: permissionError.message,
+          requiresAdminRole: true,
+          code: 'permission-denied'
+        };
+      }
       
       // Sample data for agents
       const sampleAgents = [
@@ -223,7 +245,54 @@ class AdminService {
     } catch (error) {
       // Log error for debugging but don't expose to user
       console.warn('Error creating collections directly:', error.message);
-      throw new Error('Failed to create collections. Please check your permissions and try again.');
+      
+      // Return a graceful error response instead of throwing
+      return {
+        success: false,
+        message: 'Failed to create collections. Please check your permissions and try again.',
+        error: error.message,
+        requiresAdminRole: true,
+        code: error.code || 'unknown-error'
+      };
+    }
+  }
+
+  // Check if current user has admin permissions
+  async checkAdminPermissions() {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return {
+          hasAccess: false,
+          message: 'You must be logged in to access admin features.',
+          requiresLogin: true
+        };
+      }
+
+      // Try to access a protected collection to test permissions
+      const db = getFirestore(app);
+      try {
+        const testQuery = await getDocs(collection(db, 'adminRequests'));
+        return {
+          hasAccess: true,
+          message: 'Admin access confirmed.',
+          uid: currentUser.uid
+        };
+      } catch (permissionError) {
+        return {
+          hasAccess: false,
+          message: 'You do not have admin permissions. Please contact an administrator.',
+          requiresAdminRole: true,
+          code: permissionError.code
+        };
+      }
+    } catch (error) {
+      console.warn('Error checking admin permissions:', error.message);
+      return {
+        hasAccess: false,
+        message: 'Unable to verify permissions. Please try again.',
+        error: error.message
+      };
     }
   }
 

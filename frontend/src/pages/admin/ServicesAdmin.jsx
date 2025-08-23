@@ -51,17 +51,51 @@ const ServicesAdmin = () => {
   }, [user]);
 
   const checkAdminAccess = async () => {
-    if (!user) return;
-    
     try {
-      const status = await adminService.checkAdminStatus(user.uid);
-      setAdminStatus(status);
+      setLoading(true);
       
-      if (status.isAdmin) {
-        await loadAllData();
+      // Check admin permissions first
+      const permissionResult = await adminService.checkAdminPermissions();
+      
+      if (!permissionResult.hasAccess) {
+        if (permissionResult.requiresLogin) {
+          toast({
+            title: 'Authentication Required',
+            description: 'Please log in to access admin features.',
+            variant: 'destructive'
+          });
+          // Redirect to login or show login modal
+          return;
+        } else if (permissionResult.requiresAdminRole) {
+          toast({
+            title: 'Admin Access Required',
+            description: permissionResult.message,
+            variant: 'destructive'
+          });
+          // Show admin request form or contact info
+          return;
+        } else {
+          toast({
+            title: 'Access Denied',
+            description: permissionResult.message,
+            variant: 'destructive'
+          });
+          return;
+        }
       }
+
+      // If we have access, proceed with loading data
+      await loadAllData();
+      
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.warn('Error checking admin access:', error.message);
+      toast({
+        title: 'Error',
+        description: 'Failed to verify admin access. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,12 +119,29 @@ const ServicesAdmin = () => {
             description: 'Setting up required collections for admin services...',
           });
           
-          await adminService.initializeAdminCollections();
+          const result = await adminService.initializeAdminCollections();
           
-          toast({
-            title: 'Collections Initialized',
-            description: 'Admin collections have been set up successfully!',
-          });
+          if (result.success) {
+            toast({
+              title: 'Collections Initialized',
+              description: 'Admin collections have been set up successfully!',
+            });
+          } else {
+            // Handle error response
+            if (result.requiresAdminRole) {
+              toast({
+                title: 'Admin Access Required',
+                description: result.message || 'You need admin privileges to initialize collections.',
+                variant: 'destructive'
+              });
+            } else {
+              toast({
+                title: 'Initialization Error',
+                description: result.message || 'Failed to initialize collections. Please try again.',
+                variant: 'destructive'
+              });
+            }
+          }
         } catch (error) {
           // Log error for debugging but don't expose to user
           console.warn('Error initializing collections:', error.message);
