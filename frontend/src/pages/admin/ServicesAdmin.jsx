@@ -59,9 +59,21 @@ const ServicesAdmin = () => {
       
       if (status.isAdmin) {
         await loadAllData();
+      } else {
+        console.warn('User is not admin:', status.reason);
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have administrator privileges to access this page.',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
+      toast({
+        title: 'Authentication Error',
+        description: 'Failed to verify your administrator status. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -92,13 +104,13 @@ const ServicesAdmin = () => {
             description: 'Admin collections have been set up successfully!',
           });
         } catch (error) {
-          // Log error for debugging but don't expose to user
-          console.warn('Error initializing collections:', error.message);
+          console.error('Error initializing collections:', error);
           toast({
             title: 'Initialization Error',
-            description: 'Failed to initialize collections. Please check your permissions and try again.',
+            description: error.message || 'Failed to initialize collections. Please check your permissions and try again.',
             variant: 'destructive'
           });
+          return; // Don't continue if initialization fails
         }
       }
       
@@ -109,13 +121,19 @@ const ServicesAdmin = () => {
       
       try {
         agentsData = await agentService.getAllAgents();
+        console.log('Loaded agents:', agentsData.length);
       } catch (error) {
-        // Log error for debugging but don't expose to user
-        console.warn('Error loading agents:', error.message);
-        if (error.code === 'permission-denied') {
+        console.error('Error loading agents:', error);
+        if (error.message?.includes('permission') || error.message?.includes('Admin access required')) {
           toast({
             title: 'Permission Error',
             description: 'You do not have permission to view agents. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Error Loading Agents',
+            description: 'Failed to load agents. Please try again later.',
             variant: 'destructive'
           });
         }
@@ -123,13 +141,19 @@ const ServicesAdmin = () => {
       
       try {
         applicationsData = await agentService.getAllAgentApplications();
+        console.log('Loaded applications:', applicationsData.length);
       } catch (error) {
-        // Log error for debugging but don't expose to user
-        console.warn('Error loading agent applications:', error.message);
-        if (error.code === 'permission-denied') {
+        console.error('Error loading agent applications:', error);
+        if (error.message?.includes('permission') || error.message?.includes('Admin access required')) {
           toast({
             title: 'Permission Error',
             description: 'You do not have permission to view agent applications. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Error Loading Applications',
+            description: 'Failed to load agent applications. Please try again later.',
             variant: 'destructive'
           });
         }
@@ -137,13 +161,19 @@ const ServicesAdmin = () => {
       
       try {
         requestsData = await agentService.getAllServiceRequests();
+        console.log('Loaded service requests:', requestsData.length);
       } catch (error) {
-        // Log error for debugging but don't expose to user
-        console.warn('Error loading service requests:', error.message);
-        if (error.code === 'permission-denied') {
+        console.error('Error loading service requests:', error);
+        if (error.message?.includes('permission') || error.message?.includes('Admin access required')) {
           toast({
             title: 'Permission Error',
             description: 'You do not have permission to view service requests. Please contact an administrator.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Error Loading Service Requests',
+            description: 'Failed to load service requests. Please try again later.',
             variant: 'destructive'
           });
         }
@@ -161,8 +191,7 @@ const ServicesAdmin = () => {
         });
       }
     } catch (error) {
-      // Log error for debugging but don't expose to user
-      console.warn('Error loading data:', error.message);
+      console.error('Error loading data:', error);
       toast({
         title: 'Error',
         description: 'Failed to load data. Please try again later.',

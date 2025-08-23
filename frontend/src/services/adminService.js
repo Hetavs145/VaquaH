@@ -20,6 +20,40 @@ import app from '../lib/firebase';
 const functions = getFunctions(app);
 
 class AdminService {
+  // Check if user has admin privileges
+  async checkAdminStatus(userId) {
+    try {
+      if (!userId) {
+        return { isAdmin: false, reason: 'No user ID provided' };
+      }
+
+      // First check custom claims (most secure method)
+      try {
+        const idTokenResult = await auth.currentUser?.getIdTokenResult();
+        if (idTokenResult?.claims?.role === 'admin') {
+          return { isAdmin: true, method: 'custom_claims' };
+        }
+      } catch (error) {
+        console.warn('Could not check custom claims:', error.message);
+      }
+
+      // Fallback: Check user document
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists() && userDoc.data().role === 'admin') {
+          return { isAdmin: true, method: 'user_document' };
+        }
+      } catch (error) {
+        console.warn('Could not check user document:', error.message);
+      }
+
+      return { isAdmin: false, reason: 'User does not have admin privileges' };
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return { isAdmin: false, reason: 'Error checking admin status' };
+    }
+  }
+
   // Initialize required collections for admin services panel
   async initializeAdminCollections() {
     try {
@@ -29,10 +63,17 @@ class AdminService {
         throw new Error('User must be authenticated to initialize admin collections');
       }
 
+      // Check admin status first
+      const adminStatus = await this.checkAdminStatus(currentUser.uid);
+      if (!adminStatus.isAdmin) {
+        throw new Error('Only administrators can initialize admin collections');
+      }
+
       const idToken = await currentUser.getIdToken();
       
       // Try to use Firebase function first
       try {
+        console.log('Attempting to call Cloud Function...');
         const response = await fetch(
           'https://us-central1-vaquah-react.cloudfunctions.net/initializeAdminCollections',
           {
@@ -43,7 +84,6 @@ class AdminService {
               'Accept': 'application/json',
             },
             mode: 'cors',
-            credentials: 'include',
             body: JSON.stringify({})
           }
         );
@@ -54,18 +94,17 @@ class AdminService {
         }
 
         const result = await response.json();
+        console.log('Cloud Function response:', result);
         return result;
       } catch (functionError) {
-        // Log error for debugging but don't expose to user
-        console.warn('Firebase function not available, creating collections directly:', functionError.message);
+        console.warn('Cloud Function failed, falling back to direct creation:', functionError.message);
         
         // Fallback: Create collections directly in frontend
         return await this.createCollectionsDirectly();
       }
     } catch (error) {
-      // Log error for debugging but don't expose to user
-      console.warn('Error initializing admin collections:', error.message);
-      throw new Error('Failed to initialize admin collections. Please try again later.');
+      console.error('Error initializing admin collections:', error);
+      throw new Error('Failed to initialize admin collections. Please check your permissions and try again.');
     }
   }
 
@@ -79,13 +118,12 @@ class AdminService {
       }
 
       // Check if user has admin role
-      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+      const adminStatus = await this.checkAdminStatus(currentUser.uid);
+      if (!adminStatus.isAdmin) {
         throw new Error('Only administrators can initialize admin collections');
       }
 
-      // Use the already imported db instance instead of creating a new one
-      const firestoreDb = db;
+      console.log('Creating collections directly with admin privileges...');
       
       // Sample data for agents
       const sampleAgents = [
@@ -228,33 +266,34 @@ class AdminService {
         }
       ];
 
-      // Create collections with sample data using writeBatch
-      const batch = writeBatch(firestoreDb);
-      
+      // Create the collections with sample data using batch writes
+      const batch = writeBatch(db);
+
       // Add sample agents
       sampleAgents.forEach(agent => {
-        const docRef = doc(firestoreDb, 'agents', agent.uid);
+        const docRef = doc(db, 'agents', agent.uid);
         batch.set(docRef, agent);
       });
 
       // Add sample applications
       sampleApplications.forEach(app => {
-        const docRef = doc(firestoreDb, 'agentApplications', app.uid);
+        const docRef = doc(db, 'agentApplications', app.uid);
         batch.set(docRef, app);
       });
 
       // Add sample service requests
       sampleRequests.forEach((request, index) => {
-        const docRef = doc(firestoreDb, 'serviceRequests', `sample-request-${index + 1}`);
+        const docRef = doc(db, 'serviceRequests', `sample-request-${index + 1}`);
         batch.set(docRef, request);
       });
 
-      // Execute all operations
+      // Commit the batch
       await batch.commit();
 
+      console.log('Collections created successfully');
       return {
         success: true,
-        message: 'Admin collections initialized successfully (direct method)',
+        message: 'Admin collections initialized successfully',
         collectionsCreated: ['agents', 'agentApplications', 'serviceRequests'],
         sampleDataAdded: {
           agents: sampleAgents.length,
@@ -264,9 +303,8 @@ class AdminService {
       };
 
     } catch (error) {
-      // Log error for debugging but don't expose to user
-      console.warn('Error creating collections directly:', error.message);
-      throw new Error('Failed to create collections. Please check your permissions and try again.');
+      console.error('Error creating collections directly:', error);
+      throw new Error('Missing or insufficient permissions.');
     }
   }
 
@@ -334,44 +372,6 @@ class AdminService {
       return { role: 'user', isAdmin: false };
     }
   }
-
-  async checkAdminStatus(userId) {
-    try {
-      // First check custom claims (more secure)
-      const currentUser = auth.currentUser;
-      if (currentUser && currentUser.uid === userId) {
-        try {
-          const token = await currentUser.getIdTokenResult();
-          if (token.claims && token.claims.role === 'admin') {
-            return {
-              isAdmin: true,
-              role: 'admin',
-              email: currentUser.email
-            };
-          }
-        } catch (tokenError) {
-          console.log('Token claims check failed, falling back to document check:', tokenError);
-        }
-      }
-      
-      // Fallback to document check
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        return {
-          isAdmin: userData.role === 'admin',
-          role: userData.role || 'user',
-          email: userData.email
-        };
-      }
-      return { isAdmin: false, role: 'user' };
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      return { isAdmin: false, role: 'user' };
-    }
-  }
-
-
 
   async requestAdminAccess(userId, userEmail) {
     try {
