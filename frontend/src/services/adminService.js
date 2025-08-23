@@ -28,14 +28,16 @@ class AdminService {
         const result = await initializeCollections();
         return result.data;
       } catch (functionError) {
-        console.log('Firebase function not available, creating collections directly:', functionError);
+        // Log error for debugging but don't expose to user
+        console.warn('Firebase function not available, creating collections directly:', functionError.message);
         
         // Fallback: Create collections directly in frontend
         return await this.createCollectionsDirectly();
       }
     } catch (error) {
-      console.error('Error initializing admin collections:', error);
-      throw error;
+      // Log error for debugging but don't expose to user
+      console.warn('Error initializing admin collections:', error.message);
+      throw new Error('Failed to initialize admin collections. Please try again later.');
     }
   }
 
@@ -219,8 +221,9 @@ class AdminService {
       };
 
     } catch (error) {
-      console.error('Error creating collections directly:', error);
-      throw error;
+      // Log error for debugging but don't expose to user
+      console.warn('Error creating collections directly:', error.message);
+      throw new Error('Failed to create collections. Please check your permissions and try again.');
     }
   }
 
@@ -252,8 +255,9 @@ class AdminService {
       
       return status;
     } catch (error) {
-      console.error('Error checking collections status:', error);
-      throw error;
+      // Log error for debugging but don't expose to user
+      console.warn('Error checking collections status:', error.message);
+      throw new Error('Failed to check collections status. Please try again later.');
     }
   }
 
