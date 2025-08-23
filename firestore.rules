@@ -107,6 +107,11 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isAdminCombined();
     }
 
+    // Admin initialization collection (temporary, for setup purposes)
+    match /adminInit/{docId} {
+      allow read, write: if isSignedIn() && isAdminCombined();
+    }
+
     // Admin logs collection (only admins can read/write)
     match /adminLogs/{docId} {
       allow read, write: if isSignedIn() && isAdminCombined();

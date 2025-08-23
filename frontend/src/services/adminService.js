@@ -22,11 +22,38 @@ class AdminService {
   // Initialize required collections for admin services panel
   async initializeAdminCollections() {
     try {
+      // Get current user's ID token for authentication
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated to initialize admin collections');
+      }
+
+      const idToken = await currentUser.getIdToken();
+      
       // Try to use Firebase function first
       try {
-        const initializeCollections = httpsCallable(functions, 'initializeAdminCollections');
-        const result = await initializeCollections();
-        return result.data;
+        const response = await fetch(
+          'https://us-central1-vaquah-react.cloudfunctions.net/initializeAdminCollections',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${idToken}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            mode: 'cors',
+            credentials: 'include',
+            body: JSON.stringify({})
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return result;
       } catch (functionError) {
         // Log error for debugging but don't expose to user
         console.warn('Firebase function not available, creating collections directly:', functionError.message);
@@ -44,6 +71,18 @@ class AdminService {
   // Fallback method to create collections directly
   async createCollectionsDirectly() {
     try {
+      // Check if user is authenticated
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated to create collections');
+      }
+
+      // Check if user has admin role
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+        throw new Error('Only administrators can initialize admin collections');
+      }
+
       const { getFirestore, collection, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
       const db = getFirestore(app);
       
