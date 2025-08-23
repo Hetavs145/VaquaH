@@ -11,8 +11,7 @@ import {
   serverTimestamp,
   addDoc
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { auth } from '@/lib/firebase'; // Added missing import for auth
+import { db, auth } from '@/lib/firebase';
 
 class AdminService {
   // Ensure user document exists and has correct role
@@ -47,6 +46,24 @@ class AdminService {
 
   async checkAdminStatus(userId) {
     try {
+      // First check custom claims (more secure)
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.uid === userId) {
+        try {
+          const token = await currentUser.getIdTokenResult();
+          if (token.claims && token.claims.role === 'admin') {
+            return {
+              isAdmin: true,
+              role: 'admin',
+              email: currentUser.email
+            };
+          }
+        } catch (tokenError) {
+          console.log('Token claims check failed, falling back to document check:', tokenError);
+        }
+      }
+      
+      // Fallback to document check
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();

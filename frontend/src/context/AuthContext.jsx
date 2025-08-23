@@ -5,7 +5,9 @@ import {
   signInWithPopup, 
   signOut, 
   onAuthStateChanged,
-  updateProfile as updateFirebaseProfile
+  updateProfile as updateFirebaseProfile,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { adminService } from '@/services/adminService';
@@ -44,11 +46,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const token = await user.getIdToken();
-          try { localStorage.setItem('userToken', token); } catch (_) {}
+    // Handle redirect result first
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User signed in via redirect
+          const user = result.user;
+          try {
+            const token = await user.getIdToken();
+            localStorage.setItem('userToken', token);
+          } catch (_) {}
 
           await ensureUserDoc(user);
           const adminStatus = await checkAdminStatus(user.uid);
@@ -61,25 +69,51 @@ export const AuthProvider = ({ children }) => {
             isAdmin: adminStatus.isAdmin,
             role: adminStatus.role
           });
-        } catch (error) {
-          console.error('Error setting up user:', error);
-          setUser({
-            uid: user.uid,
-            email: user.email,
-            name: user.displayName || user.email?.split('@')[0] || 'User',
-            photoURL: user.photoURL,
-            isAdmin: false,
-            role: 'user'
-          });
         }
-      } else {
-        try { localStorage.removeItem('userToken'); } catch (_) {}
-        setUser(null);
+      } catch (error) {
+        console.error('Error handling redirect result:', error);
       }
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    // Handle redirect result first, then set up auth state listener
+    handleRedirectResult().then(() => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const token = await user.getIdToken();
+            try { localStorage.setItem('userToken', token); } catch (_) {}
+
+            await ensureUserDoc(user);
+            const adminStatus = await checkAdminStatus(user.uid);
+
+            setUser({
+              uid: user.uid,
+              email: user.email,
+              name: user.displayName || user.email?.split('@')[0] || 'User',
+              photoURL: user.photoURL,
+              isAdmin: adminStatus.isAdmin,
+              role: adminStatus.role
+            });
+          } catch (error) {
+            console.error('Error setting up user:', error);
+            setUser({
+              uid: user.uid,
+              email: user.email,
+              name: user.displayName || user.email?.split('@')[0] || 'User',
+              photoURL: user.photoURL,
+              isAdmin: false,
+              role: 'user'
+            });
+          }
+        } else {
+          try { localStorage.removeItem('userToken'); } catch (_) {}
+          setUser(null);
+        }
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    });
   }, []);
 
   const login = async (email, password) => {
@@ -195,7 +229,31 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Configure Google provider with additional settings to handle COOP issues
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      // Try popup first, fallback to redirect if popup fails
+      let result;
+      try {
+        result = await signInWithPopup(auth, googleProvider);
+      } catch (popupError) {
+        console.log('Popup failed, trying redirect:', popupError.code);
+        
+        // If popup is blocked or fails due to COOP, use redirect
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.message.includes('Cross-Origin-Opener-Policy')) {
+          
+          // Use redirect method instead
+          await signInWithRedirect(auth, googleProvider);
+          return; // Redirect will handle the rest
+        }
+        throw popupError;
+      }
+      
       const user = result.user;
       try {
         const token = await user.getIdToken();
@@ -226,6 +284,8 @@ export const AuthProvider = ({ children }) => {
         errorMessage = "Sign-in was cancelled";
       } else if (error.code === 'auth/popup-blocked') {
         errorMessage = "Pop-up was blocked. Please allow pop-ups for this site";
+      } else if (error.message.includes('Cross-Origin-Opener-Policy')) {
+        errorMessage = "Browser security policy blocked sign-in. Please try again or use email/password.";
       } else {
         errorMessage = error.message;
       }
