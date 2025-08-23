@@ -37,7 +37,7 @@ const OrdersAdmin = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [userIdFilter, setUserIdFilter] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [adminStatus, setAdminStatus] = useState(null);
@@ -64,7 +64,10 @@ const OrdersAdmin = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const orders = await adminService.getAllOrders(statusFilter || null, userIdFilter || null);
+      const orders = await adminService.getAllOrders(
+        statusFilter === 'all' ? null : statusFilter, 
+        userIdFilter || null
+      );
       setOrders(orders);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
@@ -155,7 +158,7 @@ const OrdersAdmin = () => {
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     {statuses.map(status => (
                       <SelectItem key={status} value={status}>
                         {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
