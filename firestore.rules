@@ -10,20 +10,20 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid; 
     }
     
-    // Simplified admin check - only check custom claims for now
-    // This avoids circular dependency issues when reading user documents
+    // Admin check using custom claims (primary method)
     function isAdmin() { 
       return request.auth != null && request.auth.token.role == 'admin';
     }
     
-    // Alternative admin check using user document (for cases where custom claims aren't set)
+    // Admin check using user document (fallback method)
+    // This is safe because we're only checking the current user's own document
     function isAdminByUserDoc() {
       return request.auth != null && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Combined admin check
+    // Combined admin check - try custom claims first, then user document
     function isAdminCombined() {
       return isAdmin() || isAdminByUserDoc();
     }
