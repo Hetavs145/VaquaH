@@ -201,23 +201,23 @@ const AdminDashboard = () => {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <p className="text-red-800">{error}</p>
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+              <p className="text-red-800 text-sm sm:text-base">{error}</p>
             </div>
           </div>
         )}
 
         {/* Debug Section */}
-        <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">Debug Admin Access</h3>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Debug Admin Access</h3>
             <Button 
               onClick={debugAdminAccess} 
               variant="outline" 
               size="sm"
-              className="bg-blue-50 hover:bg-blue-100"
+              className="bg-blue-50 hover:bg-blue-100 w-full sm:w-auto"
             >
               Debug Access
             </Button>
@@ -233,61 +233,61 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Orders</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalOrders}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Pending Orders</CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Products</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalProducts}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalUsers}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Admin Pages Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {adminPages.map((page) => (
             <Card key={page.path} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(page.path)}>
               <CardHeader>
-                <div className={`w-12 h-12 rounded-lg ${page.color} flex items-center justify-center mb-4`}>
-                  <page.icon className="w-6 h-6 text-white" />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${page.color} flex items-center justify-center mb-3 sm:mb-4`}>
+                  <page.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <CardTitle className="text-lg">{page.title}</CardTitle>
+                <CardTitle className="text-base sm:text-lg">{page.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm mb-4">{page.description}</p>
-                <Button variant="outline" className="w-full">
+                <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">{page.description}</p>
+                <Button variant="outline" className="w-full text-sm sm:text-base">
                   Access {page.title}
                 </Button>
               </CardContent>

@@ -109,11 +109,11 @@ const Checkout = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
+          <div className="text-center px-4">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-4 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
               Your Cart is Empty
             </h1>
-            <p className="text-gray-600 text-lg">Add some products to checkout!</p>
+            <p className="text-gray-600 text-base sm:text-lg">Add some products to checkout!</p>
           </div>
         </div>
         <Footer />
@@ -124,33 +124,33 @@ const Checkout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex-grow p-6">
+      <div className="flex-grow p-4 sm:p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
             Checkout
           </h1>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Order Summary */}
             <div>
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-              <div className="border rounded-lg p-4">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Order Summary</h2>
+              <div className="border rounded-lg p-3 sm:p-4">
                 {cartItems.map((item, idx) => (
                   <div key={`${item._id || idx}-checkout`} className="flex justify-between items-center py-2">
-                    <div>
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-gray-600 ml-2">x {item.qty}</span>
+                    <div className="flex-1 min-w-0 mr-2">
+                      <span className="font-medium text-sm sm:text-base">{item.name}</span>
+                      <span className="text-gray-600 ml-2 text-sm">x {item.qty}</span>
                     </div>
-                    <span>₹{(item.price * item.qty).toFixed(2)}</span>
+                    <span className="text-sm sm:text-base flex-shrink-0">₹{(item.price * item.qty).toFixed(2)}</span>
                   </div>
                 ))}
                 <hr className="my-4" />
-                <div className="flex justify-between font-semibold text-lg">
+                <div className="flex justify-between font-semibold text-base sm:text-lg">
                   <span>Total:</span>
                   <span>₹{calculateTotal().toFixed(2)}</span>
                 </div>
                 {paymentMethod === 'cod' && calculateTotal() > codAdvanceThreshold && (
-                  <div className="flex justify-between text-sm text-gray-600 mt-1">
+                  <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-1">
                     <span>Advance Payable Now (25%):</span>
                     <span>₹{(calculateTotal() * 0.25).toFixed(2)}</span>
                   </div>
@@ -160,9 +160,9 @@ const Checkout = () => {
 
             {/* Shipping Form */}
             <div>
-              <h2 className="text-xl font-semibold mb-4">Shipping Details</h2>
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Shipping Details</h2>
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">First Name</label>
                     <input
@@ -171,7 +171,7 @@ const Checkout = () => {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                     />
                   </div>
                   <div>
@@ -182,7 +182,7 @@ const Checkout = () => {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                     />
                   </div>
                 </div>
@@ -195,7 +195,7 @@ const Checkout = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                   />
                 </div>
 
@@ -207,7 +207,7 @@ const Checkout = () => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                   />
                 </div>
 
@@ -219,11 +219,11 @@ const Checkout = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">City</label>
                     <input
@@ -232,7 +232,7 @@ const Checkout = () => {
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                     />
                   </div>
                   <div>
@@ -243,7 +243,7 @@ const Checkout = () => {
                       value={formData.state}
                       onChange={handleInputChange}
                       required
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                     />
                   </div>
                   <div>
@@ -254,20 +254,20 @@ const Checkout = () => {
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       required
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 {/* Payment method selection with COD 25% advance */}
                 <div className="mt-6 space-y-3">
-                  <h3 className="text-lg font-semibold">Payment Method</h3>
+                  <h3 className="text-base sm:text-lg font-semibold">Payment Method</h3>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod==='razorpay'} onChange={() => setPaymentMethod('razorpay')} className="accent-vaquah-blue" />
                       <span>Razorpay (Recommended)</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod==='cod'} onChange={() => setPaymentMethod('cod')} className="accent-vaquah-blue" />
                       <span>Cash on Delivery (COD) - Advance 25% for orders above ₹2000</span>
                     </label>
@@ -284,7 +284,7 @@ const Checkout = () => {
                         }
                         handlePlaceOrderCOD();
                       }}
-                      className="w-full bg-vaquah-blue text-white py-2 px-4 rounded hover:bg-vaquah-dark-blue"
+                      className="w-full bg-vaquah-blue text-white py-2 px-4 rounded hover:bg-vaquah-dark-blue text-sm sm:text-base"
                       disabled={shippingIncomplete}
                     >
                       Place COD Order (Pay on Delivery)
@@ -299,7 +299,7 @@ const Checkout = () => {
                     />
                   )}
                   {paymentMethod === 'cod' && calculateTotal() > codAdvanceThreshold && (
-                    <p className="text-sm text-gray-600">You will be charged an advance of ₹{(calculateTotal()*0.25).toFixed(2)} now. Remaining amount payable on delivery.</p>
+                    <p className="text-xs sm:text-sm text-gray-600">You will be charged an advance of ₹{(calculateTotal()*0.25).toFixed(2)} now. Remaining amount payable on delivery.</p>
                   )}
                 </div>
               </form>
