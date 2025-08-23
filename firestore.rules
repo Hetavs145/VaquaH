@@ -34,19 +34,43 @@ service cloud.firestore {
 
     // Orders collection
     match /orders/{docId} {
-      allow read, write: if isSignedIn() && (isOwnerOrAdmin(resource.data.userId) || isAdminCombined());
-      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      // Allow read if user owns the order OR is admin
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow write if user owns the order OR is admin
+      allow write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow create if user is creating their own order OR is admin
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
       
       // Timeline subcollection
       match /timeline/{timelineDocId} {
-        allow read, write: if isSignedIn() && (isOwnerOrAdmin(get(/databases/$(database)/documents/orders/$(docId)).data.userId) || isAdminCombined());
+        allow read, write: if isSignedIn() && (
+          (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+          isAdminCombined()
+        );
       }
     }
 
     // Appointments collection
     match /appointments/{docId} {
-      allow read, write: if isSignedIn() && isOwnerOrAdmin(resource.data.userId);
-      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow read, write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
     }
 
     // Users collection

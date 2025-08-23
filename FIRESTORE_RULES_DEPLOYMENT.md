@@ -54,19 +54,43 @@ service cloud.firestore {
 
     // Orders collection
     match /orders/{docId} {
-      allow read, write: if isSignedIn() && (isOwnerOrAdmin(resource.data.userId) || isAdminCombined());
-      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      // Allow read if user owns the order OR is admin
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow write if user owns the order OR is admin
+      allow write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow create if user is creating their own order OR is admin
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
       
       // Timeline subcollection
       match /timeline/{timelineDocId} {
-        allow read, write: if isSignedIn() && (isOwnerOrAdmin(get(/databases/$(database)/documents/orders/$(docId)).data.userId) || isAdminCombined());
+        allow read, write: if isSignedIn() && (
+          (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+          isAdminCombined()
+        );
       }
     }
 
     // Appointments collection
     match /appointments/{docId} {
-      allow read, write: if isSignedIn() && isOwnerOrAdmin(resource.data.userId);
-      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow read, write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
     }
 
     // Users collection
@@ -118,6 +142,8 @@ service cloud.firestore {
 2. **Circular Dependencies**: Avoids issues when reading user documents to check admin status
 3. **Collection Access**: Ensures admins can read/write to orders, users, and products collections
 4. **Security**: Maintains proper security while allowing admin functionality
+5. **Null Safety**: Added proper null checks for `resource.data.userId` to prevent errors when accessing documents
+6. **Admin Collection Access**: Admins can now read all documents in collections without requiring specific user ownership
 
 ## Alternative: Use Firebase CLI (if available)
 
@@ -148,3 +174,4 @@ If issues persist:
 2. Verify the user is properly authenticated
 3. Check browser console for any remaining errors
 4. Ensure the rules were published successfully
+5. Verify that the `isAdminCombined()` function is working by checking both custom claims and user document roles
