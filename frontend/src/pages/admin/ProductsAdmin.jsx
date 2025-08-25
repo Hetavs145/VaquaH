@@ -12,6 +12,7 @@ import { imageUploadService } from '@/services/imageUploadService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import DeleteVaquahProduct from '@/components/DeleteVaquahProduct';
 
 const ProductsAdmin = () => {
   const { user } = useAuth();
@@ -213,13 +214,16 @@ const ProductsAdmin = () => {
             <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
           </div>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => { setEditingProduct(null); resetForm(); }} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <DeleteVaquahProduct />
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => { setEditingProduct(null); resetForm(); }} className="w-full sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
