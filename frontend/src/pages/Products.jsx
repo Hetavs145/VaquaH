@@ -36,7 +36,19 @@ const Products = () => {
     (async () => {
       try {
         const all = await productService.getAllProducts();
-        setProducts((all || []).map(normalize));
+        const filtered = (all || []).filter(doc => {
+          const name = (doc?.name || '').toLowerCase();
+          const brand = (doc?.brand || '').toLowerCase();
+          const image = (doc?.image || doc?.imageUrl || '').toLowerCase();
+          return !(
+            name.includes('vaquah inverter split ac 1.5 ton') ||
+            name.includes('inverter split ac 1.5 ton') ||
+            brand.includes('mitshubishi') ||
+            image.includes('511929539_hkrzpkg') ||
+            image.includes('as2.ftcdn.net/jpg/05/11/92/95')
+          );
+        });
+        setProducts(filtered.map(normalize));
       } catch (e) {
         console.error('Failed to load products', e);
       } finally {
