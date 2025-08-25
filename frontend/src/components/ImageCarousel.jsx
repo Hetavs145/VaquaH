@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
 const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -25,7 +26,12 @@ const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
   if (!images || images.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
-        <p className="text-gray-500">No images available</p>
+        <img 
+          src={getPlaceholderImage()} 
+          alt="No images available" 
+          className="w-32 h-32 object-contain opacity-50"
+        />
+        <p className="text-gray-500 mt-4">No images available</p>
       </div>
     );
   }
@@ -61,7 +67,7 @@ const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
             alt={`${productName} - Image ${currentIndex + 1}`}
             className={`w-full h-auto object-contain ${isModal ? 'max-h-[80vh]' : 'max-h-96'}`}
             onError={(e) => {
-              e.target.src = '/placeholder.svg';
+              e.target.src = getPlaceholderImage();
             }}
           />
           
@@ -108,9 +114,9 @@ const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
                   src={image}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '/placeholder.svg';
-                  }}
+                                  onError={(e) => {
+                  e.target.src = getPlaceholderImage();
+                }}
                 />
               </button>
             ))}

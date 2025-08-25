@@ -25,11 +25,50 @@ class ImageUploadService {
     return true;
   }
 
-  // Upload single image and return base64 string
+  // Convert image to JPG format
+  async convertToJPG(file) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Set canvas dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw image on canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // Convert to JPG blob
+        canvas.toBlob((blob) => {
+          // Create a new file with JPG extension
+          const jpgFile = new File([blob], this.getFileNameWithJpgExtension(file.name), {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          resolve(jpgFile);
+        }, 'image/jpeg', 0.9); // 90% quality
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  // Get filename with JPG extension
+  getFileNameWithJpgExtension(filename) {
+    const nameWithoutExt = filename.split('.').slice(0, -1).join('.');
+    return `${nameWithoutExt}.jpg`;
+  }
+
+  // Upload single image and return base64 string (converted to JPG)
   async uploadImage(file) {
     try {
       this.validateImageFile(file);
-      const base64String = await this.fileToBase64(file);
+      
+      // Convert to JPG if not already
+      const jpgFile = await this.convertToJPG(file);
+      const base64String = await this.fileToBase64(jpgFile);
       return base64String;
     } catch (error) {
       throw new Error(`Image upload failed: ${error.message}`);
@@ -52,14 +91,16 @@ class ImageUploadService {
     try {
       this.validateImageFile(file);
       
-      // Create a unique filename
+      // Convert to JPG first
+      const jpgFile = await this.convertToJPG(file);
+      
+      // Create a unique filename with JPG extension
       const timestamp = Date.now();
-      const fileExtension = file.name.split('.').pop();
-      const filename = `product_${productId}_${imageIndex}_${timestamp}.${fileExtension}`;
+      const filename = `product_${productId}_${imageIndex}_${timestamp}.jpg`;
       
       // For now, we'll store as base64 in localStorage for development
       // In production, this would save to the server's public_html folder
-      const base64String = await this.fileToBase64(file);
+      const base64String = await this.fileToBase64(jpgFile);
       
       // Store in localStorage for development
       const imageData = {
@@ -67,7 +108,8 @@ class ImageUploadService {
         base64: base64String,
         timestamp,
         productId,
-        imageIndex
+        imageIndex,
+        originalName: file.name
       };
       
       const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');

@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/firestoreService';
 import { imageUploadService } from '@/services/imageUploadService';
 import ImageCarousel from '@/components/ImageCarousel';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -39,11 +40,11 @@ const ProductDetail = () => {
             finalImages = images;
           } else if (mainImage) {
             finalImages = [mainImage];
-          } else {
-            // Try to get from local storage
-            const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
-            finalImages = localImages.length > 0 ? localImages : ['/placeholder.svg'];
-          }
+            } else {
+    // Try to get from local storage
+    const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
+    finalImages = localImages.length > 0 ? localImages : [getPlaceholderImage()];
+  }
 
           // Normalize fields that UI expects
           const normalized = {
@@ -51,7 +52,7 @@ const ProductDetail = () => {
             name: doc.name,
             price: doc.price,
             rating: doc.rating || 4.5,
-            image: finalImages[0] || '/placeholder.svg',
+            image: finalImages[0] || getPlaceholderImage(),
             images: finalImages,
             description: doc.description || '',
             features: doc.features || [],
@@ -138,7 +139,7 @@ const ProductDetail = () => {
                 style={{ maxHeight: '400px' }}
                 onClick={() => setShowImageModal(true)}
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.svg';
+                  e.currentTarget.src = getPlaceholderImage();
                 }}
               />
               

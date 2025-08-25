@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ImageCarousel from '@/components/ImageCarousel';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
 const ProductsAdmin = () => {
   const { user } = useAuth();
@@ -223,11 +224,11 @@ const ProductsAdmin = () => {
       return images;
     } else if (mainImage) {
       return [mainImage];
-    } else {
-      // Try to get from local storage
-      const localImages = imageUploadService.getAllImagesFromLocal(product.id);
-      return localImages.length > 0 ? localImages : ['/placeholder.svg'];
-    }
+      } else {
+    // Try to get from local storage
+    const localImages = imageUploadService.getAllImagesFromLocal(product.id);
+    return localImages.length > 0 ? localImages : [getPlaceholderImage()];
+  }
   };
 
   const handleViewImages = (product) => {
@@ -466,7 +467,7 @@ const ProductsAdmin = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {products.map((product) => {
                   const productImages = getProductImages(product);
-                  const mainImage = productImages[0] || '/placeholder.svg';
+                  const mainImage = productImages[0] || getPlaceholderImage();
                   
                   return (
                     <Card key={product.id} className="overflow-hidden">
@@ -476,7 +477,7 @@ const ProductsAdmin = () => {
                           alt={product.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder.svg';
+                            e.currentTarget.src = getPlaceholderImage();
                           }}
                         />
                         {productImages.length > 1 && (

@@ -9,6 +9,7 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { productService } from '@/services/firestoreService';
 import { imageUploadService } from '@/services/imageUploadService';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
 const normalize = (doc) => {
   // Get images from multiple sources
@@ -23,7 +24,7 @@ const normalize = (doc) => {
   } else {
     // Try to get from local storage
     const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
-    finalImages = localImages.length > 0 ? localImages : ['/placeholder.svg'];
+    finalImages = localImages.length > 0 ? localImages : [getPlaceholderImage()];
   }
 
   return {
@@ -32,7 +33,7 @@ const normalize = (doc) => {
     name: doc.name,
     price: doc.price,
     rating: doc.rating || 4.5,
-    image: finalImages[0] || '/placeholder.svg',
+    image: finalImages[0] || getPlaceholderImage(),
     images: finalImages,
     description: doc.description || '',
     features: doc.features || [],
@@ -139,7 +140,7 @@ const Products = () => {
                       className="object-contain h-full w-full p-4"
                       loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
+                        e.currentTarget.src = getPlaceholderImage();
                       }} 
                     />
                     {product.images && product.images.length > 1 && (
