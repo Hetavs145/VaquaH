@@ -5,6 +5,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy, 
@@ -177,47 +178,7 @@ class AdminService {
     }
   }
 
-  // Debug method to troubleshoot admin access issues
-  async debugAdminAccess() {
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        return {
-          authenticated: false,
-          uid: null,
-          error: 'No authenticated user'
-        };
-      }
 
-      // Get user document
-      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-      if (!userDoc.exists()) {
-        return {
-          authenticated: true,
-          uid: currentUser.uid,
-          userDocExists: false,
-          error: 'User document does not exist'
-        };
-      }
-
-      const userData = userDoc.data();
-      return {
-        authenticated: true,
-        uid: currentUser.uid,
-        userDocExists: true,
-        userRole: userData.role,
-        isAdmin: userData.role === 'admin',
-        userData: userData
-      };
-    } catch (error) {
-      return {
-        authenticated: auth.currentUser !== null,
-        uid: auth.currentUser?.uid,
-        error: error.message,
-        errorCode: error.code
-      };
-    }
-  }
 
   // Get all orders (admin only)
   async getAllOrders(statusFilter = null, userIdFilter = null) {
@@ -409,10 +370,7 @@ class AdminService {
   async deleteProduct(productId) {
     try {
       const productRef = doc(db, 'products', productId);
-      await updateDoc(productRef, {
-        deleted: true,
-        deletedAt: serverTimestamp()
-      });
+      await deleteDoc(productRef);
       return { id: productId };
     } catch (error) {
       console.error('Error deleting product:', error);
