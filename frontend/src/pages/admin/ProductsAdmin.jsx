@@ -78,8 +78,8 @@ const ProductsAdmin = () => {
       // Handle image upload for new products
       let finalFormData = { ...formData };
       if (!editingProduct && imageFile) {
-        const base64Image = await imageUploadService.uploadImage(imageFile);
-        finalFormData.imageUrl = base64Image;
+        const imageUrl = await imageUploadService.uploadImage(imageFile);
+        finalFormData.imageUrl = imageUrl;
       }
       
       if (editingProduct) {
