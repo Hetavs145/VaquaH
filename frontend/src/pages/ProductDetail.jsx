@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Star, ShoppingCart, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
@@ -29,15 +28,12 @@ const ProductDetail = () => {
         const doc = await productService.getProductById(id);
         if (doc) {
           // Normalize fields that UI expects
-          const images = Array.isArray(doc.images) ? doc.images : [];
-          const primaryImage = doc.imageUrl || images[0] || doc.image || '/images/product1.jpg';
           const normalized = {
             _id: doc.id,
             name: doc.name,
             price: doc.price,
             rating: doc.rating || 4.5,
-            image: primaryImage,
-            images: images.length ? images : [primaryImage],
+            image: doc.image || '/images/product1.jpg',
             description: doc.description || '',
             features: doc.features || [],
             specifications: doc.specifications || {},
@@ -116,32 +112,12 @@ const ProductDetail = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <Carousel className="relative">
-                <CarouselContent>
-                  {product.images.map((src, idx) => (
-                    <CarouselItem key={idx}>
-                      <div className="w-full flex items-center justify-center">
-                        <img
-                          src={src}
-                          alt={`${product.name} ${idx+1}`}
-                          className="w-full h-auto object-contain rounded-lg"
-                          style={{ maxHeight: '400px' }}
-                          onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious aria-label="Previous" />
-                <CarouselNext aria-label="Next" />
-              </Carousel>
-              {product.images.length > 1 && (
-                <div className="mt-3 flex gap-2 overflow-x-auto">
-                  {product.images.slice(0,10).map((thumb, i) => (
-                    <img key={i} src={thumb} alt={`thumb ${i+1}`} className="w-16 h-16 object-cover rounded border" />
-                  ))}
-                </div>
-              )}
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxHeight: '400px' }}
+              />
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
