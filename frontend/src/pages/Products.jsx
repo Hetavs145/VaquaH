@@ -8,21 +8,41 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { productService } from '@/services/firestoreService';
+import { imageUploadService } from '@/services/imageUploadService';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
-const normalize = (doc) => ({
-  id: doc.id,
-  _id: doc.id,
-  name: doc.name,
-  price: doc.price,
-  rating: doc.rating || 4.5,
-  image: doc.image || '/images/product1.jpg',
-  description: doc.description || '',
-  features: doc.features || [],
-  brand: doc.brand || 'VaquaH',
-  energyRating: doc.energyRating || '5',
-  tonnage: doc.tonnage || 1.5,
-  inverter: doc.inverter ?? true,
-});
+const normalize = (doc) => {
+  // Get images from multiple sources
+  const images = doc.images || [];
+  const mainImage = doc.image || doc.imageUrl || '';
+  
+  let finalImages = [];
+  if (images.length > 0) {
+    finalImages = images;
+  } else if (mainImage) {
+    finalImages = [mainImage];
+  } else {
+    // Try to get from local storage
+    const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
+    finalImages = localImages.length > 0 ? localImages : [getPlaceholderImage()];
+  }
+
+  return {
+    id: doc.id,
+    _id: doc.id,
+    name: doc.name,
+    price: doc.price,
+    rating: doc.rating || 4.5,
+    image: finalImages[0] || getPlaceholderImage(),
+    images: finalImages,
+    description: doc.description || '',
+    features: doc.features || [],
+    brand: doc.brand || 'VaquaH',
+    energyRating: doc.energyRating || '5',
+    tonnage: doc.tonnage || 1.5,
+    inverter: doc.inverter ?? true,
+  };
+};
 
 const Products = () => {
   const navigate = useNavigate();
@@ -113,16 +133,21 @@ const Products = () => {
                   className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white"
                   onClick={() => handleProductClick(product._id)}
                 >
-                  <div className="aspect-w-16 aspect-h-9 bg-gray-100 h-40 sm:h-48 flex items-center justify-center">
+                  <div className="aspect-w-16 aspect-h-9 bg-gray-100 h-40 sm:h-48 flex items-center justify-center relative">
                     <img 
-                      src={product.image || "/placeholder.svg"} 
+                      src={product.image} 
                       alt={product.name} 
                       className="object-contain h-full w-full p-4"
                       loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
+                        e.currentTarget.src = getPlaceholderImage();
                       }} 
                     />
+                    {product.images && product.images.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        +{product.images.length - 1} more
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 sm:p-4">
                     <h3 className="font-bold text-base sm:text-lg mb-1 line-clamp-2">{product.name}</h3>
