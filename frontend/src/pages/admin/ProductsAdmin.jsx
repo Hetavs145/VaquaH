@@ -81,8 +81,8 @@ const ProductsAdmin = () => {
       // Handle image upload for new products
       let finalFormData = { ...formData };
       if (!editingProduct && imageFile) {
-        const imageUrl = await imageUploadService.uploadImage(imageFile);
-        finalFormData.imageUrl = imageUrl;
+        const base64Image = await imageUploadService.uploadImage(imageFile);
+        finalFormData.imageUrl = base64Image;
       }
       // Handle multi images (max 10)
       if (imageFiles.length > 0) {
