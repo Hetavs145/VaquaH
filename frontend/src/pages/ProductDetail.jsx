@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, ShoppingCart, Check, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { productService } from '@/services/firestoreService';
+import { imageUploadService } from '@/services/imageUploadService';
+import ImageCarousel from '@/components/ImageCarousel';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -20,6 +22,7 @@ const ProductDetail = () => {
   const [expandedFeatures, setExpandedFeatures] = useState(false);
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,13 +30,29 @@ const ProductDetail = () => {
       try {
         const doc = await productService.getProductById(id);
         if (doc) {
+          // Get images from multiple sources
+          const images = doc.images || [];
+          const mainImage = doc.image || doc.imageUrl || '';
+          
+          let finalImages = [];
+          if (images.length > 0) {
+            finalImages = images;
+          } else if (mainImage) {
+            finalImages = [mainImage];
+          } else {
+            // Try to get from local storage
+            const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
+            finalImages = localImages.length > 0 ? localImages : ['/placeholder.svg'];
+          }
+
           // Normalize fields that UI expects
           const normalized = {
             _id: doc.id,
             name: doc.name,
             price: doc.price,
             rating: doc.rating || 4.5,
-            image: doc.image || '/images/product1.jpg',
+            image: finalImages[0] || '/placeholder.svg',
+            images: finalImages,
             description: doc.description || '',
             features: doc.features || [],
             specifications: doc.specifications || {},
@@ -111,13 +130,34 @@ const ProductDetail = () => {
       <main className="flex-grow py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-6 rounded-lg shadow-sm relative">
               <img 
                 src={product.image} 
                 alt={product.name} 
-                className="w-full h-auto object-contain rounded-lg"
+                className="w-full h-auto object-contain rounded-lg cursor-pointer"
                 style={{ maxHeight: '400px' }}
+                onClick={() => setShowImageModal(true)}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.svg';
+                }}
               />
+              
+              {/* Image indicator */}
+              {product.images && product.images.length > 1 && (
+                <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-sm px-2 py-1 rounded">
+                  {product.images.length} images
+                </div>
+              )}
+              
+              {/* View all images button */}
+              {product.images && product.images.length > 1 && (
+                <button
+                  onClick={() => setShowImageModal(true)}
+                  className="absolute bottom-4 right-4 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
+                >
+                  <ImageIcon size={20} />
+                </button>
+              )}
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -230,6 +270,17 @@ const ProductDetail = () => {
           </div>
         </div>
       </main>
+      
+      {/* Image Modal */}
+      {showImageModal && (
+        <ImageCarousel
+          images={product.images}
+          productName={product.name}
+          onClose={() => setShowImageModal(false)}
+          isModal={true}
+        />
+      )}
+      
       <Footer />
     </div>
   );

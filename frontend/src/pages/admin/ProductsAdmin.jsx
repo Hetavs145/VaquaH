@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Package, Plus, Edit, Trash2, AlertTriangle, Upload, X } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, AlertTriangle, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { imageUploadService } from '@/services/imageUploadService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ImageCarousel from '@/components/ImageCarousel';
 
 const ProductsAdmin = () => {
   const { user } = useAuth();
@@ -26,12 +27,15 @@ const ProductsAdmin = () => {
     price: '',
     category: '',
     imageUrl: '',
+    images: [], // Array of image URLs for carousel
     featured: false,
     inStock: true
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedProductImages, setSelectedProductImages] = useState([]);
 
   useEffect(() => {
     checkAdminAccess();
@@ -75,11 +79,14 @@ const ProductsAdmin = () => {
     try {
       setUploading(true);
       
-      // Handle image upload for new products
+      // Handle image uploads for new products
       let finalFormData = { ...formData };
-      if (!editingProduct && imageFile) {
-        const base64Image = await imageUploadService.uploadImage(imageFile);
-        finalFormData.imageUrl = base64Image;
+      
+      if (!editingProduct && imageFiles.length > 0) {
+        // Upload multiple images
+        const base64Images = await imageUploadService.uploadMultipleImages(imageFiles);
+        finalFormData.images = base64Images;
+        finalFormData.imageUrl = base64Images[0] || ''; // Keep first image as main image for backward compatibility
       }
       
       if (editingProduct) {
@@ -89,7 +96,15 @@ const ProductsAdmin = () => {
           description: 'Product updated successfully'
         });
       } else {
-        await adminService.createProduct(finalFormData);
+        const newProduct = await adminService.createProduct(finalFormData);
+        
+        // Save images to local storage for development
+        if (imageFiles.length > 0) {
+          for (let i = 0; i < imageFiles.length; i++) {
+            await imageUploadService.saveImageToLocal(imageFiles[i], newProduct.id, i);
+          }
+        }
+        
         toast({
           title: 'Success',
           description: 'Product created successfully'
@@ -120,11 +135,12 @@ const ProductsAdmin = () => {
       price: product.price || '',
       category: product.category || '',
       imageUrl: product.imageUrl || '',
+      images: product.images || [product.imageUrl].filter(Boolean) || [],
       featured: product.featured || false,
       inStock: product.inStock !== false
     });
-    setImagePreview(product.imageUrl || '');
-    setImageFile(null);
+    setImagePreviews(product.images || [product.imageUrl].filter(Boolean) || []);
+    setImageFiles([]);
     setIsDialogOpen(true);
   };
 
@@ -133,6 +149,8 @@ const ProductsAdmin = () => {
     
     try {
       await adminService.deleteProduct(productId);
+      // Remove images from local storage
+      imageUploadService.removeImageFromLocal(productId, 0);
       toast({
         title: 'Success',
         description: 'Product deleted successfully'
@@ -149,20 +167,36 @@ const ProductsAdmin = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
+    const files = Array.from(e.target.files);
+    
+    if (files.length + imagePreviews.length > 10) {
+      toast({
+        title: 'Error',
+        description: 'Maximum 10 images allowed per product',
+        variant: 'destructive'
+      });
+      return;
     }
+    
+    setImageFiles(prev => [...prev, ...files]);
+    
+    // Create previews for new files
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreviews(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview('');
-    setFormData({ ...formData, imageUrl: '' });
+  const removeImage = (index) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const resetForm = () => {
@@ -172,11 +206,34 @@ const ProductsAdmin = () => {
       price: '',
       category: '',
       imageUrl: '',
+      images: [],
       featured: false,
       inStock: true
     });
-    setImageFile(null);
-    setImagePreview('');
+    setImageFiles([]);
+    setImagePreviews([]);
+  };
+
+  const getProductImages = (product) => {
+    // Try to get images from multiple sources
+    const images = product.images || [];
+    const mainImage = product.imageUrl || product.image;
+    
+    if (images.length > 0) {
+      return images;
+    } else if (mainImage) {
+      return [mainImage];
+    } else {
+      // Try to get from local storage
+      const localImages = imageUploadService.getAllImagesFromLocal(product.id);
+      return localImages.length > 0 ? localImages : ['/placeholder.svg'];
+    }
+  };
+
+  const handleViewImages = (product) => {
+    const images = getProductImages(product);
+    setSelectedProductImages(images);
+    setShowImageModal(true);
   };
 
   if (!adminStatus?.isAdmin) {
@@ -220,7 +277,7 @@ const ProductsAdmin = () => {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -262,7 +319,7 @@ const ProductsAdmin = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Product Image</label>
+                  <label className="block text-sm font-medium mb-2">Product Images (Up to 10)</label>
                   {!editingProduct ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-center w-full">
@@ -272,51 +329,71 @@ const ProductsAdmin = () => {
                             <p className="mb-2 text-sm text-gray-500">
                               <span className="font-semibold">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-gray-500">JPEG, PNG, WebP (MAX. 5MB)</p>
+                            <p className="text-xs text-gray-500">JPEG, PNG, WebP (MAX. 5MB each)</p>
+                            <p className="text-xs text-gray-500">Current: {imagePreviews.length}/10 images</p>
                           </div>
                           <input
                             type="file"
                             className="hidden"
                             accept="image/*"
+                            multiple
                             onChange={handleImageChange}
-                            required={!editingProduct}
+                            disabled={imagePreviews.length >= 10}
                           />
                         </label>
                       </div>
-                      {imagePreview && (
-                        <div className="relative inline-block">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="w-20 h-20 object-cover rounded-lg border"
-                          />
-                          <button
-                            type="button"
-                            onClick={removeImage}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                      
+                      {/* Image Previews */}
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                              {index === 0 && (
+                                <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                                  Main
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {imagePreview && (
-                        <div className="relative inline-block">
-                          <img
-                            src={imagePreview}
-                            alt="Current image"
-                            className="w-20 h-20 object-cover rounded-lg border"
-                          />
+                      <p className="text-sm text-gray-600">
+                        Current images: {imagePreviews.length} | 
+                        <span className="text-blue-600"> First image is the main product image</span>
+                      </p>
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={preview}
+                                alt={`Current image ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              {index === 0 && (
+                                <div className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                                  Main
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       )}
-                      <Input
-                        value={formData.imageUrl}
-                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                        placeholder="https://example.com/image.jpg"
-                        required
-                      />
                     </div>
                   )}
                 </div>
@@ -356,6 +433,7 @@ const ProductsAdmin = () => {
                 
                 <div className="text-sm text-gray-600">
                   <p>* All fields are required</p>
+                  <p>* First uploaded image will be the main product image</p>
                 </div>
                 
                 {/* Responsive button layout */}
@@ -386,59 +464,89 @@ const ProductsAdmin = () => {
               <div className="text-center py-8 text-gray-500">No products found</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {products.map((product) => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{product.name}</h3>
-                        <div className="flex flex-wrap gap-1">
-                          {product.featured && (
-                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">Featured</Badge>
-                          )}
-                          {!product.inStock && (
-                            <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
-                          )}
+                {products.map((product) => {
+                  const productImages = getProductImages(product);
+                  const mainImage = productImages[0] || '/placeholder.svg';
+                  
+                  return (
+                    <Card key={product.id} className="overflow-hidden">
+                      <div className="aspect-square overflow-hidden relative">
+                        <img
+                          src={mainImage}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
+                        />
+                        {productImages.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            +{productImages.length - 1} more
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleViewImages(product)}
+                          className="absolute top-2 left-2 bg-black bg-opacity-50 text-white p-1 rounded hover:bg-opacity-75"
+                        >
+                          <ImageIcon size={16} />
+                        </button>
+                      </div>
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{product.name}</h3>
+                          <div className="flex flex-wrap gap-1">
+                            {product.featured && (
+                              <Badge className="bg-yellow-100 text-yellow-800 text-xs">Featured</Badge>
+                            )}
+                            {!product.inStock && (
+                              <Badge className="bg-red-100 text-red-800 text-xs">Out of Stock</Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-2">{product.category}</p>
-                      <p className="text-lg font-bold text-green-600 mb-3">₹{Number(product.price || 0).toFixed(2)}</p>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                      
-                      {/* Responsive button layout */}
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(product)}
-                          className="flex-1"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-700 flex-1 sm:flex-none"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <p className="text-gray-600 text-sm mb-2">{product.category}</p>
+                        <p className="text-lg font-bold text-green-600 mb-3">₹{Number(product.price || 0).toFixed(2)}</p>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                        
+                        {/* Responsive button layout */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(product)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(product.id)}
+                            className="text-red-600 hover:text-red-700 flex-1 sm:flex-none"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+      
+      {/* Image Modal */}
+      {showImageModal && (
+        <ImageCarousel
+          images={selectedProductImages}
+          productName="Product Images"
+          onClose={() => setShowImageModal(false)}
+          isModal={true}
+        />
+      )}
+      
       <Footer />
     </div>
   );
