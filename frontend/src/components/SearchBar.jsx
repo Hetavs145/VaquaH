@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 
 // Sample product data for search suggestions
 const productData = [
-  'VaquaH Inverter Split AC 1.5 Ton',
   'VaquaH Inverter Split AC 2 Ton',
   'VaquaH Window AC 1 Ton',
   'VaquaH Portable AC 1 Ton',
