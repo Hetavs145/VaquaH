@@ -26,11 +26,14 @@ const ProductsAdmin = () => {
     price: '',
     category: '',
     imageUrl: '',
+    images: [],
     featured: false,
     inStock: true
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [imageFiles, setImageFiles] = useState([]); // multiple selection
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -81,6 +84,15 @@ const ProductsAdmin = () => {
         const base64Image = await imageUploadService.uploadImage(imageFile);
         finalFormData.imageUrl = base64Image;
       }
+      // Handle multi images (max 10)
+      if (imageFiles.length > 0) {
+        const uploaded = [];
+        for (const f of imageFiles.slice(0, 10)) {
+          const base64 = await imageUploadService.uploadImage(f);
+          uploaded.push(base64);
+        }
+        finalFormData.images = uploaded;
+      }
       
       if (editingProduct) {
         await adminService.updateProduct(editingProduct.id, finalFormData);
@@ -120,11 +132,14 @@ const ProductsAdmin = () => {
       price: product.price || '',
       category: product.category || '',
       imageUrl: product.imageUrl || '',
+      images: Array.isArray(product.images) ? product.images : [],
       featured: product.featured || false,
       inStock: product.inStock !== false
     });
     setImagePreview(product.imageUrl || '');
+    setImagePreviews(Array.isArray(product.images) ? product.images : []);
     setImageFile(null);
+    setImageFiles([]);
     setIsDialogOpen(true);
   };
 
@@ -163,6 +178,25 @@ const ProductsAdmin = () => {
     setImageFile(null);
     setImagePreview('');
     setFormData({ ...formData, imageUrl: '' });
+  };
+
+  const handleMultiImageChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const limited = files.slice(0, 10);
+    setImageFiles(limited);
+    // previews
+    Promise.all(limited.map((file) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    })) ).then((results) => setImagePreviews(results));
+  };
+
+  const removeMultiImageAt = (index) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
   };
 
   const resetForm = () => {
@@ -299,6 +333,20 @@ const ProductsAdmin = () => {
                           </button>
                         </div>
                       )}
+                      <div>
+                        <label className="block text-sm font-medium mt-4 mb-2">Additional Images (up to 10)</label>
+                        <input type="file" accept="image/*" multiple onChange={handleMultiImageChange} />
+                        {imagePreviews?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {imagePreviews.map((src, idx) => (
+                              <div key={idx} className="relative">
+                                <img src={src} alt={`Preview ${idx+1}`} className="w-16 h-16 object-cover rounded border" />
+                                <button type="button" onClick={() => removeMultiImageAt(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5">×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -317,6 +365,22 @@ const ProductsAdmin = () => {
                         placeholder="https://example.com/image.jpg"
                         required
                       />
+                      <div>
+                        <label className="block text-sm font-medium">Additional Images (comma separated URLs)</label>
+                        <Textarea
+                          value={(formData.images || []).join('\n')}
+                          onChange={(e) => setFormData({ ...formData, images: e.target.value.split(/\n|,\s*/).filter(Boolean).slice(0,10) })}
+                          rows={3}
+                          placeholder="Paste up to 10 image URLs, one per line"
+                        />
+                        {imagePreviews?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {imagePreviews.map((src, idx) => (
+                              <img key={idx} src={src} alt={`Img ${idx+1}`} className="w-16 h-16 object-cover rounded border" />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

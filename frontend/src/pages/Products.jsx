@@ -9,20 +9,24 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { productService } from '@/services/firestoreService';
 
-const normalize = (doc) => ({
-  id: doc.id,
-  _id: doc.id,
-  name: doc.name,
-  price: doc.price,
-  rating: doc.rating || 4.5,
-  image: doc.image || '/images/product1.jpg',
-  description: doc.description || '',
-  features: doc.features || [],
-  brand: doc.brand || 'VaquaH',
-  energyRating: doc.energyRating || '5',
-  tonnage: doc.tonnage || 1.5,
-  inverter: doc.inverter ?? true,
-});
+const normalize = (doc) => {
+  const images = Array.isArray(doc?.images) ? doc.images : [];
+  const primaryImage = doc?.imageUrl || images[0] || doc?.image || '/images/product1.jpg';
+  return ({
+    id: doc.id,
+    _id: doc.id,
+    name: doc.name,
+    price: doc.price,
+    rating: doc.rating || 4.5,
+    image: primaryImage,
+    description: doc.description || '',
+    features: doc.features || [],
+    brand: doc.brand || 'VaquaH',
+    energyRating: doc.energyRating || '5',
+    tonnage: doc.tonnage || 1.5,
+    inverter: doc.inverter ?? true,
+  });
+};
 
 const Products = () => {
   const navigate = useNavigate();
