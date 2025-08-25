@@ -1,192 +1,210 @@
-// Image Deployment Utility for Hostinger
-// This utility helps prepare and deploy images to hostinger's public_html folder
+// Image deployment utility for hostinger production environment
+import { imageUploadService } from '@/services/imageUploadService';
 
 class ImageDeploymentUtility {
-  constructor() {
-    this.localStorageKey = 'productImages';
-    this.productionPath = '/images/products/';
-  }
-
-  // Get all stored images from localStorage
-  getAllStoredImages() {
-    try {
-      const stored = localStorage.getItem(this.localStorageKey);
-      return stored ? JSON.parse(stored) : {};
-    } catch (error) {
-      console.error('Error reading stored images:', error);
-      return {};
-    }
-  }
-
-  // Generate deployment manifest for hostinger
-  generateDeploymentManifest() {
-    const storedImages = this.getAllStoredImages();
-    const manifest = {
-      timestamp: new Date().toISOString(),
-      totalProducts: Object.keys(storedImages).length,
-      images: []
+  // Generate deployment instructions for hostinger
+  generateDeploymentInstructions() {
+    return {
+      steps: [
+        "1. Download the ZIP file containing all product images",
+        "2. Extract the ZIP file to your local computer",
+        "3. Connect to your hostinger hosting via FTP or File Manager",
+        "4. Navigate to the public_html folder",
+        "5. Create a folder named 'images' if it doesn't exist",
+        "6. Inside 'images', create a folder named 'products'",
+        "7. Upload all extracted image files to the 'public_html/images/products/' folder",
+        "8. Ensure all images have .jpg extension",
+        "9. Verify images are accessible via your domain (e.g., yourdomain.com/images/products/filename.jpg)",
+        "10. Update your product database with the new image URLs"
+      ],
+      folderStructure: {
+        public_html: {
+          images: {
+            products: "All product images go here"
+          }
+        }
+      },
+      urlFormat: "https://yourdomain.com/images/products/filename.jpg"
     };
+  }
 
-    Object.entries(storedImages).forEach(([productId, images]) => {
-      images.forEach((imageData, index) => {
-        if (imageData && imageData.base64) {
-          manifest.images.push({
+  // Prepare all images for deployment
+  async prepareAllImagesForDeployment() {
+    try {
+      const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');
+      const deploymentData = [];
+      
+      for (const [productId, productImages] of Object.entries(existingImages)) {
+        if (productImages && productImages.length > 0) {
+          const productDeploymentData = await imageUploadService.prepareImagesForDeployment(productId);
+          deploymentData.push({
             productId,
-            imageIndex: index,
-            filename: imageData.filename,
-            localPath: `${this.productionPath}${imageData.filename}`,
-            timestamp: imageData.timestamp,
-            size: this.getBase64Size(imageData.base64)
+            images: productDeploymentData
           });
         }
-      });
-    });
-
-    return manifest;
-  }
-
-  // Calculate base64 string size in bytes
-  getBase64Size(base64String) {
-    const padding = base64String.endsWith('==') ? 2 : base64String.endsWith('=') ? 1 : 0;
-    return Math.floor((base64String.length * 3) / 4) - padding;
-  }
-
-  // Convert base64 to blob for file download
-  base64ToBlob(base64String, mimeType = 'image/jpeg') {
-    const byteCharacters = atob(base64String.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: mimeType });
-  }
-
-  // Download all images as zip (for manual upload to hostinger)
-  async downloadImagesAsZip() {
-    try {
-      // Dynamic import for JSZip
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
+      }
       
-      const storedImages = this.getAllStoredImages();
-      let fileCount = 0;
+      return deploymentData;
+    } catch (error) {
+      console.error('Error preparing images for deployment:', error);
+      throw new Error('Failed to prepare images for deployment');
+    }
+  }
 
-      Object.entries(storedImages).forEach(([productId, images]) => {
-        images.forEach((imageData, index) => {
-          if (imageData && imageData.base64) {
-            const blob = this.base64ToBlob(imageData.base64);
-            const filename = imageData.filename;
-            zip.file(filename, blob);
-            fileCount++;
+  // Generate deployment manifest
+  async generateDeploymentManifest() {
+    try {
+      const deploymentData = await this.prepareAllImagesForDeployment();
+      const manifest = {
+        totalProducts: deploymentData.length,
+        totalImages: deploymentData.reduce((sum, product) => sum + product.images.length, 0),
+        products: deploymentData.map(product => ({
+          productId: product.productId,
+          imageCount: product.images.length,
+          images: product.images.map(img => ({
+            filename: img.filename,
+            productionPath: img.productionPath,
+            size: this.estimateImageSize(img.base64)
+          }))
+        })),
+        generatedAt: new Date().toISOString()
+      };
+      
+      return manifest;
+    } catch (error) {
+      console.error('Error generating deployment manifest:', error);
+      throw new Error('Failed to generate deployment manifest');
+    }
+  }
+
+  // Estimate image size from base64
+  estimateImageSize(base64String) {
+    if (!base64String) return 0;
+    // Remove data URL prefix and calculate size
+    const base64Data = base64String.split(',')[1];
+    return Math.ceil((base64Data.length * 3) / 4); // Approximate size in bytes
+  }
+
+  // Validate deployment readiness
+  async validateDeploymentReadiness() {
+    try {
+      const deploymentData = await this.prepareAllImagesForDeployment();
+      const issues = [];
+      
+      deploymentData.forEach(product => {
+        product.images.forEach(img => {
+          if (!img.filename) {
+            issues.push(`Missing filename for product ${product.productId}`);
+          }
+          if (!img.base64) {
+            issues.push(`Missing image data for ${img.filename}`);
+          }
+          if (!img.productionPath) {
+            issues.push(`Missing production path for ${img.filename}`);
           }
         });
       });
-
-      if (fileCount === 0) {
-        throw new Error('No images found to download');
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
       
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `product-images-${new Date().toISOString().split('T')[0]}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      return { success: true, fileCount };
+      return {
+        ready: issues.length === 0,
+        issues,
+        totalProducts: deploymentData.length,
+        totalImages: deploymentData.reduce((sum, product) => sum + product.images.length, 0)
+      };
     } catch (error) {
-      console.error('Error creating zip file:', error);
-      throw error;
+      console.error('Error validating deployment readiness:', error);
+      return {
+        ready: false,
+        issues: [error.message],
+        totalProducts: 0,
+        totalImages: 0
+      };
     }
   }
 
-  // Generate deployment instructions
-  generateDeploymentInstructions() {
-    const manifest = this.generateDeploymentManifest();
+  // Generate deployment script for automation
+  generateDeploymentScript() {
+    return `
+# Hostinger Image Deployment Script
+# This script should be run on your hostinger server
+
+#!/bin/bash
+
+# Configuration
+IMAGES_DIR="/home/username/public_html/images/products"
+BACKUP_DIR="/home/username/backups/images/$(date +%Y%m%d_%H%M%S)"
+
+# Create backup
+echo "Creating backup..."
+mkdir -p $BACKUP_DIR
+cp -r $IMAGES_DIR/* $BACKUP_DIR/ 2>/dev/null || true
+
+# Create directories if they don't exist
+echo "Creating directories..."
+mkdir -p $IMAGES_DIR
+
+# Upload images (this would be done via FTP or file upload)
+echo "Uploading images..."
+# Add your upload commands here
+
+# Set permissions
+echo "Setting permissions..."
+chmod 644 $IMAGES_DIR/*.jpg
+chmod 755 $IMAGES_DIR
+
+echo "Deployment completed!"
+echo "Backup saved to: $BACKUP_DIR"
+    `;
+  }
+
+  // Generate .htaccess rules for image optimization
+  generateHtaccessRules() {
+    return `
+# Image optimization rules for hostinger
+<IfModule mod_expires.c>
+    ExpiresActive On
     
-    return {
-      instructions: [
-        '1. Download the images zip file using the download function',
-        '2. Extract the zip file on your local machine',
-        '3. Upload all images to your hostinger public_html/images/products/ folder',
-        '4. Ensure the folder structure matches: public_html/images/products/',
-        '5. Verify all images are accessible via your domain',
-        '6. Update your production environment to use the new image paths'
-      ],
-      manifest,
-      totalImages: manifest.images.length,
-      estimatedSize: this.calculateTotalSize(manifest.images)
-    };
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Cache control for images
+    <FilesMatch "\.(jpg|jpeg|png|webp|gif)$">
+        Header set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+</IfModule>
+
+# Enable compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE image/jpeg
+    AddOutputFilterByType DEFLATE image/jpg
+    AddOutputFilterByType DEFLATE image/png
+    AddOutputFilterByType DEFLATE image/webp
+</IfModule>
+    `;
   }
 
-  // Calculate total size of all images
-  calculateTotalSize(images) {
-    const totalBytes = images.reduce((sum, img) => sum + (img.size || 0), 0);
-    const mb = totalBytes / (1024 * 1024);
-    return `${mb.toFixed(2)} MB`;
-  }
-
-  // Clean up old images (remove from localStorage)
-  cleanupOldImages(olderThanDays = 30) {
-    const cutoffDate = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
-    const storedImages = this.getAllStoredImages();
-    let cleanedCount = 0;
-
-    Object.entries(storedImages).forEach(([productId, images]) => {
-      const filteredImages = images.filter(imageData => {
-        if (!imageData || !imageData.timestamp) return false;
-        return imageData.timestamp > cutoffDate;
-      });
-      
-      if (filteredImages.length !== images.length) {
-        storedImages[productId] = filteredImages;
-        cleanedCount += images.length - filteredImages.length;
-      }
-    });
-
-    localStorage.setItem(this.localStorageKey, JSON.stringify(storedImages));
-    return cleanedCount;
-  }
-
-  // Export images data for backup
-  exportImagesData() {
-    const storedImages = this.getAllStoredImages();
-    const dataStr = JSON.stringify(storedImages, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
-    const url = URL.createObjectURL(dataBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `product-images-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // Import images data from backup
-  importImagesData(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          localStorage.setItem(this.localStorageKey, JSON.stringify(data));
-          resolve({ success: true, importedProducts: Object.keys(data).length });
-        } catch (error) {
-          reject(new Error('Invalid backup file format'));
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
+  // Generate deployment checklist
+  generateDeploymentChecklist() {
+    return [
+      "Download all product images as ZIP file",
+      "Extract ZIP file to local computer",
+      "Connect to hostinger hosting (FTP/File Manager)",
+      "Navigate to public_html folder",
+      "Create images/products folder structure",
+      "Upload all .jpg files to public_html/images/products/",
+      "Verify file permissions (644 for images, 755 for folders)",
+      "Test image accessibility via browser",
+      "Update product database with new image URLs",
+      "Clear any CDN cache if applicable",
+      "Test product pages to ensure images load correctly",
+      "Monitor website performance after deployment"
+    ];
   }
 }
 

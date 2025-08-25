@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { productService } from '@/services/firestoreService';
+import { imageUploadService } from '@/services/imageUploadService';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState([]);
@@ -13,19 +14,21 @@ const FeaturedProducts = () => {
     (async () => {
       try {
         const items = await productService.getFeaturedProducts();
-        const filtered = (items || []).filter(p => {
-          const name = (p?.name || '').toLowerCase();
-          const brand = (p?.brand || '').toLowerCase();
-          const image = (p?.image || p?.imageUrl || '').toLowerCase();
-          return !(
-            name.includes('vaquah inverter split ac 1.5 ton') ||
-            name.includes('inverter split ac 1.5 ton') ||
-            brand.includes('mitshubishi') ||
-            image.includes('511929539_hkrzpkg') ||
-            image.includes('as2.ftcdn.net/jpg/05/11/92/95')
-          );
+        
+        // Process products to ensure proper image handling
+        const processedItems = (items || []).map(product => {
+          // Get images from localStorage if available
+          const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
+          
+          return {
+            ...product,
+            // Use local images if available, otherwise use the stored image
+            image: localImages[0] || product.image || product.imageUrl,
+            images: localImages.length > 0 ? localImages : (product.images || [product.image || product.imageUrl]).filter(Boolean)
+          };
         });
-        setFeatured(filtered.slice(0, 6));
+        
+        setFeatured(processedItems.slice(0, 6));
       } catch (e) {
         console.error('Failed to load featured products', e);
       } finally {
