@@ -74,7 +74,7 @@ const SearchBar = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-vaquah-blue"
+            className="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-vaquah-blue text-sm sm:text-base placeholder:text-xs sm:placeholder:text-sm"
             onFocus={() => query.trim() && setShowSuggestions(true)}
           />
           <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-vaquah-blue">

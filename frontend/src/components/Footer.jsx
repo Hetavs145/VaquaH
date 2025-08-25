@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Youtube, Phone, Mail, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -15,10 +15,9 @@ const Footer = () => {
               Premium Split AC solutions for Indian homes and businesses. Quality products, expert installation, and reliable services.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Twitter size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Instagram size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Youtube size={20} /></a>
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Facebook size={20} /></a>
+              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Twitter size={20} /></a>
+              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Instagram size={20} /></a>
             </div>
           </div>
 
@@ -29,7 +28,7 @@ const Footer = () => {
               <li><Link to="/products" className="hover:text-white transition-colors">Products</Link></li>
               <li><Link to="/services" className="hover:text-white transition-colors">Services</Link></li>
               <li><Link to="/appointments/new" className="hover:text-white transition-colors">Book Appointment</Link></li>
-              <li><Link to="/about-us" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
@@ -53,7 +52,7 @@ const Footer = () => {
               <div className="flex items-start">
                 <Phone size={18} className="mr-2 mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-sm">+91 98765 43210</p>
+                  <p className="text-sm">+91 9999999999</p>
                   <p className="text-xs text-gray-400">Mon-Sat: 10AM - 7PM IST</p>
                 </div>
               </div>
@@ -63,7 +62,7 @@ const Footer = () => {
               </div>
               <div className="flex items-start">
                 <MapPin size={18} className="mr-2 mt-1 flex-shrink-0" />
-                <span className="text-sm">123 Cooling Street, Mumbai, Maharashtra - 400001, India</span>
+                <span className="text-sm">Vadodara Gujarat -390023, India</span>
               </div>
             </div>
           </div>

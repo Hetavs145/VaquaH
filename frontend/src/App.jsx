@@ -23,6 +23,13 @@ import AppointmentNew from "./pages/AppointmentNew.jsx";
 import Services from "./pages/Services.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import Terms from "./pages/Terms.jsx";
+import About from "./pages/About.jsx";
+import Contact from "./pages/Contact.jsx";
+import FAQs from "./pages/FAQs.jsx";
+import Warranty from "./pages/Warranty.jsx";
+import Shipping from "./pages/Shipping.jsx";
+import Returns from "./pages/Returns.jsx";
+import TrackOrder from "./pages/TrackOrder.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 
@@ -119,6 +126,13 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
           <Route path="/services" element={<Services />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/faqs" element={<FAQs />} />
+          <Route path="/warranty" element={<Warranty />} />
+          <Route path="/shipping" element={<Shipping />} />
+          <Route path="/returns" element={<Returns />} />
+          <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
