@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Package, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, AlertTriangle, Upload, X } from 'lucide-react';
 import { adminService } from '@/services/adminService';
+import { imageUploadService } from '@/services/imageUploadService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -28,6 +29,9 @@ const ProductsAdmin = () => {
     featured: false,
     inStock: true
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -69,14 +73,23 @@ const ProductsAdmin = () => {
     e.preventDefault();
     
     try {
+      setUploading(true);
+      
+      // Handle image upload for new products
+      let finalFormData = { ...formData };
+      if (!editingProduct && imageFile) {
+        const base64Image = await imageUploadService.uploadImage(imageFile);
+        finalFormData.imageUrl = base64Image;
+      }
+      
       if (editingProduct) {
-        await adminService.updateProduct(editingProduct.id, formData);
+        await adminService.updateProduct(editingProduct.id, finalFormData);
         toast({
           title: 'Success',
           description: 'Product updated successfully'
         });
       } else {
-        await adminService.createProduct(formData);
+        await adminService.createProduct(finalFormData);
         toast({
           title: 'Success',
           description: 'Product created successfully'
@@ -91,9 +104,11 @@ const ProductsAdmin = () => {
       console.error('Failed to save product:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save product',
+        description: error.message || 'Failed to save product',
         variant: 'destructive'
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -108,6 +123,8 @@ const ProductsAdmin = () => {
       featured: product.featured || false,
       inStock: product.inStock !== false
     });
+    setImagePreview(product.imageUrl || '');
+    setImageFile(null);
     setIsDialogOpen(true);
   };
 
@@ -131,6 +148,23 @@ const ProductsAdmin = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    setFormData({ ...formData, imageUrl: '' });
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -141,6 +175,8 @@ const ProductsAdmin = () => {
       featured: false,
       inStock: true
     });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   if (!adminStatus?.isAdmin) {
@@ -226,13 +262,63 @@ const ProductsAdmin = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Image URL</label>
-                  <Input
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-2">Product Image</label>
+                  {!editingProduct ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">JPEG, PNG, WebP (MAX. 5MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            required={!editingProduct}
+                          />
+                        </label>
+                      </div>
+                      {imagePreview && (
+                        <div className="relative inline-block">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-20 h-20 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {imagePreview && (
+                        <div className="relative inline-block">
+                          <img
+                            src={imagePreview}
+                            alt="Current image"
+                            className="w-20 h-20 object-cover rounded-lg border"
+                          />
+                        </div>
+                      )}
+                      <Input
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                        placeholder="https://example.com/image.jpg"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -268,13 +354,17 @@ const ProductsAdmin = () => {
                   </label>
                 </div>
                 
+                <div className="text-sm text-gray-600">
+                  <p>* All fields are required</p>
+                </div>
+                
                 {/* Responsive button layout */}
                 <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button type="submit" className="w-full sm:w-auto">
-                    {editingProduct ? 'Update Product' : 'Create Product'}
+                  <Button type="submit" className="w-full sm:w-auto" disabled={uploading}>
+                    {uploading ? 'Saving...' : (editingProduct ? 'Update Product' : 'Create Product')}
                   </Button>
                 </div>
               </form>
