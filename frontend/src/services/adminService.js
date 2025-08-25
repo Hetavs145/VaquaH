@@ -5,6 +5,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy, 
@@ -409,10 +410,8 @@ class AdminService {
   async deleteProduct(productId) {
     try {
       const productRef = doc(db, 'products', productId);
-      await updateDoc(productRef, {
-        deleted: true,
-        deletedAt: serverTimestamp()
-      });
+      // Completely remove the product from the database
+      await deleteDoc(productRef);
       return { id: productId };
     } catch (error) {
       console.error('Error deleting product:', error);
