@@ -2,11 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Sample product data for search suggestions
-const productData = [
-  'VaquaH Inverter Split AC 2 Ton',
-  'VaquaH Window AC 1 Ton',
-  'VaquaH Portable AC 1 Ton',
+// Service suggestions for search
+const serviceData = [
   'AC Installation',
   'AC Service',
   'AC Repair',
@@ -29,7 +26,7 @@ const SearchBar = ({
   useEffect(() => {
     // Filter suggestions based on query
     if (query.trim()) {
-      const filteredSuggestions = productData.filter(item => 
+      const filteredSuggestions = serviceData.filter(item => 
         item.toLowerCase().includes(query.toLowerCase())
       );
       setSuggestions(filteredSuggestions);
