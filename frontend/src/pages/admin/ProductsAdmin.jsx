@@ -30,8 +30,12 @@ const ProductsAdmin = () => {
     imageUrl: '',
     images: [], // Array of image URLs for carousel
     featured: false,
-    inStock: true
+    inStock: true,
+    features: [],
+    specifications: {}
   });
+  const [featuresInput, setFeaturesInput] = useState('');
+  const [specsInput, setSpecsInput] = useState('');
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -74,6 +78,20 @@ const ProductsAdmin = () => {
     }
   };
 
+  const parseFeatures = (text) => text.split('\n').map(s => s.trim()).filter(Boolean);
+  const parseSpecs = (text) => {
+    const result = {};
+    text.split('\n').forEach(line => {
+      const idx = line.indexOf(':');
+      if (idx > -1) {
+        const key = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+        if (key) result[key] = value;
+      }
+    });
+    return result;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -82,6 +100,8 @@ const ProductsAdmin = () => {
       
       // Handle image uploads for new products
       let finalFormData = { ...formData };
+      finalFormData.features = parseFeatures(featuresInput);
+      finalFormData.specifications = parseSpecs(specsInput);
       
       if (!editingProduct && imageFiles.length > 0) {
         // Upload multiple images
@@ -160,8 +180,12 @@ const ProductsAdmin = () => {
       imageUrl: productImages[0] || product.imageUrl || '',
       images: productImages,
       featured: product.featured || false,
-      inStock: product.inStock !== false
+      inStock: product.inStock !== false,
+      features: product.features || [],
+      specifications: product.specifications || {}
     });
+    setFeaturesInput((product.features || []).join('\n'));
+    setSpecsInput(Object.entries(product.specifications || {}).map(([k,v]) => `${k}: ${v}`).join('\n'));
     setImagePreviews(productImages);
     setImageFiles([]);
     setIsDialogOpen(true);
@@ -231,8 +255,12 @@ const ProductsAdmin = () => {
       imageUrl: '',
       images: [],
       featured: false,
-      inStock: true
+      inStock: true,
+      features: [],
+      specifications: {}
     });
+    setFeaturesInput('');
+    setSpecsInput('');
     setImageFiles([]);
     setImagePreviews([]);
   };
@@ -338,6 +366,28 @@ const ProductsAdmin = () => {
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                     placeholder="e.g., Split AC, Window AC"
                     required
+                  />
+                </div>
+                
+                {/* Features */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Features (one per line)</label>
+                  <Textarea
+                    value={featuresInput}
+                    onChange={(e) => setFeaturesInput(e.target.value)}
+                    placeholder="e.g. Energy efficient\nCopper condenser\n5-year warranty"
+                    rows={3}
+                  />
+                </div>
+                
+                {/* Specifications */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Specifications (key: value per line)</label>
+                  <Textarea
+                    value={specsInput}
+                    onChange={(e) => setSpecsInput(e.target.value)}
+                    placeholder="Capacity: 1.5 Ton\nEnergy Rating: 5 Star\nRefrigerant: R32"
+                    rows={4}
                   />
                 </div>
                 

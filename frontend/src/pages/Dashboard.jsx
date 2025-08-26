@@ -273,11 +273,12 @@ const Dashboard = () => {
                     {/* Render orders list */}
                     <div className="rounded-md border">
                       {/* Header - hidden on small screens */}
-                      <div className="hidden md:grid grid-cols-4 p-3 sm:p-4 font-medium text-sm">
+                      <div className="hidden md:grid grid-cols-5 p-3 sm:p-4 font-medium text-sm">
                         <div>Order ID</div>
                         <div>Date</div>
                         <div>Total</div>
                         <div>Status</div>
+                        <div>Shipping ID</div>
                       </div>
                       <div className="divide-y">
                         {orders.map((order) => {
@@ -293,7 +294,7 @@ const Dashboard = () => {
                             status === 'shipping' || status === 'out_for_delivery' ? 'bg-purple-100 text-purple-800' :
                             'bg-yellow-100 text-yellow-800';
                           return (
-                            <div key={orderId} className="grid grid-cols-1 md:grid-cols-4 p-3 sm:p-4 gap-3 md:gap-0">
+                            <div key={orderId} className="grid grid-cols-1 md:grid-cols-5 p-3 sm:p-4 gap-3 md:gap-0">
                               {/* Order ID */}
                               <div className="min-w-0">
                                 <div className="md:hidden text-xs text-gray-500 mb-1">Order ID</div>
@@ -320,6 +321,11 @@ const Dashboard = () => {
                                     </div>
                                   )}
                                 </div>
+                              </div>
+                              {/* Shipping ID */}
+                              <div>
+                                <div className="md:hidden text-xs text-gray-500 mb-1">Shipping ID</div>
+                                <div className="text-sm">{order.shippingId || '-'}</div>
                               </div>
                             </div>
                           );

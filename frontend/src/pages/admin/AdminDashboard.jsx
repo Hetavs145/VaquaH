@@ -30,7 +30,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
   useEffect(() => {
     checkAdminAccess();
   }, [user]);
@@ -55,8 +54,6 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
-
-
 
   const loadAdminStats = async () => {
     try {
@@ -84,7 +81,7 @@ const AdminDashboard = () => {
       
       setStats({
         totalOrders: orders.length,
-        pendingOrders: orders.filter(o => ['created', 'payment_pending', 'cod_pending'].includes(o.status)).length,
+        pendingOrders: orders.filter(o => o.status !== 'success').length,
         totalProducts: products.length,
         totalUsers: users.length
       });
@@ -199,8 +196,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
-
-
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">

@@ -41,7 +41,7 @@ const Footer = () => {
               <li><Link to="/warranty" className="hover:text-white transition-colors">Warranty Policy</Link></li>
               <li><Link to="/shipping" className="hover:text-white transition-colors">Shipping Info</Link></li>
               <li><Link to="/returns" className="hover:text-white transition-colors">Returns & Refunds</Link></li>
-              <li><Link to="/track-order" className="hover:text-white transition-colors">Track Your Order</Link></li>
+              <li><Link to="/dashboard" className="hover:text-white transition-colors">Track Your Order</Link></li>
             </ul>
           </div>
 

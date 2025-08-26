@@ -42,6 +42,7 @@ const OrdersAdmin = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [adminStatus, setAdminStatus] = useState(null);
   const [countdowns, setCountdowns] = useState({});
+  const [shippingInput, setShippingInput] = useState({});
 
   useEffect(() => {
     checkAdminAccess();
@@ -94,6 +95,9 @@ const OrdersAdmin = () => {
         userIdFilter || null
       );
       setOrders(orders);
+      const shipping = {};
+      orders.forEach(o => { shipping[o.id] = o.shippingId || ''; });
+      setShippingInput(shipping);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       toast({
@@ -126,6 +130,16 @@ const OrdersAdmin = () => {
       });
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const updateShipping = async (orderId) => {
+    try {
+      const value = shippingInput[orderId] || '';
+      await adminService.updateOrderShipping(orderId, value.trim());
+      toast({ title: 'Shipping updated', description: 'AWB/Shipping ID saved.' });
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to save shipping ID', variant: 'destructive' });
     }
   };
 
@@ -250,6 +264,21 @@ const OrdersAdmin = () => {
                           )}
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Shipping ID / AWB */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:items-center">
+                      <div className="sm:col-span-2">
+                        <Input
+                          placeholder="Shipping ID / AWB"
+                          value={shippingInput[order.id] || ''}
+                          onChange={(e) => setShippingInput(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        />
+                        {order.shippingId && (
+                          <div className="text-xs text-gray-500 mt-1">Current: {order.shippingId}</div>
+                        )}
+                      </div>
+                      <Button variant="outline" onClick={() => updateShipping(order.id)}>Save Shipping</Button>
                     </div>
                     
                     <div className="flex gap-2">
