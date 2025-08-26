@@ -19,6 +19,8 @@ const ProductCard = ({
   energyRating,
   tonnage,
   inverter,
+  specifications,
+  features,
 }) => {
   const navigate = useNavigate();
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
@@ -31,6 +33,19 @@ const ProductCard = ({
   // Handle image source - prioritize image prop, then imageUrl, then placeholder
   const imageSource = image || imageUrl || getPlaceholderImage();
   
+  // Build specification badges from specifications object when available
+  const specEntries = specifications && typeof specifications === 'object'
+    ? Object.entries(specifications).filter(([_, v]) => v != null && String(v).trim() !== '')
+    : [];
+  const specBadges = specEntries.length > 0
+    ? specEntries.map(([_, v]) => String(v)).slice(0, 3)
+    : [
+        tonnage ? `${tonnage} Ton` : null,
+        energyRating ? `${energyRating} Star` : null,
+        inverter != null ? (inverter ? 'Inverter' : 'Non-Inverter') : null,
+      ].filter(Boolean);
+  const safeRating = typeof rating === 'number' ? rating : 4.2;
+
   const handleAddToCart = () => {
     // Create a product object from the props with all required properties
     const product = {
@@ -39,10 +54,12 @@ const ProductCard = ({
       brand,
       price,
       image: imageSource,
-      rating,
+      rating: safeRating,
       energyRating,
       tonnage,
       inverter,
+      specifications,
+      features,
       // Adding missing required properties
       description: `${brand} ${name} ${tonnage} Ton ${inverter ? 'Inverter' : 'Non-Inverter'} AC`,
       category: 'Air Conditioner',
@@ -102,29 +119,21 @@ const ProductCard = ({
       </Link>
       
       {/* Specifications */}
-      <div className="grid grid-cols-2 gap-1 mb-3">
-        <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-            {tonnage} Ton
-          </span>
+      {specBadges.length > 0 && (
+        <div className="grid grid-cols-2 gap-1 mb-3">
+          {specBadges.map((text, i) => (
+            <div key={i} className="flex items-center text-xs text-gray-600">
+              <span className="bg-gray-100 px-2 py-1 rounded text-xs">{text}</span>
+            </div>
+          ))}
         </div>
-        <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-            {energyRating} Star
-          </span>
-        </div>
-        <div className="flex items-center text-xs text-gray-600">
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-            {inverter ? 'Inverter' : 'Non-Inverter'}
-          </span>
-        </div>
-      </div>
+      )}
       
       {/* Rating */}
       <div className="flex items-center mb-2">
         <div className="bg-green-50 text-green-700 py-0.5 px-2 rounded flex items-center">
           <Star size={12} sm:size={14} fill="currentColor" className="mr-1" />
-          <span className="text-xs sm:text-sm font-medium">{rating}</span>
+          <span className="text-xs sm:text-sm font-medium">{safeRating}</span>
         </div>
       </div>
       

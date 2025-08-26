@@ -41,6 +41,9 @@ const ProductsAdmin = () => {
   const [uploading, setUploading] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedProductImages, setSelectedProductImages] = useState([]);
+  // Line-by-line inputs state
+  const [featuresList, setFeaturesList] = useState([]);
+  const [specsList, setSpecsList] = useState([]); // [{ key: '', value: '' }]
 
   useEffect(() => {
     checkAdminAccess();
@@ -99,8 +102,20 @@ const ProductsAdmin = () => {
       setUploading(true);
       
       let finalFormData = { ...formData };
-      finalFormData.features = parseFeatures(featuresInput);
-      finalFormData.specifications = parseSpecs(specsInput);
+      // Build from line-by-line UI; fall back to textareas if present
+      const builtFeatures = featuresList.length > 0
+        ? featuresList.map(f => (f || '').trim()).filter(Boolean)
+        : parseFeatures(featuresInput);
+      const builtSpecs = specsList.length > 0
+        ? specsList.reduce((acc, pair) => {
+            const key = (pair.key || '').trim();
+            const value = (pair.value || '').trim();
+            if (key && value) acc[key] = value;
+            return acc;
+          }, {})
+        : parseSpecs(specsInput);
+      finalFormData.features = builtFeatures;
+      finalFormData.specifications = builtSpecs;
       
       if (!editingProduct && imageFiles.length > 0) {
         // Upload to Firebase Storage and store HTTPS URLs
@@ -154,6 +169,9 @@ const ProductsAdmin = () => {
     });
     setFeaturesInput((product.features || []).join('\n'));
     setSpecsInput(Object.entries(product.specifications || {}).map(([k,v]) => `${k}: ${v}`).join('\n'));
+    // Populate line-by-line lists
+    setFeaturesList([...(product.features || [])]);
+    setSpecsList(Object.entries(product.specifications || {}).map(([key, value]) => ({ key, value })));
     setImagePreviews(productImages);
     setImageFiles([]);
     setIsDialogOpen(true);
@@ -231,6 +249,8 @@ const ProductsAdmin = () => {
     setSpecsInput('');
     setImageFiles([]);
     setImagePreviews([]);
+    setFeaturesList([]);
+    setSpecsList([]);
   };
 
   const getProductImages = (product) => {
@@ -331,24 +351,67 @@ const ProductsAdmin = () => {
                 
                 {/* Features */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Features (one per line)</label>
-                  <Textarea
-                    value={featuresInput}
-                    onChange={(e) => setFeaturesInput(e.target.value)}
-                    placeholder="e.g. Energy efficient\nCopper condenser\n5-year warranty"
-                    rows={3}
-                  />
+                  <label className="block text-sm font-medium mb-2">Features</label>
+                  <div className="space-y-2">
+                    {featuresList.length === 0 && (
+                      <div className="text-xs text-gray-500">Add features one by one.</div>
+                    )}
+                    {featuresList.map((feature, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={feature}
+                          onChange={(e) => {
+                            const next = [...featuresList];
+                            next[index] = e.target.value;
+                            setFeaturesList(next);
+                          }}
+                          placeholder={`Feature ${index + 1}`}
+                        />
+                        <Button type="button" variant="outline" onClick={() => setFeaturesList(featuresList.filter((_, i) => i !== index))}>Remove</Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" onClick={() => setFeaturesList([...featuresList, ''])} className="w-fit">
+                      <Plus className="w-4 h-4 mr-1" /> Add Feature
+                    </Button>
+                  </div>
                 </div>
                 
                 {/* Specifications */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Specifications (key: value per line)</label>
-                  <Textarea
-                    value={specsInput}
-                    onChange={(e) => setSpecsInput(e.target.value)}
-                    placeholder="Capacity: 1.5 Ton\nEnergy Rating: 5 Star\nRefrigerant: R32"
-                    rows={4}
-                  />
+                  <label className="block text-sm font-medium mb-2">Specifications</label>
+                  <div className="space-y-2">
+                    {specsList.length === 0 && (
+                      <div className="text-xs text-gray-500">Add specification key and value line by line.</div>
+                    )}
+                    {specsList.map((pair, index) => (
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+                        <Input
+                          value={pair.key}
+                          onChange={(e) => {
+                            const next = [...specsList];
+                            next[index] = { ...next[index], key: e.target.value };
+                            setSpecsList(next);
+                          }}
+                          placeholder="Key (e.g., Capacity)"
+                          className="sm:col-span-2"
+                        />
+                        <Input
+                          value={pair.value}
+                          onChange={(e) => {
+                            const next = [...specsList];
+                            next[index] = { ...next[index], value: e.target.value };
+                            setSpecsList(next);
+                          }}
+                          placeholder="Value (e.g., 1.5 Ton)"
+                          className="sm:col-span-2"
+                        />
+                        <Button type="button" variant="outline" onClick={() => setSpecsList(specsList.filter((_, i) => i !== index))}>Remove</Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" onClick={() => setSpecsList([...specsList, { key: '', value: '' }])} className="w-fit">
+                      <Plus className="w-4 h-4 mr-1" /> Add Specification
+                    </Button>
+                  </div>
                 </div>
                 
                 <div>
