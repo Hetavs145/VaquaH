@@ -30,6 +30,7 @@ import Warranty from "./pages/Warranty.jsx";
 import Shipping from "./pages/Shipping.jsx";
 import Returns from "./pages/Returns.jsx";
 import TrackOrder from "./pages/TrackOrder.jsx";
+import CarouselDemo from "./pages/CarouselDemo.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 
@@ -77,6 +78,7 @@ const AppContent = () => {
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/carousel-demo" element={<CarouselDemo />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/checkout" element={
             <ProtectedRoute>
