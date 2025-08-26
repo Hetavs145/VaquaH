@@ -98,55 +98,31 @@ const ProductsAdmin = () => {
     try {
       setUploading(true);
       
-      // Handle image uploads for new products
       let finalFormData = { ...formData };
       finalFormData.features = parseFeatures(featuresInput);
       finalFormData.specifications = parseSpecs(specsInput);
       
       if (!editingProduct && imageFiles.length > 0) {
-        // Upload multiple images
-        const base64Images = await imageUploadService.uploadMultipleImages(imageFiles);
-        finalFormData.images = base64Images;
-        finalFormData.imageUrl = base64Images[0] || ''; // Keep first image as main image for backward compatibility
+        // Upload to Firebase Storage and store HTTPS URLs
+        const storageUrls = await imageUploadService.uploadMultipleImages(imageFiles, finalFormData.name || 'product');
+        finalFormData.images = storageUrls;
+        finalFormData.imageUrl = storageUrls[0] || '';
       }
       
       if (editingProduct) {
-        // For editing, handle both existing and new images
         let updatedImages = [...(finalFormData.images || [])];
-        
-        // Add new images if any
         if (imageFiles.length > 0) {
-          const newBase64Images = await imageUploadService.uploadMultipleImages(imageFiles);
-          updatedImages = [...updatedImages, ...newBase64Images];
-          
-          // Save new images to local storage
-          for (let i = 0; i < imageFiles.length; i++) {
-            await imageUploadService.saveImageToLocal(imageFiles[i], editingProduct.id, updatedImages.length - imageFiles.length + i);
-          }
+          const newUrls = await imageUploadService.uploadMultipleImages(imageFiles, editingProduct.id);
+          updatedImages = [...updatedImages, ...newUrls];
         }
-        
         finalFormData.images = updatedImages;
         finalFormData.imageUrl = updatedImages[0] || '';
         
         await adminService.updateProduct(editingProduct.id, finalFormData);
-        toast({
-          title: 'Success',
-          description: 'Product updated successfully'
-        });
+        toast({ title: 'Success', description: 'Product updated successfully' });
       } else {
         const newProduct = await adminService.createProduct(finalFormData);
-        
-        // Save images to local storage for development
-        if (imageFiles.length > 0) {
-          for (let i = 0; i < imageFiles.length; i++) {
-            await imageUploadService.saveImageToLocal(imageFiles[i], newProduct.id, i);
-          }
-        }
-        
-        toast({
-          title: 'Success',
-          description: 'Product created successfully'
-        });
+        toast({ title: 'Success', description: 'Product created successfully' });
       }
       
       setIsDialogOpen(false);
@@ -155,11 +131,7 @@ const ProductsAdmin = () => {
       await loadProducts();
     } catch (error) {
       console.error('Failed to save product:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save product',
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: error.message || 'Failed to save product', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -167,11 +139,7 @@ const ProductsAdmin = () => {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    
-    // Get images from localStorage if available
-    const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
-    const productImages = localImages.length > 0 ? localImages : (product.images || [product.imageUrl]).filter(Boolean);
-    
+    const productImages = (product.images || [product.imageUrl]).filter(Boolean);
     setFormData({
       name: product.name || '',
       description: product.description || '',
@@ -266,19 +234,11 @@ const ProductsAdmin = () => {
   };
 
   const getProductImages = (product) => {
-    // Try to get images from multiple sources
     const images = product.images || [];
     const mainImage = product.imageUrl || product.image;
-    
-    if (images.length > 0) {
-      return images;
-    } else if (mainImage) {
-      return [mainImage];
-      } else {
-    // Try to get from local storage
-    const localImages = imageUploadService.getAllImagesFromLocal(product.id);
-    return localImages.length > 0 ? localImages : [getPlaceholderImage()];
-  }
+    if (images.length > 0) return images;
+    if (mainImage) return [mainImage];
+    return [getPlaceholderImage()];
   };
 
   const handleViewImages = (product) => {

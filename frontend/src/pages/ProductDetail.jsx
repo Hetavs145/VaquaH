@@ -30,20 +30,11 @@ const ProductDetail = () => {
       try {
         const doc = await productService.getProductById(id);
         if (doc) {
-          // Get images from multiple sources
-          const images = doc.images || [];
+          // Get images from Firestore/Storage
+          const images = (doc.images || []).filter(Boolean);
           const mainImage = doc.image || doc.imageUrl || '';
           
-          let finalImages = [];
-          if (images.length > 0) {
-            finalImages = images;
-          } else if (mainImage) {
-            finalImages = [mainImage];
-            } else {
-    // Try to get from local storage
-    const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
-    finalImages = localImages.length > 0 ? localImages : [getPlaceholderImage()];
-  }
+          const finalImages = images.length > 0 ? images : (mainImage ? [mainImage] : [getPlaceholderImage()]);
 
           // Normalize fields that UI expects
           const normalized = {
