@@ -87,7 +87,7 @@ const ProductCard = ({
           <img 
             src={imageSource} 
             alt={name} 
-            className="h-40 sm:h-48 object-contain hover:scale-105 transition-transform"
+            className="h-56 sm:h-64 object-contain hover:scale-105 transition-transform"
             onError={handleImageError}
           />
         </div>
@@ -98,7 +98,7 @@ const ProductCard = ({
       
       {/* Product name */}
       <Link to={`/products/${productId}`} className="hover:text-vaquah-blue">
-        <h3 className="font-medium text-gray-800 mb-2 h-10 sm:h-12 overflow-hidden text-sm sm:text-base">{name}</h3>
+        <h3 className="font-medium text-gray-800 mb-2 h-12 sm:h-14 overflow-hidden text-sm sm:text-base">{name}</h3>
       </Link>
       
       {/* Specifications */}

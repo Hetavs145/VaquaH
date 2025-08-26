@@ -103,6 +103,12 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && isAdminCombined();
     }
 
+    // Offers/Discounts collection
+    match /offers/{docId} {
+      allow read: if true; // public can read available offers
+      allow write: if isSignedIn() && isAdminCombined(); // only admins can manage
+    }
+
     // Services collection (read-only for everyone)
     match /services/{docId} {
       allow read: if true;
