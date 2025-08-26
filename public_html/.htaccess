@@ -7,5 +7,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(?!api/).* index.html [L]
 
 # API routes -> PHP files
+RewriteRule ^api/create-order/?$ api/create-order.php [QSA,L]
+RewriteRule ^api/verify/?$ api/verify.php [QSA,L]
 RewriteRule ^api/payments/razorpay/create-order$ api/create-order.php [L]
 RewriteRule ^api/payments/razorpay/verify$ api/verify.php [L]
