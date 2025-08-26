@@ -18,33 +18,14 @@ const FeaturedProducts = () => {
         
         // Process products to ensure proper image handling
         const processedItems = (items || []).map(product => {
-          // Get images from multiple sources with priority order
-          let productImages = [];
-          
-          // First, try to get from localStorage
+          // Get images from localStorage if available
           const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
-          
-          // Then, try to get from product.images array
-          const dbImages = product.images || [];
-          
-          // Finally, try to get from product.imageUrl or product.image
-          const mainImage = product.imageUrl || product.image;
-          
-          // Combine all sources, prioritizing localStorage, then database, then main image
-          if (localImages.length > 0) {
-            productImages = localImages;
-          } else if (dbImages.length > 0) {
-            productImages = dbImages;
-          } else if (mainImage) {
-            productImages = [mainImage];
-          }
           
           return {
             ...product,
-            // Use the first image as the main image
-            image: productImages[0] || '',
-            // Store all images in the images array
-            images: productImages
+            // Use local images if available, otherwise use the stored image
+            image: localImages[0] || product.image || product.imageUrl,
+            images: localImages.length > 0 ? localImages : (product.images || [product.image || product.imageUrl]).filter(Boolean)
           };
         });
         
@@ -79,7 +60,8 @@ const FeaturedProducts = () => {
         ) : (
           <ProductCardsCarousel
             products={featured}
-            showHeader={false}
+            title="Featured Products"
+            subtitle="Handpicked air conditioners for your ultimate comfort"
             autoPlay={true}
             autoPlayInterval={6000}
             showArrows={true}

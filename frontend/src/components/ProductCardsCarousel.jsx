@@ -12,8 +12,7 @@ const ProductCardsCarousel = ({
   showArrows = true,
   showDots = true,
   className = "",
-  maxVisibleCards = 4,
-  showHeader = false // New prop to control header visibility
+  maxVisibleCards = 4
 }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true, 
@@ -99,17 +98,15 @@ const ProductCardsCarousel = ({
   return (
     <section className={`py-8 sm:py-12 ${className}`}>
       <div className="container mx-auto px-4">
-        {/* Header - Only show if showHeader is true */}
-        {showHeader && (
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-              {title}
-            </h2>
-            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
-              {subtitle}
-            </p>
-          </div>
-        )}
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+            {title}
+          </h2>
+          <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+            {subtitle}
+          </p>
+        </div>
 
         {/* Carousel Container */}
         <div className="relative">
