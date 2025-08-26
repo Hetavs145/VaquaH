@@ -126,7 +126,7 @@ const ProductCarousel = ({ title = "Our Products", subtitle, maxProducts = 8, pr
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden group"
               >
                 {/* Product Image */}
-                <div className="aspect-w-16 aspect-h-9 bg-gray-50 h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-w-16 aspect-h-9 bg-gray-50 h-56 sm:h-64 flex items-center justify-center relative overflow-hidden">
                   <img
                     src={product.image}
                     alt={product.name}
