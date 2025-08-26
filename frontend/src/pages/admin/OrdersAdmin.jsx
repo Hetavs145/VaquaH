@@ -267,7 +267,7 @@ const OrdersAdmin = () => {
                     </div>
                     
                     {/* Shipping ID / AWB */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:items-center items-stretch">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:items-center">
                       <div className="sm:col-span-2">
                         <Input
                           placeholder="Shipping ID / AWB"
@@ -278,7 +278,7 @@ const OrdersAdmin = () => {
                           <div className="text-xs text-gray-500 mt-1">Current: {order.shippingId}</div>
                         )}
                       </div>
-                      <Button variant="outline" className="w-full sm:w-auto justify-center" onClick={() => updateShipping(order.id)}>Save Shipping</Button>
+                      <Button variant="outline" onClick={() => updateShipping(order.id)}>Save Shipping</Button>
                     </div>
                     
                     <div className="flex gap-2">

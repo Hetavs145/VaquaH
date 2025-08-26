@@ -6,9 +6,6 @@ import morgan from 'morgan';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminOrdersRouter from './routes/adminOrders.js';
 import adminUsersRouter from './routes/adminUsers.js';
-import path from 'path';
-import fs from 'fs';
-import uploadsRouter from './routes/uploads.js';
 
 dotenv.config();
 
@@ -41,15 +38,6 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Ensure uploads directory exists and serve it statically
-const uploadsDir = path.resolve(process.cwd(), 'uploads');
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-} catch {}
-app.use('/uploads', express.static(uploadsDir));
-
 // Health
 app.get('/', (_req, res) => res.json({ message: 'VaquaH API is running', status: 'success', timestamp: new Date().toISOString() }));
 app.get('/health', (_req, res) => res.json({ status: 'healthy', timestamp: new Date().toISOString(), uptime: process.uptime() }));
@@ -59,7 +47,6 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/admin/users', adminUsersRouter);
-app.use('/api/uploads', uploadsRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

@@ -160,7 +160,7 @@ const UsersAdmin = () => {
 											</div>
 											<div>
 												<div className="md:hidden text-xs text-gray-500">Email</div>
-												<div className="text-sm break-all md:break-words md:truncate md:max-w-[260px]">{u.email}</div>
+												<div className="text-sm">{u.email}</div>
 											</div>
 											<div>
 												<div className="md:hidden text-xs text-gray-500">Role</div>
