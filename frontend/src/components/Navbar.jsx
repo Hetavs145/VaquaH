@@ -48,7 +48,7 @@ const Navbar = () => {
             <NavLink
               to="/"
               className={({ isActive }) =>
-                `${isActive ? 'text-vaquah-blue border border-vaquah-blue bg-white' : 'text-white bg-vaquah-blue'} hover:text-white flex items-center px-4 py-2 rounded-md font-medium`
+                `${isActive ? 'text-vaquah-blue border border-vaquah-blue bg-white' : 'text-white bg-vaquah-blue'} hover:text-black flex items-center px-4 py-2 rounded-md font-medium`
               }
               end
             >
