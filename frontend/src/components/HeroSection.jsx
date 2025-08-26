@@ -99,7 +99,7 @@ const HeroSection = () => {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="border-white text-white hover:bg-white hover:text-vaquah-blue w-full sm:w-auto"
+                        className="border-white text-teal-500 hover:bg-white hover:text-vaquah-blue w-full sm:w-auto"
                         onClick={() => navigate('/appointments/new')}
                       >
                         Book a Service
