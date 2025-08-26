@@ -278,12 +278,12 @@ const OrdersAdmin = () => {
                           <div className="text-xs text-gray-500 mt-1">Current: {order.shippingId}</div>
                         )}
                       </div>
-                      <Button variant="outline" onClick={() => updateShipping(order.id)}>Save Shipping</Button>
+                      <Button variant="outline" onClick={() => updateShipping(order.id)} className="w-full sm:w-auto self-start">Save Shipping</Button>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Select onValueChange={(value) => updateStatus(order.id, value)}>
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-full sm:w-48">
                           <SelectValue placeholder="Update status..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -297,7 +297,7 @@ const OrdersAdmin = () => {
                       <Button 
                         disabled={updatingId === order.id}
                         onClick={() => updateStatus(order.id, 'success')}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                       >
                         {updatingId === order.id ? 'Updating...' : 'Mark Ready'}
                       </Button>

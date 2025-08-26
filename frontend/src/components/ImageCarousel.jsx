@@ -60,46 +60,70 @@ const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
       )}
       
       <div className={`relative ${isModal ? 'max-w-4xl max-h-[90vh]' : 'w-full'}`}>
-        {/* Main Image */}
-        <div className="relative overflow-hidden rounded-lg">
-          <img
-            src={images[currentIndex]}
-            alt={`${productName} - Image ${currentIndex + 1}`}
-            className={`w-full h-auto object-contain ${isModal ? 'max-h-[80vh]' : 'max-h-96'}`}
-            onError={(e) => {
-              e.target.src = getPlaceholderImage();
-            }}
-          />
-          
-          {/* Navigation Arrows */}
+        {/* Main Image with responsive thumbnail rail */}
+        <div className="relative grid grid-cols-1 md:grid-cols-[96px_1fr] gap-3">
+          {/* Desktop vertical thumbnails */}
           {images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </>
+            <div className="hidden md:flex md:flex-col md:gap-2 md:overflow-y-auto md:max-h-[24rem] pr-1">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToImage(index)}
+                  className={`w-24 h-24 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === currentIndex 
+                      ? 'border-blue-500 ring-2 ring-blue-200' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = getPlaceholderImage(); }}
+                  />
+                </button>
+              ))}
+            </div>
           )}
+
+          {/* Main image */}
+          <div className="relative overflow-hidden rounded-lg">
+            <img
+              src={images[currentIndex]}
+              alt={`${productName} - Image ${currentIndex + 1}`}
+              className={`w-full h-auto object-contain ${isModal ? 'max-h-[80vh]' : 'max-h-96'}`}
+              onError={(e) => {
+                e.target.src = getPlaceholderImage();
+              }}
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+
+            {images.length > 1 && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-xs">
+                {currentIndex + 1} / {images.length}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Image Counter */}
+        {/* Mobile/Tablet horizontal thumbnails */}
         {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-            {currentIndex + 1} / {images.length}
-          </div>
-        )}
-
-        {/* Thumbnail Navigation */}
-        {images.length > 1 && (
-          <div className="mt-4 flex justify-center gap-2 overflow-x-auto pb-2">
+          <div className="mt-4 md:hidden flex justify-center gap-2 overflow-x-auto pb-2">
             {images.map((image, index) => (
               <button
                 key={index}
@@ -114,9 +138,7 @@ const ImageCarousel = ({ images, productName, onClose, isModal = false }) => {
                   src={image}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
-                                  onError={(e) => {
-                  e.target.src = getPlaceholderImage();
-                }}
+                  onError={(e) => { e.target.src = getPlaceholderImage(); }}
                 />
               </button>
             ))}

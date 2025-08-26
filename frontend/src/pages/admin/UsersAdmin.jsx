@@ -158,9 +158,9 @@ const UsersAdmin = () => {
 												<div className="md:hidden text-xs text-gray-500">Name</div>
 												<div className="font-medium">{u.name || u.email?.split('@')[0]}</div>
 											</div>
-											<div>
+											<div className="min-w-0">
 												<div className="md:hidden text-xs text-gray-500">Email</div>
-												<div className="text-sm">{u.email}</div>
+												<div className="text-sm truncate md:truncate max-w-full md:max-w-[240px]" title={u.email}>{u.email}</div>
 											</div>
 											<div>
 												<div className="md:hidden text-xs text-gray-500">Role</div>
@@ -172,7 +172,7 @@ const UsersAdmin = () => {
 												<div className="md:hidden text-xs text-gray-500">Created</div>
 												<div className="text-sm">{u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString() : '-'}</div>
 											</div>
-											<div className="flex md:justify-end items-center gap-2">
+											<div className="flex md:justify-end items-center gap-2 flex-wrap">
 												{isUserAdmin ? (
 													<Button variant="outline" size="sm" disabled={actionLoadingId === u.id} onClick={() => handleRemove(u)}>
 														{actionLoadingId === u.id ? 'Working...' : (<><UserMinus className="w-4 h-4 mr-1" /> Remove Admin</>)}
