@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { getPlaceholderImage } from '@/utils/placeholderImage';
 
 const ProductCard = ({
   id,
@@ -13,6 +14,7 @@ const ProductCard = ({
   price,
   originalPrice,
   image,
+  imageUrl,
   rating,
   energyRating,
   tonnage,
@@ -26,6 +28,9 @@ const ProductCard = ({
   // Use _id if available, otherwise fall back to id
   const productId = _id || id;
   
+  // Handle image source - prioritize image prop, then imageUrl, then placeholder
+  const imageSource = image || imageUrl || getPlaceholderImage();
+  
   const handleAddToCart = () => {
     // Create a product object from the props with all required properties
     const product = {
@@ -33,7 +38,7 @@ const ProductCard = ({
       name,
       brand,
       price,
-      image,
+      image: imageSource,
       rating,
       energyRating,
       tonnage,
@@ -53,6 +58,10 @@ const ProductCard = ({
       title: "Added to cart",
       description: `${name} has been added to your cart.`,
     });
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = getPlaceholderImage();
   };
   
   return (
@@ -76,9 +85,10 @@ const ProductCard = ({
       <Link to={`/products/${productId}`}>
         <div className="mb-3 p-2 sm:p-4 flex justify-center">
           <img 
-            src={image} 
+            src={imageSource} 
             alt={name} 
             className="h-40 sm:h-48 object-contain hover:scale-105 transition-transform"
+            onError={handleImageError}
           />
         </div>
       </Link>

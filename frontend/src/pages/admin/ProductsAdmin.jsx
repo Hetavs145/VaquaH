@@ -91,6 +91,23 @@ const ProductsAdmin = () => {
       }
       
       if (editingProduct) {
+        // For editing, handle both existing and new images
+        let updatedImages = [...(finalFormData.images || [])];
+        
+        // Add new images if any
+        if (imageFiles.length > 0) {
+          const newBase64Images = await imageUploadService.uploadMultipleImages(imageFiles);
+          updatedImages = [...updatedImages, ...newBase64Images];
+          
+          // Save new images to local storage
+          for (let i = 0; i < imageFiles.length; i++) {
+            await imageUploadService.saveImageToLocal(imageFiles[i], editingProduct.id, updatedImages.length - imageFiles.length + i);
+          }
+        }
+        
+        finalFormData.images = updatedImages;
+        finalFormData.imageUrl = updatedImages[0] || '';
+        
         await adminService.updateProduct(editingProduct.id, finalFormData);
         toast({
           title: 'Success',
@@ -130,17 +147,22 @@ const ProductsAdmin = () => {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    
+    // Get images from localStorage if available
+    const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
+    const productImages = localImages.length > 0 ? localImages : (product.images || [product.imageUrl]).filter(Boolean);
+    
     setFormData({
       name: product.name || '',
       description: product.description || '',
       price: product.price || '',
       category: product.category || '',
-      imageUrl: product.imageUrl || '',
-      images: product.images || [product.imageUrl].filter(Boolean) || [],
+      imageUrl: productImages[0] || product.imageUrl || '',
+      images: productImages,
       featured: product.featured || false,
       inStock: product.inStock !== false
     });
-    setImagePreviews(product.images || [product.imageUrl].filter(Boolean) || []);
+    setImagePreviews(productImages);
     setImageFiles([]);
     setIsDialogOpen(true);
   };

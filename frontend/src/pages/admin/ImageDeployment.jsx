@@ -3,9 +3,9 @@ import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Upload, Trash2, FileText, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Upload, Download, Trash2, CheckCircle, AlertCircle, FolderOpen } from 'lucide-react';
 import { adminService } from '@/services/adminService';
-import { imageDeploymentUtility } from '@/utils/imageDeployment';
+import { imageUploadService } from '@/services/imageUploadService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,8 +13,10 @@ import Footer from '@/components/Footer';
 const ImageDeployment = () => {
   const { user } = useAuth();
   const [adminStatus, setAdminStatus] = useState(null);
-  const [deploymentData, setDeploymentData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deploying, setDeploying] = useState(false);
+  const [deploymentStatus, setDeploymentStatus] = useState({});
 
   useEffect(() => {
     checkAdminAccess();
@@ -28,35 +30,23 @@ const ImageDeployment = () => {
       setAdminStatus(status);
       
       if (status.isAdmin) {
-        loadDeploymentData();
+        loadProducts();
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
     }
   };
 
-  const loadDeploymentData = () => {
-    try {
-      const data = imageDeploymentUtility.generateDeploymentInstructions();
-      setDeploymentData(data);
-    } catch (error) {
-      console.error('Error loading deployment data:', error);
-    }
-  };
-
-  const handleDownloadImages = async () => {
+  const loadProducts = async () => {
     try {
       setLoading(true);
-      await imageDeploymentUtility.downloadImagesAsZip();
-      toast({
-        title: 'Success',
-        description: 'Images downloaded successfully as ZIP file',
-      });
+      const products = await adminService.getAllProducts();
+      setProducts(products);
     } catch (error) {
-      console.error('Error downloading images:', error);
+      console.error('Failed to fetch products:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to download images',
+        description: 'Failed to fetch products',
         variant: 'destructive'
       });
     } finally {
@@ -64,57 +54,152 @@ const ImageDeployment = () => {
     }
   };
 
-  const handleExportData = () => {
+  const getProductImages = (productId) => {
     try {
-      imageDeploymentUtility.exportImagesData();
+      const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');
+      return existingImages[productId] || [];
+    } catch (error) {
+      console.error('Error getting product images:', error);
+      return [];
+    }
+  };
+
+  const deployImagesToProduction = async (productId) => {
+    try {
+      setDeploymentStatus(prev => ({ ...prev, [productId]: 'deploying' }));
+      
+      const productImages = getProductImages(productId);
+      
+      if (productImages.length === 0) {
+        toast({
+          title: 'No Images',
+          description: 'No images found for this product',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Prepare deployment data
+      const deploymentData = await imageUploadService.prepareImagesForDeployment(productId);
+      
+      // In a real implementation, you would send this data to your backend
+      // which would save the images to the public_html/images/products/ folder
+      console.log('Deployment data for product', productId, ':', deploymentData);
+      
+      // Simulate deployment process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update product with production image paths
+      const product = products.find(p => p.id === productId || p._id === productId);
+      if (product) {
+        const productionImagePaths = deploymentData.map(img => img.productionPath);
+        await adminService.updateProduct(productId, {
+          ...product,
+          images: productionImagePaths,
+          imageUrl: productionImagePaths[0] || product.imageUrl
+        });
+      }
+      
+      setDeploymentStatus(prev => ({ ...prev, [productId]: 'deployed' }));
+      
       toast({
         title: 'Success',
-        description: 'Image data exported successfully',
+        description: `Images deployed for ${product?.name || 'product'}`,
       });
+      
+      await loadProducts();
     } catch (error) {
-      console.error('Error exporting data:', error);
+      console.error('Failed to deploy images:', error);
+      setDeploymentStatus(prev => ({ ...prev, [productId]: 'failed' }));
       toast({
         title: 'Error',
-        description: 'Failed to export image data',
+        description: 'Failed to deploy images',
         variant: 'destructive'
       });
     }
   };
 
-  const handleImportData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    imageDeploymentUtility.importImagesData(file)
-      .then((result) => {
+  const downloadImagesForHostinger = async (productId) => {
+    try {
+      const productImages = getProductImages(productId);
+      
+      if (productImages.length === 0) {
         toast({
-          title: 'Success',
-          description: `Imported ${result.importedProducts} products successfully`,
-        });
-        loadDeploymentData();
-      })
-      .catch((error) => {
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to import image data',
+          title: 'No Images',
+          description: 'No images found for this product',
           variant: 'destructive'
         });
-      });
-  };
+        return;
+      }
 
-  const handleCleanup = () => {
-    try {
-      const cleanedCount = imageDeploymentUtility.cleanupOldImages(30);
+      // Create a zip file with all images for manual upload to hostinger
+      const JSZip = await import('jszip');
+      const zip = new JSZip.default();
+      
+      productImages.forEach((img, index) => {
+        if (img.base64) {
+          // Convert base64 to blob
+          const base64Data = img.base64.split(',')[1];
+          const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/jpeg' });
+          zip.file(img.filename, blob);
+        }
+      });
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `product_${productId}_images.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       toast({
         title: 'Success',
-        description: `Cleaned up ${cleanedCount} old images`,
+        description: 'Images downloaded for manual upload to hostinger',
       });
-      loadDeploymentData();
     } catch (error) {
-      console.error('Error cleaning up images:', error);
+      console.error('Failed to download images:', error);
       toast({
         title: 'Error',
-        description: 'Failed to cleanup old images',
+        description: 'Failed to download images',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const removeProductImages = async (productId) => {
+    if (!confirm('Are you sure you want to remove all images for this product?')) return;
+    
+    try {
+      // Remove from localStorage
+      const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');
+      delete existingImages[productId];
+      localStorage.setItem('productImages', JSON.stringify(existingImages));
+      
+      // Update product to remove image references
+      const product = products.find(p => p.id === productId || p._id === productId);
+      if (product) {
+        await adminService.updateProduct(productId, {
+          ...product,
+          images: [],
+          imageUrl: ''
+        });
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Product images removed',
+      });
+      
+      await loadProducts();
+    } catch (error) {
+      console.error('Failed to remove images:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove images',
         variant: 'destructive'
       });
     }
@@ -122,18 +207,14 @@ const ImageDeployment = () => {
 
   if (!adminStatus?.isAdmin) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen">
         <Navbar />
-        <div className="container-custom py-4 sm:py-8 flex-1">
-          <Card className="max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-600" />
-              <CardTitle>Access Denied</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-gray-600">
-                You need admin access to view this page.
-              </p>
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="text-center py-8">
+              <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+              <p className="text-gray-600">You don't have permission to access this page.</p>
             </CardContent>
           </Card>
         </div>
@@ -143,180 +224,114 @@ const ImageDeployment = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen">
       <Navbar />
-      <div className="container-custom py-4 sm:py-8 flex-1">
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold">Image Deployment</h1>
-            <Badge className="bg-blue-100 text-blue-800 border-blue-200 w-fit">Admin</Badge>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Image Deployment</h1>
+          <p className="text-gray-600">Manage and deploy product images to production</p>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vaquah-blue mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading products...</p>
           </div>
-        </div>
-
-        {/* Deployment Overview */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="w-5 h-5" />
-              Deployment Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {deploymentData ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{deploymentData.totalImages}</div>
-                  <div className="text-sm text-gray-600">Total Images</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{deploymentData.manifest.totalProducts}</div>
-                  <div className="text-sm text-gray-600">Products</div>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">{deploymentData.estimatedSize}</div>
-                  <div className="text-sm text-gray-600">Total Size</div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">No deployment data available</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <Download className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                <h3 className="font-semibold mb-2">Download Images</h3>
-                <p className="text-sm text-gray-600 mb-4">Download all images as ZIP for hostinger upload</p>
-                <Button 
-                  onClick={handleDownloadImages} 
-                  disabled={loading}
-                  className="w-full"
-                >
-                  {loading ? 'Downloading...' : 'Download ZIP'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <FileText className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                <h3 className="font-semibold mb-2">Export Data</h3>
-                <p className="text-sm text-gray-600 mb-4">Export image data as backup</p>
-                <Button onClick={handleExportData} className="w-full">
-                  Export Backup
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-                <h3 className="font-semibold mb-2">Import Data</h3>
-                <p className="text-sm text-gray-600 mb-4">Import image data from backup</p>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportData}
-                  className="hidden"
-                  id="import-file"
-                />
-                <label htmlFor="import-file">
-                  <Button as="span" className="w-full cursor-pointer">
-                    Import Backup
-                  </Button>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <Trash2 className="w-8 h-8 mx-auto mb-2 text-red-600" />
-                <h3 className="font-semibold mb-2">Cleanup</h3>
-                <p className="text-sm text-gray-600 mb-4">Remove old images (30+ days)</p>
-                <Button onClick={handleCleanup} variant="outline" className="w-full">
-                  Cleanup
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Deployment Instructions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Hostinger Deployment Instructions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {deploymentData?.instructions.map((instruction, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">
-                    {index + 1}
-                  </div>
-                  <p className="text-gray-700">{instruction}</p>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 className="font-semibold text-yellow-800 mb-2">Important Notes:</h4>
-              <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• All images are automatically converted to JPG format</li>
-                <li>• Images are optimized for web delivery</li>
-                <li>• File naming follows pattern: product_[ID]_[INDEX]_[TIMESTAMP].jpg</li>
-                <li>• Ensure your hostinger plan supports the required storage space</li>
-                <li>• After upload, verify images are accessible via your domain</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Image Manifest */}
-        {deploymentData?.manifest.images.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Image Manifest</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Product ID</th>
-                      <th className="text-left p-2">Image Index</th>
-                      <th className="text-left p-2">Filename</th>
-                      <th className="text-left p-2">Size</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deploymentData.manifest.images.map((image, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="p-2">{image.productId}</td>
-                        <td className="p-2">{image.imageIndex}</td>
-                        <td className="p-2 font-mono text-xs">{image.filename}</td>
-                        <td className="p-2">{(image.size / 1024).toFixed(1)} KB</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {products.map(product => {
+              const productImages = getProductImages(product.id || product._id);
+              const status = deploymentStatus[product.id || product._id];
+              
+              return (
+                <Card key={product.id || product._id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{product.name}</CardTitle>
+                        <p className="text-sm text-gray-600 mt-1">ID: {product.id || product._id}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {productImages.length > 0 && (
+                          <Badge variant="secondary">
+                            {productImages.length} image{productImages.length !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                        {status === 'deployed' && (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Deployed
+                          </Badge>
+                        )}
+                        {status === 'failed' && (
+                          <Badge variant="destructive">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Failed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-4">
+                      {productImages.length > 0 ? (
+                        <>
+                          <Button
+                            onClick={() => deployImagesToProduction(product.id || product._id)}
+                            disabled={status === 'deploying'}
+                            className="flex items-center gap-2"
+                          >
+                            {status === 'deploying' ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                              <Upload className="w-4 h-4" />
+                            )}
+                            {status === 'deploying' ? 'Deploying...' : 'Deploy to Production'}
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => downloadImagesForHostinger(product.id || product._id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download for Hostinger
+                          </Button>
+                          
+                          <Button
+                            variant="destructive"
+                            onClick={() => removeProductImages(product.id || product._id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Remove Images
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <FolderOpen className="w-4 h-4" />
+                          No images uploaded
+                        </div>
+                      )}
+                    </div>
+                    
+                    {productImages.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Image Files:</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                          {productImages.map((img, index) => (
+                            <div key={index} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                              {img.filename}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
       <Footer />

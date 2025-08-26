@@ -86,7 +86,7 @@ class ImageUploadService {
     }
   }
 
-  // Save image to local storage (for development)
+  // Save image to local storage (for development) and prepare for production
   async saveImageToLocal(file, productId, imageIndex = 0) {
     try {
       this.validateImageFile(file);
@@ -109,7 +109,11 @@ class ImageUploadService {
         timestamp,
         productId,
         imageIndex,
-        originalName: file.name
+        originalName: file.name,
+        // Production path for hostinger
+        productionPath: `/images/products/${filename}`,
+        // Local development path
+        localPath: `/images/products/${filename}`
       };
       
       const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');
@@ -122,7 +126,8 @@ class ImageUploadService {
       return {
         filename,
         url: base64String,
-        localPath: `/images/products/${filename}` // Path for production
+        localPath: `/images/products/${filename}`, // Path for production
+        productionPath: `/images/products/${filename}` // Path for hostinger
       };
     } catch (error) {
       throw new Error(`Local image save failed: ${error.message}`);
@@ -204,6 +209,37 @@ class ImageUploadService {
       paths.push(`/images/products/product_${productId}_${i}.jpg`);
     }
     return paths;
+  }
+
+  // Get the correct image URL based on environment
+  getImageUrl(productId, imageIndex = 0, isProduction = false) {
+    if (isProduction) {
+      // In production, use the public_html path
+      return `/images/products/product_${productId}_${imageIndex}.jpg`;
+    } else {
+      // In development, get from localStorage
+      return this.getImageFromLocal(productId, imageIndex);
+    }
+  }
+
+  // Prepare images for deployment to hostinger
+  async prepareImagesForDeployment(productId) {
+    try {
+      const existingImages = JSON.parse(localStorage.getItem('productImages') || '{}');
+      const productImages = existingImages[productId] || [];
+      
+      const deploymentData = productImages.map((img, index) => ({
+        filename: img.filename,
+        base64: img.base64,
+        productionPath: `/images/products/${img.filename}`,
+        localPath: `/images/products/${img.filename}`
+      }));
+      
+      return deploymentData;
+    } catch (error) {
+      console.error('Error preparing images for deployment:', error);
+      return [];
+    }
   }
 }
 
