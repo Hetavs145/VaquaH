@@ -26,7 +26,33 @@ export const marketingService = {
       return items;
     } catch (error) {
       console.error('Failed to load marketing services:', error);
-      return [];
+      // Return default services if Firebase fails
+      return [
+        {
+          id: 1,
+          title: 'AC Installation',
+          description: 'Professional AC installation services with warranty',
+          iconKey: 'zap',
+          link: '/services',
+          image: '/placeholder.svg'
+        },
+        {
+          id: 2,
+          title: 'AC Maintenance',
+          description: 'Regular maintenance to keep your AC running efficiently',
+          iconKey: 'rotate',
+          link: '/services',
+          image: '/placeholder.svg'
+        },
+        {
+          id: 3,
+          title: 'AC Repair',
+          description: 'Quick and reliable AC repair services',
+          iconKey: 'wrench',
+          link: '/services',
+          image: '/placeholder.svg'
+        }
+      ];
     }
   }
 };

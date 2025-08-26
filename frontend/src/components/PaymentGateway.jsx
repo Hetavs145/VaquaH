@@ -88,12 +88,12 @@ const PaymentGateway = ({ amount, onSuccess, onCancel, disabled = false, disable
           try {
             const { orderService } = await import('@/services/orderService');
             const verification = await orderService.verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
+              order_id: response.razorpay_order_id,
+              payment_id: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
             });
             setLoading(false);
-            if (verification.valid) {
+            if (verification.status === 'ok') {
               onSuccess(response.razorpay_payment_id);
             } else {
               toast({
