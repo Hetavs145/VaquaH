@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -6,6 +6,10 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 const HeroSection = () => {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [currentX, setCurrentX] = useState(0);
+  const carouselRef = useRef(null);
 
   // Carousel images - you can add more images here
   const carouselImages = [
@@ -35,11 +39,13 @@ const HeroSection = () => {
   // Auto-advance carousel
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+      if (!isDragging) {
+        setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+      }
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [carouselImages.length]);
+  }, [carouselImages.length, isDragging]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
@@ -53,10 +59,86 @@ const HeroSection = () => {
     setCurrentSlide(index);
   };
 
+  // Touch/swipe handlers for mobile
+  const handleTouchStart = (e) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+    setCurrentX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDragging) {
+      setCurrentX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isDragging) {
+      const diff = startX - currentX;
+      const threshold = 50; // Minimum swipe distance
+
+      if (Math.abs(diff) > threshold) {
+        if (diff > 0) {
+          // Swipe left - next slide
+          nextSlide();
+        } else {
+          // Swipe right - previous slide
+          prevSlide();
+        }
+      }
+      
+      setIsDragging(false);
+      setStartX(0);
+      setCurrentX(0);
+    }
+  };
+
+  // Mouse drag handlers for desktop
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.clientX);
+    setCurrentX(e.clientX);
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setCurrentX(e.clientX);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging) {
+      const diff = startX - currentX;
+      const threshold = 100; // Higher threshold for mouse
+
+      if (Math.abs(diff) > threshold) {
+        if (diff > 0) {
+          nextSlide();
+        } else {
+          prevSlide();
+        }
+      }
+      
+      setIsDragging(false);
+      setStartX(0);
+      setCurrentX(0);
+    }
+  };
+
   return (
-    <section className="relative bg-gradient-to-r from-vaquah-light-blue to-white overflow-hidden">
+    <section className="relative bg-gradient-to-r from-vaquah-light-blue to-white overflow-hidden hero-section">
       {/* Carousel Container */}
-      <div className="relative h-[400px] sm:h-[500px] md:h-[600px]">
+      <div 
+        className="relative h-[400px] sm:h-[500px] md:h-[600px] hero-carousel"
+        ref={carouselRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         {/* Carousel Slides */}
         {carouselImages.map((slide, index) => (
           <div
@@ -72,6 +154,7 @@ const HeroSection = () => {
                 alt={slide.title}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? "eager" : "lazy"}
+                draggable={false} // Prevent image dragging
               />
               {/* Overlay for better text readability */}
               <div className="absolute inset-0 bg-black bg-opacity-30"></div>
@@ -82,7 +165,7 @@ const HeroSection = () => {
               <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
                   {/* Text Content */}
-                  <div className="text-white">
+                  <div className="text-white text-content">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 font-sans leading-tight">
                       {slide.title}
                     </h1>
@@ -134,6 +217,7 @@ const HeroSection = () => {
                         loading="eager"
                         fetchpriority="high"
                         className="hero-image rounded-lg shadow-lg" 
+                        draggable={false} // Prevent image dragging
                       />
                     </div>
                   </div>
@@ -149,12 +233,14 @@ const HeroSection = () => {
             <button
               onClick={prevSlide}
               className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all z-20"
+              aria-label="Previous slide"
             >
               <ChevronLeft size={24} />
             </button>
             <button
               onClick={nextSlide}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all z-20"
+              aria-label="Next slide"
             >
               <ChevronRight size={24} />
             </button>
@@ -173,6 +259,7 @@ const HeroSection = () => {
                     ? 'bg-white' 
                     : 'bg-white/50 hover:bg-white/75'
                 }`}
+                aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>

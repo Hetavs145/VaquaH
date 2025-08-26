@@ -31,20 +31,31 @@ const ProductDetail = () => {
       try {
         const doc = await productService.getProductById(id);
         if (doc) {
-          // Get images from multiple sources
-          const images = doc.images || [];
+          // Get images from multiple sources with priority order
+          let finalImages = [];
+          
+          // First, try to get from localStorage
+          const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
+          
+          // Then, try to get from product.images array
+          const dbImages = doc.images || [];
+          
+          // Finally, try to get from product.imageUrl or product.image
           const mainImage = doc.image || doc.imageUrl || '';
           
-          let finalImages = [];
-          if (images.length > 0) {
-            finalImages = images;
+          // Combine all sources, prioritizing localStorage, then database, then main image
+          if (localImages.length > 0) {
+            finalImages = localImages;
+          } else if (dbImages.length > 0) {
+            finalImages = dbImages;
           } else if (mainImage) {
             finalImages = [mainImage];
-            } else {
-    // Try to get from local storage
-    const localImages = imageUploadService.getAllImagesFromLocal(doc.id);
-    finalImages = localImages.length > 0 ? localImages : [getPlaceholderImage()];
-  }
+          }
+          
+          // If no images found, use placeholder
+          if (finalImages.length === 0) {
+            finalImages = [getPlaceholderImage()];
+          }
 
           // Normalize fields that UI expects
           const normalized = {
