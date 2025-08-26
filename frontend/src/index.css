@@ -100,6 +100,37 @@
     @apply container mx-auto px-4;
   }
   
+  /* Banner Carousel Styles */
+  .hero-section {
+    @apply relative overflow-hidden;
+  }
+  
+  .hero-carousel {
+    @apply relative w-full;
+    touch-action: pan-y pinch-zoom; /* Prevent vertical scrolling, allow horizontal */
+  }
+  
+  .hero-carousel img {
+    @apply select-none pointer-events-none; /* Prevent image selection and dragging */
+  }
+  
+  /* Mobile swipe support */
+  @media (max-width: 768px) {
+    .hero-carousel {
+      touch-action: pan-x; /* Only allow horizontal swiping on mobile */
+    }
+  }
+  
+  /* Ensure carousel doesn't interfere with other elements */
+  .hero-carousel * {
+    @apply box-border;
+  }
+  
+  /* Prevent text selection during swipe */
+  .hero-carousel .text-content {
+    @apply select-none;
+  }
+  
   /* Embla Carousel Styles */
   .embla {
     overflow: hidden;

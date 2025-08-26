@@ -88,9 +88,22 @@ const ProductsAdmin = () => {
         const base64Images = await imageUploadService.uploadMultipleImages(imageFiles);
         finalFormData.images = base64Images;
         finalFormData.imageUrl = base64Images[0] || ''; // Keep first image as main image for backward compatibility
-      }
-      
-      if (editingProduct) {
+        
+        // Create the product first
+        const newProduct = await adminService.createProduct(finalFormData);
+        
+        // Save images to local storage for development
+        if (imageFiles.length > 0) {
+          for (let i = 0; i < imageFiles.length; i++) {
+            await imageUploadService.saveImageToLocal(imageFiles[i], newProduct.id, i);
+          }
+        }
+        
+        toast({
+          title: 'Success',
+          description: 'Product created successfully'
+        });
+      } else if (editingProduct) {
         // For editing, handle both existing and new images
         let updatedImages = [...(finalFormData.images || [])];
         
@@ -113,20 +126,6 @@ const ProductsAdmin = () => {
           title: 'Success',
           description: 'Product updated successfully'
         });
-      } else {
-        const newProduct = await adminService.createProduct(finalFormData);
-        
-        // Save images to local storage for development
-        if (imageFiles.length > 0) {
-          for (let i = 0; i < imageFiles.length; i++) {
-            await imageUploadService.saveImageToLocal(imageFiles[i], newProduct.id, i);
-          }
-        }
-        
-        toast({
-          title: 'Success',
-          description: 'Product created successfully'
-        });
       }
       
       setIsDialogOpen(false);
@@ -148,16 +147,33 @@ const ProductsAdmin = () => {
   const handleEdit = (product) => {
     setEditingProduct(product);
     
-    // Get images from localStorage if available
+    // Get images from multiple sources with priority order
+    let productImages = [];
+    
+    // First, try to get from localStorage
     const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
-    const productImages = localImages.length > 0 ? localImages : (product.images || [product.imageUrl]).filter(Boolean);
+    
+    // Then, try to get from product.images array
+    const dbImages = product.images || [];
+    
+    // Finally, try to get from product.imageUrl or product.image
+    const mainImage = product.imageUrl || product.image;
+    
+    // Combine all sources, prioritizing localStorage, then database, then main image
+    if (localImages.length > 0) {
+      productImages = localImages;
+    } else if (dbImages.length > 0) {
+      productImages = dbImages;
+    } else if (mainImage) {
+      productImages = [mainImage];
+    }
     
     setFormData({
       name: product.name || '',
       description: product.description || '',
       price: product.price || '',
       category: product.category || '',
-      imageUrl: productImages[0] || product.imageUrl || '',
+      imageUrl: productImages[0] || '',
       images: productImages,
       featured: product.featured || false,
       inStock: product.inStock !== false
@@ -238,19 +254,33 @@ const ProductsAdmin = () => {
   };
 
   const getProductImages = (product) => {
-    // Try to get images from multiple sources
-    const images = product.images || [];
+    // Try to get images from multiple sources with priority order
+    let images = [];
+    
+    // First, try to get from localStorage
+    const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
+    
+    // Then, try to get from product.images array
+    const dbImages = product.images || [];
+    
+    // Finally, try to get from product.imageUrl or product.image
     const mainImage = product.imageUrl || product.image;
     
-    if (images.length > 0) {
-      return images;
+    // Combine all sources, prioritizing localStorage, then database, then main image
+    if (localImages.length > 0) {
+      images = localImages;
+    } else if (dbImages.length > 0) {
+      images = dbImages;
     } else if (mainImage) {
-      return [mainImage];
-      } else {
-    // Try to get from local storage
-    const localImages = imageUploadService.getAllImagesFromLocal(product.id);
-    return localImages.length > 0 ? localImages : [getPlaceholderImage()];
-  }
+      images = [mainImage];
+    }
+    
+    // If no images found, return placeholder
+    if (images.length === 0) {
+      images = [getPlaceholderImage()];
+    }
+    
+    return images;
   };
 
   const handleViewImages = (product) => {
