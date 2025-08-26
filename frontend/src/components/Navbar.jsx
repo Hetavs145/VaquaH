@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Menu, X, User, LogOut, Home } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +18,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const { state: cartState } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -44,13 +45,40 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/" className="text-white hover:text-white flex items-center bg-vaquah-blue px-4 py-2 rounded-md font-medium">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue border border-vaquah-blue bg-white' : 'text-white bg-vaquah-blue'} hover:text-white flex items-center px-4 py-2 rounded-md font-medium`
+              }
+              end
+            >
               <Home size={18} className="mr-2" />
               Home
-            </Link>
-            <Link to="/products" className="text-gray-600 hover:text-vaquah-blue">Products</Link>
-            <Link to="/appointments/new" className="text-gray-600 hover:text-vaquah-blue">Schedule Service</Link>
-            <Link to="/contracts" className="text-gray-600 hover:text-vaquah-blue">Contracts</Link>
+            </NavLink>
+            <NavLink
+              to="/products"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:text-vaquah-blue`
+              }
+            >
+              Products
+            </NavLink>
+            <NavLink
+              to="/appointments/new"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:text-vaquah-blue`
+              }
+            >
+              Schedule Service
+            </NavLink>
+            <NavLink
+              to="/contracts"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:text-vaquah-blue`
+              }
+            >
+              Contracts
+            </NavLink>
             <Link to="/cart" className="relative p-2">
               <ShoppingCart size={20} className="text-gray-700" />
               <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
@@ -102,9 +130,15 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <Link to="/" className="text-white hover:text-white mr-3 flex items-center bg-vaquah-blue px-3 py-2 rounded-md">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue border border-vaquah-blue bg-white' : 'text-white bg-vaquah-blue'} mr-3 flex items-center px-3 py-2 rounded-md`
+              }
+              end
+            >
               <Home size={18} />
-            </Link>
+            </NavLink>
             <Link to="/cart" className="relative p-2 mr-2">
               <ShoppingCart size={20} className="text-gray-700" />
               <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
@@ -125,21 +159,35 @@ const Navbar = () => {
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t">
-            <Link to="/" className="flex items-center py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">
+            <NavLink to="/" className={({ isActive }) => `flex items-center py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`} end>
               <Home size={18} className="mr-2" />
               Home
-            </Link>
-            <Link to="/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Products</Link>
-            <Link to="/appointments/new" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Schedule Service</Link>
-            <Link to="/contracts" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Contracts</Link>
+            </NavLink>
+            <NavLink to="/products" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+              Products
+            </NavLink>
+            <NavLink to="/appointments/new" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+              Schedule Service
+            </NavLink>
+            <NavLink to="/contracts" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+              Contracts
+            </NavLink>
             {user ? (
               <>
-                <Link to="/dashboard" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Dashboard</Link>
+                <NavLink to="/dashboard" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                  Dashboard
+                </NavLink>
                 {user.isAdmin && (
                   <>
-                    <Link to="/admin" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Admin Dashboard</Link>
-                    <Link to="/admin/orders" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Manage Orders</Link>
-                    <Link to="/admin/products" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Manage Products</Link>
+                    <NavLink to="/admin" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Admin Dashboard
+                    </NavLink>
+                    <NavLink to="/admin/orders" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Manage Orders
+                    </NavLink>
+                    <NavLink to="/admin/products" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Manage Products
+                    </NavLink>
                   </>
                 )}
                 <button 
@@ -150,7 +198,9 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <Link to="/login" className="block py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue">Login</Link>
+              <NavLink to="/login" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                Login
+              </NavLink>
             )}
           </div>
         )}
