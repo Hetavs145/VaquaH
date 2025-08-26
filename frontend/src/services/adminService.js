@@ -1,16 +1,13 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc,
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
   serverTimestamp,
-  addDoc
+  addDoc,
+  orderBy
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { auth } from '@/lib/firebase'; // Added missing import for auth
@@ -48,19 +45,14 @@ class AdminService {
 
   async checkAdminStatus(userId) {
     try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        return {
-          isAdmin: userData.role === 'admin',
-          role: userData.role || 'user',
-          email: userData.email
-        };
-      }
-      return { isAdmin: false, role: 'user' };
+      const adminsRef = collection(db, 'admins');
+      const q = query(adminsRef, where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+      const isAdmin = !snapshot.empty && snapshot.docs[0].data().active !== false;
+      return { isAdmin };
     } catch (error) {
       console.error('Error checking admin status:', error);
-      return { isAdmin: false, role: 'user' };
+      return { isAdmin: false };
     }
   }
 
@@ -97,7 +89,69 @@ class AdminService {
       return { requests };
     } catch (error) {
       console.error('Error listing admin requests:', error);
-      throw new Error('Failed to list admin requests');
+      return { requests: [] };
+    }
+  }
+
+  async grantAdminAccess(targetUserId) {
+    try {
+      await addDoc(collection(db, 'admins'), {
+        userId: targetUserId,
+        grantedAt: serverTimestamp(),
+        grantedBy: auth?.currentUser?.uid || 'system',
+        active: true
+      });
+
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'admin_granted',
+        grantedTo: targetUserId,
+        by: auth?.currentUser?.uid || 'system',
+        at: serverTimestamp()
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error granting admin access:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async denyAdminAccess(targetUserId) {
+    try {
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'admin_denied',
+        deniedTo: targetUserId,
+        by: auth?.currentUser?.uid || 'system',
+        at: serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error denying admin access:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async removeAdminAccess(targetUserId) {
+    try {
+      const adminsRef = collection(db, 'admins');
+      const q = query(adminsRef, where('userId', '==', targetUserId));
+      const snapshot = await getDocs(q);
+
+      for (const d of snapshot.docs) {
+        await updateDoc(doc(db, 'admins', d.id), { active: false, updatedAt: serverTimestamp() });
+      }
+
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'admin_removed',
+        removedFrom: targetUserId,
+        by: auth?.currentUser?.uid || 'system',
+        at: serverTimestamp()
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error removing admin access:', error);
+      return { success: false, error: error.message };
     }
   }
 
@@ -179,24 +233,19 @@ class AdminService {
   // Get all orders (admin only)
   async getAllOrders(statusFilter = null, userIdFilter = null) {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-
-      const adminStatus = await this.checkAdminStatus(currentUser.uid);
-      if (!adminStatus.isAdmin) {
-        throw new Error('Insufficient permissions. Admin access required.');
-      }
-
       let ordersRef = collection(db, 'orders');
       let q = ordersRef;
 
-      if (statusFilter) {
-        q = query(q, where('status', '==', statusFilter));
-      }
-      if (userIdFilter) {
-        q = query(q, where('userId', '==', userIdFilter));
+      // Apply filters only if provided
+      const clauses = [];
+      if (statusFilter) clauses.push(where('status', '==', statusFilter));
+      if (userIdFilter) clauses.push(where('userId', '==', userIdFilter));
+      if (clauses.length === 1) {
+        const [c] = clauses;
+        q = query(ordersRef, c);
+      } else if (clauses.length === 2) {
+        const [a, b] = clauses;
+        q = query(ordersRef, a, b);
       }
 
       q = query(q, orderBy('createdAt', 'desc'));
@@ -219,16 +268,6 @@ class AdminService {
   // Get all products (admin only)
   async getAllProducts() {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-
-      const adminStatus = await this.checkAdminStatus(currentUser.uid);
-      if (!adminStatus.isAdmin) {
-        throw new Error('Insufficient permissions. Admin access required.');
-      }
-
       const productsRef = collection(db, 'products');
       const q = query(productsRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
@@ -250,16 +289,6 @@ class AdminService {
   // Get all users (admin only)
   async getAllUsers() {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-
-      const adminStatus = await this.checkAdminStatus(currentUser.uid);
-      if (!adminStatus.isAdmin) {
-        throw new Error('Insufficient permissions. Admin access required.');
-      }
-
       const usersRef = collection(db, 'users');
       const q = query(usersRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
@@ -279,7 +308,7 @@ class AdminService {
   }
 
   // Update order status
-  async updateOrderStatus(orderId, nextStatus, note = '', byUserId = 'admin') {
+  async updateOrderStatus(orderId, nextStatus, note = '', byUserId = '') {
     try {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
@@ -291,7 +320,7 @@ class AdminService {
         action: `Status updated to ${nextStatus}`,
         status: nextStatus,
         note,
-        by: byUserId,
+        by: byUserId || auth?.currentUser?.uid || 'system',
         timestamp: serverTimestamp()
       });
 
@@ -313,12 +342,39 @@ class AdminService {
       await addDoc(collection(db, 'orders', orderId, 'timeline'), {
         action: 'shipping_updated',
         shippingId: shippingId || '',
+        by: auth?.currentUser?.uid || 'system',
         timestamp: serverTimestamp()
       });
       return { id: orderId, shippingId };
     } catch (error) {
       console.error('Error updating order shipping:', error);
       throw new Error('Failed to update order shipping');
+    }
+  }
+
+  // Offers
+  async getOffers() {
+    try {
+      const offersRef = collection(db, 'offers');
+      const snapshot = await getDocs(offersRef);
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error('Error fetching offers:', e);
+      return [];
+    }
+  }
+
+  async createOffer(offer) {
+    try {
+      const ref = await addDoc(collection(db, 'offers'), {
+        ...offer,
+        createdAt: serverTimestamp(),
+        createdBy: auth?.currentUser?.uid || 'system'
+      });
+      return { id: ref.id, ...offer };
+    } catch (e) {
+      console.error('Error creating offer:', e);
+      return null;
     }
   }
 
@@ -332,7 +388,8 @@ class AdminService {
         featured: Boolean(productData.featured),
         inStock: Boolean(productData.inStock),
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        createdBy: auth?.currentUser?.uid || 'system'
       };
       
       const docRef = await addDoc(productRef, newProduct);

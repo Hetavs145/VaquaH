@@ -66,7 +66,8 @@ const ProductCard = ({
   
   return (
     <div
-      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 sm:p-4 relative cursor-pointer"
+      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 sm:p-4 relative cursor-pointer flex flex-col"
+      style={{ minHeight: '360px' }}
       onClick={() => navigate(`/products/${productId}`)}
     >
       {/* Wishlist button */}
@@ -83,11 +84,11 @@ const ProductCard = ({
       
       {/* Product image */}
       <Link to={`/products/${productId}`}>
-        <div className="mb-3 p-2 sm:p-4 flex justify-center">
+        <div className="mb-3 p-2 sm:p-4 flex justify-center items-center h-48 sm:h-56">
           <img 
             src={imageSource} 
             alt={name} 
-            className="h-40 sm:h-48 object-contain hover:scale-105 transition-transform"
+            className="max-h-full object-contain hover:scale-105 transition-transform"
             onError={handleImageError}
           />
         </div>
@@ -98,7 +99,7 @@ const ProductCard = ({
       
       {/* Product name */}
       <Link to={`/products/${productId}`} className="hover:text-vaquah-blue">
-        <h3 className="font-medium text-gray-800 mb-2 h-10 sm:h-12 overflow-hidden text-sm sm:text-base">{name}</h3>
+        <h3 className="font-medium text-gray-800 mb-2 text-sm sm:text-base line-clamp-2 min-h-[40px] sm:min-h-[48px]">{name}</h3>
       </Link>
       
       {/* Specifications */}
@@ -143,7 +144,7 @@ const ProductCard = ({
       
       {/* Call to action */}
       <Button 
-        className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue text-sm sm:text-base"
+        className="w-full mt-auto flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue text-sm sm:text-base"
         onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
       >
         <ShoppingCart size={14} sm:size={16} className="mr-2" />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -20,6 +20,15 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Filters & Sorting
+  const [sortBy, setSortBy] = useState('relevance');
+  const [brand, setBrand] = useState('all');
+  const [inverterOnly, setInverterOnly] = useState('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [minRating, setMinRating] = useState('all');
+  const [tonnage, setTonnage] = useState('all');
+
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -34,7 +43,7 @@ const Products = () => {
           return {
             ...product,
             // Use local images if available, otherwise use the stored image
-            image: localImages[0] || product.image || product.imageUrl,
+            image: localImages[0] || product.image || product.imageUrl || getPlaceholderImage(),
             images: localImages.length > 0 ? localImages : (product.images || [product.image || product.imageUrl]).filter(Boolean)
           };
         });
@@ -79,6 +88,68 @@ const Products = () => {
     });
   };
 
+  // Derived brand list
+  const brandOptions = useMemo(() => {
+    const set = new Set((products || []).map(p => (p.brand || '').trim()).filter(Boolean));
+    return ['all', ...Array.from(set).sort()];
+  }, [products]);
+
+  const tonnageOptions = ['all', '1', '1.5', '2'];
+  const ratingOptions = ['all', '3', '4', '4.5', '5'];
+
+  const filteredSorted = useMemo(() => {
+    let list = [...products];
+
+    // Filters
+    if (brand !== 'all') {
+      list = list.filter(p => (p.brand || '').toLowerCase() === brand.toLowerCase());
+    }
+    if (inverterOnly !== 'all') {
+      const target = inverterOnly === 'yes';
+      list = list.filter(p => Boolean(p.inverter) === target);
+    }
+    if (tonnage !== 'all') {
+      const t = parseFloat(tonnage);
+      list = list.filter(p => parseFloat(p.tonnage) === t);
+    }
+    if (minRating !== 'all') {
+      const r = parseFloat(minRating);
+      list = list.filter(p => Number(p.rating || 0) >= r);
+    }
+    const min = minPrice === '' ? -Infinity : Number(minPrice);
+    const max = maxPrice === '' ? Infinity : Number(maxPrice);
+    if (min !== -Infinity || max !== Infinity) {
+      list = list.filter(p => {
+        const price = Number(p.price || 0);
+        return price >= min && price <= max;
+      });
+    }
+
+    // Sorting
+    switch (sortBy) {
+      case 'price_low_high':
+        list.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+        break;
+      case 'price_high_low':
+        list.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+        break;
+      case 'rating_high_low':
+        list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+        break;
+      case 'newest':
+        list.sort((a, b) => {
+          const ad = a.createdAt?.toDate?.()?.getTime?.() || new Date(a.createdAt || 0).getTime();
+          const bd = b.createdAt?.toDate?.()?.getTime?.() || new Date(b.createdAt || 0).getTime();
+          return bd - ad;
+        });
+        break;
+      default:
+        break;
+    }
+
+    return list;
+  }, [products, brand, inverterOnly, minPrice, maxPrice, minRating, sortBy, tonnage]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -97,19 +168,59 @@ const Products = () => {
 
         <section className="py-8 sm:py-12">
           <div className="container mx-auto px-4">
+            {/* Filters */}
+            <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="border rounded-md px-2 py-2 text-sm">
+                <option value="relevance">Sort: Relevance</option>
+                <option value="price_low_high">Price: Low to High</option>
+                <option value="price_high_low">Price: High to Low</option>
+                <option value="rating_high_low">Rating</option>
+                <option value="newest">Newest</option>
+              </select>
+
+              <select value={brand} onChange={e => setBrand(e.target.value)} className="border rounded-md px-2 py-2 text-sm">
+                {brandOptions.map(b => (
+                  <option key={b} value={b}>{b === 'all' ? 'All Brands' : b}</option>
+                ))}
+              </select>
+
+              <select value={inverterOnly} onChange={e => setInverterOnly(e.target.value)} className="border rounded-md px-2 py-2 text-sm">
+                <option value="all">All Types</option>
+                <option value="yes">Inverter</option>
+                <option value="no">Non-Inverter</option>
+              </select>
+
+              <select value={tonnage} onChange={e => setTonnage(e.target.value)} className="border rounded-md px-2 py-2 text-sm">
+                {tonnageOptions.map(t => (
+                  <option key={t} value={t}>{t === 'all' ? 'All Tonnage' : `${t} Ton`}</option>
+                ))}
+              </select>
+
+              <select value={minRating} onChange={e => setMinRating(e.target.value)} className="border rounded-md px-2 py-2 text-sm">
+                {ratingOptions.map(r => (
+                  <option key={r} value={r}>{r === 'all' ? 'Any Rating' : `${r}+ Stars`}</option>
+                ))}
+              </select>
+
+              <div className="flex gap-2">
+                <input type="number" inputMode="numeric" placeholder="Min ₹" className="border rounded-md px-2 py-2 text-sm w-full" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
+                <input type="number" inputMode="numeric" placeholder="Max ₹" className="border rounded-md px-2 py-2 text-sm w-full" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
+              </div>
+            </div>
+
             {loading ? (
               <div className="text-center text-gray-500 py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 Loading products...
               </div>
-            ) : products.length === 0 ? (
+            ) : filteredSorted.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No products found.</div>
             ) : (
               <ProductCarousel 
                 title="All Products"
                 subtitle="Browse our complete collection of air conditioners and cooling solutions"
-                maxProducts={products.length}
-                products={products}
+                maxProducts={filteredSorted.length}
+                products={filteredSorted}
               />
             )}
           </div>

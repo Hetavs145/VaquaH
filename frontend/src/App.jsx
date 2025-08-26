@@ -18,6 +18,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import SetupAdmin from "./pages/admin/SetupAdmin.jsx";
 import AdminManagement from "./pages/admin/AdminManagement.jsx";
 import ProductsAdmin from "./pages/admin/ProductsAdmin.jsx";
+import UsersAdmin from "./pages/admin/UsersAdmin.jsx";
+import OffersAdmin from "./pages/admin/OffersAdmin.jsx";
 
 import AppointmentNew from "./pages/AppointmentNew.jsx";
 import Services from "./pages/Services.jsx";
@@ -116,6 +118,16 @@ const AppContent = () => {
           <Route path="/admin/products" element={
             <AdminRoute>
               <ProductsAdmin />
+            </AdminRoute>
+          } />
+          <Route path="/admin/users" element={
+            <AdminRoute>
+              <UsersAdmin />
+            </AdminRoute>
+          } />
+          <Route path="/admin/offers" element={
+            <AdminRoute>
+              <OffersAdmin />
             </AdminRoute>
           } />
 
