@@ -1,5 +1,5 @@
-import React from 'react';
-import { Star, ShoppingCart, Heart } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, ShoppingCart, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
@@ -15,6 +15,7 @@ const ProductCard = ({
   originalPrice,
   image,
   imageUrl,
+  images,
   rating,
   energyRating,
   tonnage,
@@ -24,12 +25,14 @@ const ProductCard = ({
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Use _id if available, otherwise fall back to id
   const productId = _id || id;
   
-  // Handle image source - prioritize image prop, then imageUrl, then placeholder
-  const imageSource = image || imageUrl || getPlaceholderImage();
+  // Handle image source - prioritize images array, then image prop, then imageUrl, then placeholder
+  const allImages = images && images.length > 0 ? images : [image || imageUrl || getPlaceholderImage()];
+  const imageSource = allImages[currentImageIndex] || getPlaceholderImage();
   
   const handleAddToCart = () => {
     // Create a product object from the props with all required properties
@@ -83,13 +86,64 @@ const ProductCard = ({
       
       {/* Product image */}
       <Link to={`/products/${productId}`}>
-        <div className="mb-3 p-2 sm:p-4 flex justify-center">
+        <div className="mb-3 p-2 sm:p-4 flex justify-center relative">
           <img 
             src={imageSource} 
             alt={name} 
             className="h-40 sm:h-48 object-contain hover:scale-105 transition-transform"
             onError={handleImageError}
           />
+          
+          {/* Image carousel navigation for multiple images */}
+          {allImages.length > 1 && (
+            <>
+              {/* Image counter */}
+              <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                {currentImageIndex + 1} / {allImages.length}
+              </div>
+              
+              {/* Navigation arrows */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentImageIndex(prev => prev > 0 ? prev - 1 : allImages.length - 1);
+                }}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentImageIndex(prev => prev < allImages.length - 1 ? prev + 1 : 0);
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+              
+              {/* Image dots */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+                {allImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? 'bg-white' 
+                        : 'bg-white bg-opacity-50'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </Link>
       

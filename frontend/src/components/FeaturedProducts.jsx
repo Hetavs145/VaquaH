@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
+import ProductCardsCarousel from './ProductCardsCarousel';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -57,11 +58,16 @@ const FeaturedProducts = () => {
         ) : featured.length === 0 ? (
           <div className="text-center text-gray-500 text-sm sm:text-base">No featured products yet. Check back soon.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {featured.map(product => (
-              <ProductCard key={product.id || product._id} {...product} />
-            ))}
-          </div>
+          <ProductCardsCarousel
+            products={featured}
+            title="Featured Products"
+            subtitle="Handpicked air conditioners for your ultimate comfort"
+            autoPlay={true}
+            autoPlayInterval={6000}
+            showArrows={true}
+            showDots={true}
+            maxVisibleCards={4}
+          />
         )}
       </div>
     </section>
