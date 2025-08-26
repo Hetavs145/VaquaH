@@ -2,34 +2,33 @@ import React from 'react';
 import { ArrowRight, RotateCw, Wrench, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { marketingService } from '@/services/marketingService';
 
 const ServiceSection = () => {
-  const services = [
-    {
-      id: 1,
-      title: 'AC Installation',
-      description: 'Professional installation by certified technicians ensuring optimal performance and longevity.',
-      icon: <Zap size={40} className="text-vaquah-blue" />,
-      link: '/services/installation',
-      image: '/images/service1.jpg'
-    },
-    {
-      id: 2,
-      title: 'Annual Maintenance',
-      description: 'Regular servicing and maintenance to keep your AC running efficiently throughout the year.',
-      icon: <RotateCw size={40} className="text-vaquah-blue" />,
-      link: '/services/maintenance',
-      image: '/images/service2.jpg'
-    },
-    {
-      id: 3,
-      title: 'Repair Services',
-      description: 'Quick and reliable repair services for all types of AC problems by experienced technicians.',
-      icon: <Wrench size={40} className="text-vaquah-blue" />,
-      link: '/services/repair',
-      image: '/images/service3.jpg'
-    }
-  ];
+  const [services, setServices] = React.useState([]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const items = await marketingService.getServices();
+      if (!isMounted) return;
+      const iconMap = {
+        zap: <Zap size={40} className="text-vaquah-blue" />,
+        rotate: <RotateCw size={40} className="text-vaquah-blue" />,
+        wrench: <Wrench size={40} className="text-vaquah-blue" />,
+      };
+      const normalized = (items || []).map((it, idx) => ({
+        id: it.id || idx + 1,
+        title: it.title || it.name || 'Service',
+        description: it.description || '',
+        icon: it.iconKey && iconMap[it.iconKey] ? iconMap[it.iconKey] : null,
+        link: it.link || '/services',
+        image: it.imageUrl || it.image || '',
+      }));
+      setServices(normalized.slice(0, 3));
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <section className="section-padding bg-white">
@@ -50,7 +49,7 @@ const ServiceSection = () => {
             >
               <div className="mb-4 h-48 overflow-hidden rounded-lg">
                 <img 
-                  src={service.image} 
+                  src={service.image || "/placeholder.svg"} 
                   alt={service.title} 
                   className="w-full h-full object-cover"
                   onError={(e) => {

@@ -14,74 +14,41 @@ import {
   Clock,
   ChevronRight 
 } from 'lucide-react';
+import { marketingService } from '@/services/marketingService';
 
 const Services = () => {
-  const services = [
-    {
-      id: 1,
-      name: 'AC Installation',
-      description: 'Professional installation service for all types of AC units with proper calibration and testing.',
-      icon: <Wrench className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹1,500 onwards',
-      image: '/images/service1.jpg'
-    },
-    {
-      id: 2,
-      name: 'Regular Servicing',
-      description: 'Complete AC service including cleaning, filter replacement, and performance check.',
-      icon: <Settings className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹899 onwards',
-      image: '/images/service2.jpg'
-    },
-    {
-      id: 3,
-      name: 'Repair & Troubleshooting',
-      description: 'Expert diagnosis and repair for all AC issues with genuine spare parts.',
-      icon: <Thermometer className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹599 onwards (+ parts)',
-      image: '/images/service3.jpg'
-    },
-    {
-      id: 4,
-      name: 'Annual Maintenance Contract',
-      description: 'Year-round protection with scheduled servicing and priority support.',
-      icon: <Clipboard className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹2,999/year',
-      image: '/images/service4.jpg'
-    },
-    {
-      id: 5,
-      name: 'Gas Refilling',
-      description: 'Proper gas refilling with leak detection and system pressure testing.',
-      icon: <Zap className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹1,299 onwards',
-      image: '/images/service5.jpg'
-    },
-    {
-      id: 6,
-      name: 'Relocation Service',
-      description: 'Safe uninstallation, transportation, and reinstallation of your AC unit.',
-      icon: <RefreshCcw className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹2,999 onwards',
-      image: '/images/service6.jpg'
-    },
-    {
-      id: 7,
-      name: 'Extended Warranty',
-      description: 'Extended protection beyond manufacturer warranty with comprehensive coverage.',
-      icon: <Shield className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹1,999/year',
-      image: '/images/service7.jpg'
-    },
-    {
-      id: 8,
-      name: 'Emergency Repairs',
-      description: '24/7 emergency repair service with priority attendance.',
-      icon: <Clock className="h-8 w-8 text-vaquah-blue" />,
-      price: '₹1,099 onwards',
-      image: '/images/service8.jpg'
-    }
-  ];
+  const [services, setServices] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const items = await marketingService.getServices();
+      if (!isMounted) return;
+      // Map optional icons by key if provided; else leave icon null
+      const iconMap = {
+        wrench: <Wrench className="h-8 w-8 text-vaquah-blue" />,
+        settings: <Settings className="h-8 w-8 text-vaquah-blue" />,
+        thermometer: <Thermometer className="h-8 w-8 text-vaquah-blue" />,
+        clipboard: <Clipboard className="h-8 w-8 text-vaquah-blue" />,
+        zap: <Zap className="h-8 w-8 text-vaquah-blue" />,
+        refresh: <RefreshCcw className="h-8 w-8 text-vaquah-blue" />,
+        shield: <Shield className="h-8 w-8 text-vaquah-blue" />,
+        clock: <Clock className="h-8 w-8 text-vaquah-blue" />,
+      };
+      const normalized = (items || []).map((it, idx) => ({
+        id: it.id || idx + 1,
+        name: it.name || it.title || 'Service',
+        description: it.description || '',
+        icon: it.iconKey && iconMap[it.iconKey] ? iconMap[it.iconKey] : null,
+        price: it.price || '',
+        image: it.imageUrl || it.image || '',
+      }));
+      setServices(normalized);
+      setLoading(false);
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   const whyChooseUs = [
     {
@@ -136,34 +103,37 @@ const Services = () => {
         <section className="py-8 sm:py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Our Services</h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {services.map((service) => (
-                <div key={service.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow">
-                  <div className="mb-4 h-40 sm:h-48 overflow-hidden rounded-lg">
-                    <img 
-                      src={service.image} 
-                      alt={service.name} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
+            {loading ? (
+              <div className="text-center text-gray-500">Loading services...</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {services.map((service) => (
+                  <div key={service.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow">
+                    <div className="mb-4 h-40 sm:h-48 overflow-hidden rounded-lg">
+                      <img 
+                        src={service.image || "/placeholder.svg"} 
+                        alt={service.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
+                    <div className="mb-4">{service.icon}</div>
+                    <h3 className="text-lg sm:text-xl font-bold mb-2">{service.name}</h3>
+                    <p className="text-gray-600 mb-4 text-sm sm:text-base">{service.description}</p>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+                      <span className="font-semibold text-vaquah-blue text-sm sm:text-base">{service.price}</span>
+                      <Link to="/appointments/new">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                          Book Now <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="mb-4">{service.icon}</div>
-                  <h3 className="text-lg sm:text-xl font-bold mb-2">{service.name}</h3>
-                  <p className="text-gray-600 mb-4 text-sm sm:text-base">{service.description}</p>
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
-                    <span className="font-semibold text-vaquah-blue text-sm sm:text-base">{service.price}</span>
-                    <Link to="/appointments/new">
-                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                        Book Now <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
