@@ -19,12 +19,12 @@ export const orderService = {
   },
 
   createRazorpayOrder: async ({ amount, currency = 'INR', receipt }) => {
-    const { data } = await api.post('/payments/razorpay/create-order', { amount, currency, receipt });
+    const { data } = await api.post('/create-order', { amount, currency, receipt });
     return data;
   },
 
   verifyRazorpayPayment: async (payload) => {
-    const { data } = await api.post('/payments/razorpay/verify', payload);
+    const { data } = await api.post('/verify', payload);
     return data;
   },
 };
