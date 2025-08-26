@@ -100,6 +100,49 @@
     @apply container mx-auto px-4;
   }
 
+  /* Product Carousel Styles */
+  .product-carousel {
+    @apply relative overflow-hidden;
+  }
+
+  .product-carousel-grid {
+    @apply grid gap-4 sm:gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  /* Mobile-first horizontal layout */
+  @media (max-width: 639px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      @apply gap-3;
+    }
+  }
+
+  /* Tablet layout */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      @apply gap-4;
+    }
+  }
+
+  /* Desktop layout */
+  @media (min-width: 1024px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      @apply gap-6;
+    }
+  }
+
+  /* Ensure carousel navigation is always visible */
+  .carousel-nav-button {
+    @apply absolute top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:shadow-xl transition-all hover:bg-gray-50;
+  }
+
+  .carousel-nav-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
   /* Responsive text utilities */
   .text-responsive-sm {
     @apply text-xs sm:text-sm;
