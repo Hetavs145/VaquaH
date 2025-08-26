@@ -25,14 +25,11 @@ const ProductCarousel = ({ title = "Our Products", subtitle, maxProducts = 8, pr
         
         // Process products to ensure proper image handling
         const processedItems = (items || []).map(product => {
-          // Get images from localStorage if available
-          const localImages = imageUploadService.getAllImagesFromLocal(product.id || product._id);
-          
+          const images = (product.images || [product.image || product.imageUrl]).filter(Boolean);
           return {
             ...product,
-            // Use local images if available, otherwise use the stored image
-            image: localImages[0] || product.image || product.imageUrl,
-            images: localImages.length > 0 ? localImages : (product.images || [product.image || product.imageUrl]).filter(Boolean)
+            image: images[0],
+            images
           };
         });
         
