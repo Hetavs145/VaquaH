@@ -104,10 +104,10 @@ const ProductsAdmin = () => {
       finalFormData.specifications = parseSpecs(specsInput);
       
       if (!editingProduct && imageFiles.length > 0) {
-        // Upload multiple images
-        const base64Images = await imageUploadService.uploadMultipleImages(imageFiles);
-        finalFormData.images = base64Images;
-        finalFormData.imageUrl = base64Images[0] || ''; // Keep first image as main image for backward compatibility
+        // Upload multiple images to server and store URLs
+        const uploadedUrls = await imageUploadService.uploadMultipleImages(imageFiles);
+        finalFormData.images = uploadedUrls;
+        finalFormData.imageUrl = uploadedUrls[0] || '';
       }
       
       if (editingProduct) {
@@ -116,13 +116,8 @@ const ProductsAdmin = () => {
         
         // Add new images if any
         if (imageFiles.length > 0) {
-          const newBase64Images = await imageUploadService.uploadMultipleImages(imageFiles);
-          updatedImages = [...updatedImages, ...newBase64Images];
-          
-          // Save new images to local storage
-          for (let i = 0; i < imageFiles.length; i++) {
-            await imageUploadService.saveImageToLocal(imageFiles[i], editingProduct.id, updatedImages.length - imageFiles.length + i);
-          }
+          const newUrls = await imageUploadService.uploadMultipleImages(imageFiles);
+          updatedImages = [...updatedImages, ...newUrls];
         }
         
         finalFormData.images = updatedImages;
@@ -135,13 +130,6 @@ const ProductsAdmin = () => {
         });
       } else {
         const newProduct = await adminService.createProduct(finalFormData);
-        
-        // Save images to local storage for development
-        if (imageFiles.length > 0) {
-          for (let i = 0; i < imageFiles.length; i++) {
-            await imageUploadService.saveImageToLocal(imageFiles[i], newProduct.id, i);
-          }
-        }
         
         toast({
           title: 'Success',
@@ -274,11 +262,9 @@ const ProductsAdmin = () => {
       return images;
     } else if (mainImage) {
       return [mainImage];
-      } else {
-    // Try to get from local storage
-    const localImages = imageUploadService.getAllImagesFromLocal(product.id);
-    return localImages.length > 0 ? localImages : [getPlaceholderImage()];
-  }
+    } else {
+      return [getPlaceholderImage()];
+    }
   };
 
   const handleViewImages = (product) => {
