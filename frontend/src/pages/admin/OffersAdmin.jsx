@@ -24,15 +24,19 @@ const OffersAdmin = () => {
 
 	useEffect(() => {
 		(async () => {
-			if (!user) return;
+			// Short-circuit if no authenticated user
+			if (!user) {
+				setIsAdmin(false);
+				setLoading(false);
+				return;
+			}
 			setLoading(true);
 			setError(null);
 			try {
-				// Simple admin check: read own user doc role (already ensured by Auth flow)
-				const { adminService } = await import('@/services/adminService');
-				const status = await adminService.checkAdminStatus(user.uid);
-				setIsAdmin(!!status.isAdmin);
-				if (status.isAdmin) {
+				// Use role already resolved by AuthContext to avoid extra Firestore reads
+				const adminFlag = !!user.isAdmin;
+				setIsAdmin(adminFlag);
+				if (adminFlag) {
 					await loadOffers();
 				}
 			} catch (e) {
@@ -45,9 +49,15 @@ const OffersAdmin = () => {
 	}, [user]);
 
 	const loadOffers = async () => {
-		const q = query(collection(db, 'offers'), orderBy('createdAt', 'desc'));
-		const snap = await getDocs(q);
-		setOffers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+		try {
+			if (!isAdmin) return;
+			const q = query(collection(db, 'offers'), orderBy('createdAt', 'desc'));
+			const snap = await getDocs(q);
+			setOffers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+		} catch (e) {
+			console.error('Load offers failed', e);
+			setError(e?.message || 'Failed to load offers');
+		}
 	};
 
 	const resetForm = () => {
@@ -57,6 +67,10 @@ const OffersAdmin = () => {
 
 	const saveOffer = async (e) => {
 		e.preventDefault();
+		if (!isAdmin) {
+			setError('Insufficient permissions');
+			return;
+		}
 		setSaving(true);
 		setError(null);
 		try {
@@ -89,6 +103,10 @@ const OffersAdmin = () => {
 	};
 
 	const removeOffer = async (id) => {
+		if (!isAdmin) {
+			setError('Insufficient permissions');
+			return;
+		}
 		try {
 			await deleteDoc(doc(db, 'offers', id));
 			await loadOffers();
