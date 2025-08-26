@@ -123,25 +123,31 @@ const ProductCarousel = ({ title = "Our Products", subtitle, maxProducts = 8, pr
             {visibleProducts.map((product) => (
               <div
                 key={product.id || product._id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden group flex flex-col"
-                style={{ minHeight: '360px' }}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden group"
               >
                 {/* Product Image */}
-                <div className="bg-gray-50 h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-w-16 aspect-h-9 bg-gray-50 h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="max-h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgMTEwQzExMC41IDExMCAxMTkgMTAxLjUgMTE5IDkxQzExOSA4MC41IDExMC41IDcyIDEwMCA3MkM4OS41IDcyIDgxIDgwLjUgODEgOTFDODEgMTAxLjUgODkuNSAxMTAgMTAwIDExMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTEwMCAxMzBDMTEwLjUgMTMwIDExOSAxMjEuNSAxMTkgMTExQzExOSAxMDAuNSAxMTAuNSA5MiAxMDAgOTJDODkuNSA5MiA4MSAxMDAuNSA4MSAxMTFDODEgMTIxLjUgODkuNSAxMzAgMTAwIDEzMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
                     }}
                   />
+                  
+                  {/* Image count indicator */}
+                  {product.images && product.images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                      +{product.images.length - 1} more
+                    </div>
+                  )}
                 </div>
 
                 {/* Product Info */}
-                <div className="p-4 flex flex-col flex-1">
-                  <h3 className="font-semibold text-sm sm:text-base mb-2 line-clamp-2 text-gray-800 group-hover:text-vaquah-blue transition-colors min-h-[40px] sm:min-h-[48px]">
+                <div className="p-4">
+                  <h3 className="font-semibold text-sm sm:text-base mb-2 line-clamp-2 text-gray-800 group-hover:text-vaquah-blue transition-colors">
                     {product.name}
                   </h3>
                   
@@ -169,7 +175,7 @@ const ProductCarousel = ({ title = "Our Products", subtitle, maxProducts = 8, pr
                   {/* View Details Button */}
                   <Link
                     to={`/products/${product.id || product._id}`}
-                    className="mt-auto block w-full bg-vaquah-blue hover:bg-vaquah-dark-blue text-white text-center py-2 px-4 rounded-md transition-colors text-sm font-medium"
+                    className="block w-full bg-vaquah-blue hover:bg-vaquah-dark-blue text-white text-center py-2 px-4 rounded-md transition-colors text-sm font-medium"
                   >
                     View Details
                   </Link>

@@ -19,7 +19,6 @@ const Dashboard = () => {
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
-  const [ordersError, setOrdersError] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -48,9 +47,6 @@ const Dashboard = () => {
   // Add real-time listener for orders
   useEffect(() => {
     if (!user) return;
-
-    setOrdersLoading(true);
-    setOrdersError(null);
 
     // Set up real-time listener for user's orders
     const ordersQuery = query(
@@ -81,6 +77,8 @@ const Dashboard = () => {
       
       if (newNotifications.length > 0) {
         setNotifications(prev => [...prev, ...newNotifications]);
+        
+        // Auto-remove notifications after 5 seconds
         newNotifications.forEach(notification => {
           setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== notification.id));
@@ -92,13 +90,12 @@ const Dashboard = () => {
       setOrdersLoading(false);
     }, (error) => {
       console.error('Error listening to orders:', error);
-      setOrdersError(error?.message || 'Failed to load orders');
       setOrdersLoading(false);
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [user]);
+  }, [user, orders]);
 
   // Countdown timer for orders marked as success
   const [countdowns, setCountdowns] = useState({});
@@ -154,12 +151,6 @@ const Dashboard = () => {
                 <span className="text-blue-800 text-sm sm:text-base">{notification.message}</span>
               </div>
             ))}
-          </div>
-        )}
-        
-        {ordersError && (
-          <div className="mb-4 sm:mb-6 bg-red-50 border border-red-200 text-red-800 rounded p-3 text-sm">
-            {ordersError}
           </div>
         )}
         

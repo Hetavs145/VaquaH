@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       const [orders, products, users] = await Promise.all([
         adminService.getAllOrders().catch(err => {
           console.error('Error fetching orders:', err);
-          if (err.message?.includes('Insufficient permissions')) {
+          if (err.message.includes('Insufficient permissions')) {
             setError('Admin permissions issue detected. Please contact an administrator to grant you admin access.');
           }
           return [];
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
         }),
         adminService.getAllUsers().catch(err => {
           console.error('Error fetching users:', err);
-          if (err.message?.includes('Insufficient permissions')) {
+          if (err.message.includes('Insufficient permissions')) {
             setError('Admin permissions issue detected. Please contact an administrator to grant you admin access.');
           }
           return [];
@@ -174,6 +174,7 @@ const AdminDashboard = () => {
       path: '/admin/management',
       color: 'bg-red-500'
     },
+
   ];
 
   return (
