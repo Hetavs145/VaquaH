@@ -99,63 +99,6 @@
   .container-custom {
     @apply container mx-auto px-4;
   }
-  
-  /* Embla Carousel Styles */
-  .embla {
-    overflow: hidden;
-  }
-  
-  .embla__container {
-    display: flex;
-    user-select: none;
-    -webkit-touch-callout: none;
-    -khtml-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    margin-left: calc(var(--embla-spacing) * -1);
-  }
-  
-  .embla__slide {
-    flex: 0 0 100%;
-    min-width: 0;
-    padding-left: var(--embla-spacing);
-    position: relative;
-  }
-  
-  .embla__slide__img {
-    display: block;
-    height: auto;
-    width: 100%;
-    object-fit: contain;
-  }
-  
-  /* Touch/swipe support for mobile */
-  .embla__slide {
-    touch-action: pan-y pinch-zoom;
-  }
-  
-  /* Smooth transitions */
-  .embla__slide {
-    transition: transform 0.3s ease-in-out;
-  }
-  
-  /* Responsive breakpoints for carousel */
-  @media (min-width: 640px) {
-    .embla__slide {
-      flex: 0 0 calc(50% - 0.75rem);
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .embla__slide {
-      flex: 0 0 calc(33.333% - 1rem);
-    }
-  }
-  
-  @media (min-width: 1280px) {
-    .embla__slide {
-      flex: 0 0 calc(25% - 1.125rem);
-    }
-  }
 
   /* Responsive text utilities */
   .text-responsive-sm {
