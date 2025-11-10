@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(uid) { 
+      return request.auth != null && request.auth.uid == uid; 
+    }
+    
+    // Admin check using custom claims (primary method)
+    function isAdmin() { 
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Admin check using user document (fallback method)
+    // This is safe because we're only checking the current user's own document
+    function isAdminByUserDoc() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Combined admin check - try custom claims first, then user document
+    function isAdminCombined() {
+      return isAdmin() || isAdminByUserDoc();
+    }
+    
+    function isOwnerOrAdmin(uid) {
+      return isOwner(uid) || isAdminCombined();
+    }
+
+    // Orders collection
+    match /orders/{docId} {
+      // Allow read if user owns the order OR is admin
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow write if user owns the order OR is admin
+      allow write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      
+      // Allow create if user is creating their own order OR is admin
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
+      
+      // Timeline subcollection
+      match /timeline/{timelineDocId} {
+        allow read, write: if isSignedIn() && (
+          (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+          isAdminCombined()
+        );
+      }
+    }
+
+    // Appointments collection
+    match /appointments/{docId} {
+      allow read, write: if isSignedIn() && (
+        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
+        isAdminCombined()
+      );
+      allow create: if isSignedIn() && (
+        isOwner(request.resource.data.userId) || 
+        isAdminCombined()
+      );
+    }
+
+    // Users collection
+    match /users/{docId} {
+      // Users can read their own record; Admins can read any
+      allow read: if isOwner(docId) || isAdminCombined();
+      // Users can create their own record; Admins can create/update any
+      allow create: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow update: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      // Only admins can delete
+      allow delete: if isAdminCombined();
+    }
+
+    // Products collection (read-only for everyone, write for admins)
+    match /products/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAdminCombined();
+    }
+
+    // Admin requests collection (only admins can read, users can create their own)
+    match /adminRequests/{docId} {
+      allow read: if isSignedIn() && (isOwner(docId) || isAdminCombined());
+      allow create: if isSignedIn() && isOwner(docId);
+      allow update: if isSignedIn() && isAdminCombined();
+      allow delete: if isSignedIn() && isAdminCombined();
+    }
+
+    // Admin logs collection (only admins can read/write)
+    match /adminLogs/{docId} {
+      allow read, write: if isSignedIn() && isAdminCombined();
+    }
+
+    // Offers/Discounts collection
+    match /offers/{docId} {
+      allow read: if true; // public can read available offers
+      allow write: if isSignedIn() && isAdminCombined(); // only admins can manage
+    }
+
+    // Services collection (read-only for everyone)
+    match /services/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Marketing assets collection (read-only for everyone)
+    match /marketingAssets/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isAdminCombined();
+    }
+  }
+}

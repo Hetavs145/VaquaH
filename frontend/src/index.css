@@ -1,0 +1,261 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 196 92% 36%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 195 75% 95%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 196 92% 36%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 196 92% 36%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-vaquah-blue hover:bg-vaquah-dark-blue text-white font-medium py-2 px-4 rounded transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-vaquah-blue border border-vaquah-blue hover:bg-vaquah-light-blue font-medium py-2 px-4 rounded transition-all;
+  }
+  
+  .section-padding {
+    @apply py-8 sm:py-12 md:py-20;
+  }
+  
+  .container-custom {
+    @apply container mx-auto px-4;
+  }
+
+  /* Product Carousel Styles */
+  .product-carousel {
+    @apply relative overflow-hidden;
+  }
+
+  .product-carousel-grid {
+    @apply grid gap-4 sm:gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  /* Mobile-first horizontal layout */
+  @media (max-width: 639px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      @apply gap-3;
+    }
+  }
+
+  /* Tablet layout */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      @apply gap-4;
+    }
+  }
+
+  /* Desktop layout */
+  @media (min-width: 1024px) {
+    .product-carousel-grid {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      @apply gap-6;
+    }
+  }
+
+  /* Ensure carousel navigation is always visible */
+  .carousel-nav-button {
+    @apply absolute top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:shadow-xl transition-all hover:bg-gray-50;
+  }
+
+  .carousel-nav-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-sm {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  .text-responsive-3xl {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  /* Responsive spacing utilities */
+  .space-responsive-sm {
+    @apply space-y-2 sm:space-y-3;
+  }
+
+  .space-responsive-md {
+    @apply space-y-3 sm:space-y-4;
+  }
+
+  .space-responsive-lg {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  /* Responsive padding utilities */
+  .p-responsive-sm {
+    @apply p-2 sm:p-3;
+  }
+
+  .p-responsive-md {
+    @apply p-3 sm:p-4;
+  }
+
+  .p-responsive-lg {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Responsive margin utilities */
+  .m-responsive-sm {
+    @apply m-2 sm:m-3;
+  }
+
+  .m-responsive-md {
+    @apply m-3 sm:m-4;
+  }
+
+  .m-responsive-lg {
+    @apply m-4 sm:m-6;
+  }
+
+  /* Responsive gap utilities */
+  .gap-responsive-sm {
+    @apply gap-2 sm:gap-3;
+  }
+
+  .gap-responsive-md {
+    @apply gap-3 sm:gap-4;
+  }
+
+  .gap-responsive-lg {
+    @apply gap-4 sm:gap-6;
+  }
+
+  /* Mobile-first responsive grid */
+  .grid-responsive-1 {
+    @apply grid-cols-1;
+  }
+
+  .grid-responsive-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Responsive flex utilities */
+  .flex-responsive-col {
+    @apply flex-col sm:flex-row;
+  }
+
+  .flex-responsive-center {
+    @apply justify-center sm:justify-start;
+  }
+
+  .flex-responsive-between {
+    @apply flex-col sm:flex-row sm:justify-between sm:items-center;
+  }
+
+  /* Responsive width utilities */
+  .w-responsive-full {
+    @apply w-full sm:w-auto;
+  }
+
+  .w-responsive-auto {
+    @apply w-auto sm:w-full;
+  }
+}

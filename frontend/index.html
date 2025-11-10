@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VaquaH - Premium AC Services & Products</title>
+    <meta name="description" content="VaquaH Cooling Service - Premium split AC solutions for Indian homes and businesses. Quality products, expert installation, and reliable services." />
+    <meta name="author" content="VaquaH" />
+
+    <meta property="og:title" content="VaquaH - Premium AC Services & Products" />
+    <meta property="og:description" content="Premium split AC solutions for Indian homes and businesses. Quality products, expert installation, and reliable services." />
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VaquaH - Premium AC Services & Products" />
+
+    <!-- Performance: preconnects -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com">
+
+    <!-- Critical CSS to prevent CLS -->
+    <style>
+      .hero-image-container {
+        aspect-ratio: 800/533;
+        min-height: 400px;
+        max-height: 533px;
+        width: 100%;
+        max-width: 800px;
+      }
+      .hero-image {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .hero-text-content {
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .hero-text-content h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.2;
+        margin-bottom: 1rem;
+      }
+      .hero-text-content p {
+        font-size: 1.125rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+    </style>
+
+    <!-- Preload LCP hero image only on home page -->
+    <script>
+      // Only preload hero image on home page to avoid unused preload warnings
+      if (window.location.pathname === '/' || window.location.pathname === '/home') {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = 'https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=80&w=800';
+        link.imagesrcset = `
+          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=70&w=480 480w,
+          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=75&w=800 800w,
+          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=75&w=1200 1200w
+        `;
+        link.imagesizes = '(max-width: 768px) 90vw, 50vw';
+        link.fetchpriority = 'high';
+        document.head.appendChild(link);
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <!-- Removed global Razorpay script. It loads on-demand inside PaymentGateway. -->
+  </body>
+</html>
