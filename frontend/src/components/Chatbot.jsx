@@ -17,12 +17,20 @@ const Chatbot = () => {
     const location = useLocation();
     const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Hello! 👋 I am VaquaH. How can I help you today?' }
-    ]);
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem('chatHistory');
+        return saved ? JSON.parse(saved) : [
+            { role: 'assistant', content: 'Hello! 👋 I am VaquaH. How can I help you today?' }
+        ];
+    });
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef(null);
+
+    // Auto-save messages to local storage
+    useEffect(() => {
+        localStorage.setItem('chatHistory', JSON.stringify(messages));
+    }, [messages]);
 
     useEffect(() => {
         if (scrollAreaRef.current) {

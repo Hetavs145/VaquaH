@@ -1,47 +1,50 @@
 import natural from 'natural';
-import { Ollama } from 'ollama';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { db } from '../lib/firebaseAdmin.js';
 
-const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// User explicitly requested gemini-2.5-flash
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-// In-memory knowledge base (Lite RAG)
+// In-memory knowledge base (Full Site Context)
 const vaquahContext = [
     {
-        category: 'General',
-        content: 'VaquaH is a premium Split AC solution provider for Indian homes and businesses. About VaquaH: We are a leading company offering quality AC products, expert installation, and reliable services. Who is VaquaH? We are your trusted partner for all air conditioning needs. What is VaquaH? A dedicated AC solutions brand.'
+        category: 'About',
+        content: "About VaquaH: VaquaH is a trusted partner for home services and premium cooling products, simplifying home maintenance with reliable technicians and quality products. Mission: To provide accessible, high-quality home services and products that enhance living experiences. Why Choose Us: 100% Secure, 30-Day Service Warranty, Expert Team."
     },
     {
         category: 'Contact',
-        content: 'You can contact VaquaH support at +91 9999999999 (This number is not an actual number please do not call) or email contact@vaquah.in. Our address is Vadodara Gujarat -390023, India. Operating hours: Mon-Sat: 10AM - 7PM IST.'
+        content: "Contact Email: contact@vaquah.in. Contact Phone: +91 9999999999 (Headquarters in Vadodara, Gujarat - 390023). Operating hours: Mon-Sat, 9 AM - 6 PM. Location: Vadodara, Gujarat."
     },
     {
         category: 'Services',
-        content: 'We offer AC Installation, AC Repair, AC Servicing (Jet Service, Foam Service), and Annual Maintenance Contracts (AMC). We also sell Split AC units.'
+        content: "We offer AC Installation, Repair, Maintenance (AMC), Jet Service, Foam Service, and Gas Refilling. Service Area: Greater Mumbai and suburbs."
     },
     {
         category: 'Products',
-        content: 'We sell high-quality Split ACs from top brands. Check our Products page for the latest models and prices.'
-    },
-    {
-        category: 'Warranty',
-        content: 'We provide standard manufacturer warranty on all products. Installation warranty is 1 year.'
+        content: "We sell high-quality Split ACs and Window ACs from top brands with manufacturer warranties. Check the 'Products' page for current catalog."
     },
     {
         category: 'Shipping',
-        content: 'We ship across Gujarat. Delivery usually takes 3-5 business days.'
+        content: "Shipping Policy: Standard Shipping is FREE for orders above ₹999 on the net total; ₹50 for orders below ₹999. Express Delivery is flat ₹150. Delivery Timelines: Metro Cities (2-4 Days), Rest of India (5-7 Days), Remote Areas (7-10 Days)."
     },
     {
-        category: 'Offers',
-        content: 'Check our Offers page for the latest discounts and hidden coupon codes.'
+        category: 'Returns & Refunds',
+        content: "Returns accepted within 7 days of delivery if unused/original packaging. Non-returnable: Perishables, Custom items, Final Sale. To return/refund, email contact@vaquah.in. Refunds initiated within 48h of inspection."
     },
     {
-        category: 'Account',
-        content: 'You are currently on our website. To create a profile or log in, simply click on the "SignIn/SignUp" button in the top navigation menu. This will take you to the login page where you can also find the option to register.'
+        category: 'Warranty',
+        content: "30-Day Service Warranty: Covers labor and parts for repairs/service provided by VaquaH. Product Warranty: Standard manufacturer warranty applies to AC units and parts."
     },
     {
-        category: 'Site Structure',
-        content: 'Our website has the following sections: Home, Products, Schedule Service (Book Appointment), Contracts, Offers, Contact. In the footer, you can find: FAQs, Warranty Policy, Shipping Info, Returns & Refunds, Track Your Order, Privacy Policy, and Terms of Service. We do NOT have a generic "Help" section; please refer to FAQs or Contact.'
+        category: 'Payments',
+        content: "We accept Credit/Debit Cards, UPI, NetBanking, and Cash on Delivery (COD). Orders can be canceled before shipping. Services can be canceled 4 hours prior."
+    },
+    {
+        category: 'Legal',
+        content: "Privacy: We collect basic info (Name, Email, Address) for orders. Payments via Razorpay. Terms: User must be 18+. Jurisdiction: Mumbai Courts."
     }
 ];
 
@@ -134,22 +137,40 @@ export const generateResponse = async (query, context, history = [], user = null
     ${context}
     `;
 
-        // Format history for Ollama
-        const messages = [
-            { role: 'system', content: systemPrompt },
-            ...history.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: 'user', content: query }
-        ];
+        // Format history for Gemini (alternating user/model)
+        // Note: Gemini doesn't strictly support system prompts in chat history cleanly in proper roles always, 
+        // usually we prepend instructions or use 'user' role for system instruction initial turn.
+        // We will construct the prompt to include the instruction.
 
-        const response = await ollama.chat({
-            model: 'llama3.2:1b', // Using a small model for speed
-            messages: messages,
-            stream: false
+        let chatHistory = [];
+        if (history && history.length > 0) {
+            chatHistory = history.map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+            // Gemini SDK Restriction: First message in history MUST be from 'user'.
+            // If the history starts with 'model' (e.g. initial greeting), remove it.
+            if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
+                chatHistory.shift();
+            }
+        }
+
+        const chat = model.startChat({
+            history: chatHistory,
+            generationConfig: {
+                maxOutputTokens: 500,
+            },
         });
 
-        return response.message.content;
+        const fullPrompt = `${systemPrompt}\n\nUser Question: ${query}`;
+        const result = await chat.sendMessage(fullPrompt);
+        const response = await result.response;
+        return response.text();
+
     } catch (error) {
-        console.error('Ollama generation error:', error);
+        console.error('Gemini generation error DETAILS:', JSON.stringify(error, null, 2));
+        console.error('Gemini generation error MESSAGE:', error.message);
         return "I'm having trouble connecting to my brain right now. 🧠 Please try again later.";
     }
 };
