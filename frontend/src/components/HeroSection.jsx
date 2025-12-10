@@ -61,9 +61,8 @@ const HeroSection = () => {
         {carouselImages.map((slide, index) => (
           <div
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
           >
             {/* Background Image */}
             <div className="absolute inset-0">
@@ -82,23 +81,23 @@ const HeroSection = () => {
               <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
                   {/* Text Content */}
-                  <div className="text-white">
+                  <div className="text-white animate-slide-up">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 font-sans leading-tight">
                       {slide.title}
                     </h1>
                     <p className="text-base sm:text-lg mb-4 sm:mb-6 text-white/90">
                       {slide.subtitle}
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
-                      <Button 
+                      <Button
                         className="bg-vaquah-blue hover:bg-vaquah-dark-blue text-white w-full sm:w-auto"
                         onClick={() => navigate(slide.ctaLink)}
                       >
                         {slide.ctaText} <ArrowRight size={16} className="ml-2" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="border-white text-teal-500 hover:bg-white hover:text-vaquah-blue w-full sm:w-auto"
                         onClick={() => navigate('/appointments/new')}
                       >
@@ -126,14 +125,14 @@ const HeroSection = () => {
                   {/* Image placeholder for larger screens */}
                   <div className="hidden md:flex justify-center">
                     <div className="hero-image-container">
-                      <img 
-                        src={slide.image} 
-                        alt={slide.title} 
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
                         width="800"
                         height="533"
                         loading="eager"
                         fetchpriority="high"
-                        className="hero-image rounded-lg shadow-lg" 
+                        className="hero-image rounded-lg shadow-lg"
                       />
                     </div>
                   </div>
@@ -168,11 +167,10 @@ const HeroSection = () => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentSlide 
-                    ? 'bg-white' 
+                className={`w-3 h-3 rounded-full transition-all ${index === currentSlide
+                    ? 'bg-white'
                     : 'bg-white/50 hover:bg-white/75'
-                }`}
+                  }`}
               />
             ))}
           </div>

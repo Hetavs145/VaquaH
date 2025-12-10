@@ -1,14 +1,14 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  updateDoc,
   deleteDoc,
-  query, 
-  where, 
-  orderBy, 
+  query,
+  where,
+  orderBy,
   serverTimestamp,
   addDoc
 } from 'firebase/firestore';
@@ -21,7 +21,7 @@ class AdminService {
     try {
       const userRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userRef);
-      
+
       if (!userDoc.exists()) {
         // Create user document if it doesn't exist
         await setDoc(userRef, {
@@ -34,7 +34,7 @@ class AdminService {
         });
         return { role: 'user', isAdmin: false };
       }
-      
+
       const userData = userDoc.data();
       return {
         role: userData.role || 'user',
@@ -334,7 +334,7 @@ class AdminService {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
-      
+
       const docRef = await addDoc(productRef, newProduct);
       return { id: docRef.id, ...newProduct };
     } catch (error) {
@@ -354,7 +354,7 @@ class AdminService {
         inStock: Boolean(productData.inStock),
         updatedAt: serverTimestamp()
       };
-      
+
       await updateDoc(productRef, updateData);
       return { id: productId, ...updateData };
     } catch (error) {
@@ -435,6 +435,104 @@ class AdminService {
     } catch (error) {
       console.error('Error updating appointment status:', error);
       throw new Error('Failed to update appointment status');
+    }
+  }
+  // Delete order
+  async deleteOrder(orderId) {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await deleteDoc(orderRef);
+      return { id: orderId };
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw new Error('Failed to delete order');
+    }
+  }
+
+  // Delete appointment
+  async deleteAppointment(appointmentId) {
+    try {
+      const appointmentRef = doc(db, 'appointments', appointmentId);
+      await deleteDoc(appointmentRef);
+      return { id: appointmentId };
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      throw new Error('Failed to delete appointment');
+    }
+  }
+
+  // Update product stock
+  async updateProductStock(productId, inStock) {
+    try {
+      const productRef = doc(db, 'products', productId);
+      await updateDoc(productRef, {
+        inStock: inStock,
+        updatedAt: serverTimestamp()
+      });
+      return { id: productId, inStock };
+    } catch (error) {
+      console.error('Error updating product stock:', error);
+      throw new Error('Failed to update product stock');
+    }
+  }
+
+  // Get all services
+  async getAllServices() {
+    try {
+      const servicesRef = collection(db, 'services');
+      const q = query(servicesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      return [];
+    }
+  }
+
+  // Create service
+  async createService(serviceData) {
+    try {
+      const servicesRef = collection(db, 'services');
+      const newService = {
+        ...serviceData,
+        price: Number(serviceData.price),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      const docRef = await addDoc(servicesRef, newService);
+      return { id: docRef.id, ...newService };
+    } catch (error) {
+      console.error('Error creating service:', error);
+      throw new Error('Failed to create service');
+    }
+  }
+
+  // Update service
+  async updateService(serviceId, serviceData) {
+    try {
+      const serviceRef = doc(db, 'services', serviceId);
+      const updateData = {
+        ...serviceData,
+        price: Number(serviceData.price),
+        updatedAt: serverTimestamp()
+      };
+      await updateDoc(serviceRef, updateData);
+      return { id: serviceId, ...updateData };
+    } catch (error) {
+      console.error('Error updating service:', error);
+      throw new Error('Failed to update service');
+    }
+  }
+
+  // Delete service
+  async deleteService(serviceId) {
+    try {
+      const serviceRef = doc(db, 'services', serviceId);
+      await deleteDoc(serviceRef);
+      return { id: serviceId };
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      throw new Error('Failed to delete service');
     }
   }
 }

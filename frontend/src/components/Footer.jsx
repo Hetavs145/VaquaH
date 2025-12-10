@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react';
+import { Instagram, Phone, Mail, MapPin } from 'lucide-react';
+import ScrollToTopButton from './ScrollToTopButton';
 
 const Footer = () => {
   return (
@@ -15,9 +16,8 @@ const Footer = () => {
               Premium Split AC solutions for Indian homes and businesses. Quality products, expert installation, and reliable services.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Twitter size={20} /></a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Instagram size={20} /></a>
+              <a href="https://www.instagram.com/hetav.shah145/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors"><Instagram size={20} /></a>
+              <a href="mailto:contact@vaquah.in" className="hover:text-white transition-colors"><Mail size={20} /></a>
             </div>
           </div>
 
@@ -53,12 +53,13 @@ const Footer = () => {
                 <Phone size={18} className="mr-2 mt-1 flex-shrink-0" />
                 <div>
                   <p className="text-sm">+91 9999999999</p>
+                  <p className="text-[10px] text-red-400">(This number is not an actual number please do not call)</p>
                   <p className="text-xs text-gray-400">Mon-Sat: 10AM - 7PM IST</p>
                 </div>
               </div>
               <div className="flex items-start">
                 <Mail size={18} className="mr-2 mt-1 flex-shrink-0" />
-                <span className="text-sm">vaquah.contact@gmail.com</span>
+                <span className="text-sm">contact@vaquah.in</span>
               </div>
               <div className="flex items-start">
                 <MapPin size={18} className="mr-2 mt-1 flex-shrink-0" />
@@ -90,7 +91,7 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Copyright */}
         <div className="border-t border-gray-700 mt-8 pt-6 text-center">
           <p className="text-sm mb-3">© 2025 VaquaH. All Rights Reserved.</p>
@@ -100,6 +101,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      <ScrollToTopButton />
     </footer>
   );
 };

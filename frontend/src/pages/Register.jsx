@@ -1,6 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -25,7 +23,7 @@ const registerSchema = yup.object({
   password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
   confirmPassword: yup.string()
     .required('Please confirm your password')
-    .test('passwords-match', 'Passwords do not match', function(value) {
+    .test('passwords-match', 'Passwords do not match', function (value) {
       return this.parent.password === value;
     }),
 });
@@ -71,7 +69,6 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <div className="flex flex-grow items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
@@ -194,7 +191,6 @@ const Register = () => {
           </CardFooter>
         </Card>
       </div>
-      <Footer />
     </div>
   );
 };

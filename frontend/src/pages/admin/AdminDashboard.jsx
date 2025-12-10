@@ -4,14 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Package, 
-  Users, 
-  ShoppingCart, 
-  Settings, 
+import {
+  Package,
+  Users,
+  ShoppingCart,
+  Settings,
   TrendingUp,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  Wrench,
+  RefreshCw
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import Navbar from '@/components/Navbar';
@@ -36,13 +38,13 @@ const AdminDashboard = () => {
 
   const checkAdminAccess = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       const status = await adminService.checkAdminStatus(user.uid);
       setAdminStatus(status);
-      
+
       if (status.isAdmin) {
         // Load admin stats
         await loadAdminStats();
@@ -78,7 +80,7 @@ const AdminDashboard = () => {
           return [];
         })
       ]);
-      
+
       setStats({
         totalOrders: orders.length,
         pendingOrders: orders.filter(o => o.status !== 'success').length,
@@ -124,8 +126,8 @@ const AdminDashboard = () => {
               <p className="text-center text-gray-600 mb-4">
                 You need admin access to view this page. Contact an existing admin to request access.
               </p>
-              <Button 
-                onClick={() => navigate('/admin/setup')} 
+              <Button
+                onClick={() => navigate('/admin/setup')}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 Request Admin Access
@@ -147,6 +149,13 @@ const AdminDashboard = () => {
       color: 'bg-blue-500'
     },
     {
+      title: 'Services Management',
+      description: 'Manage service appointments and statuses',
+      icon: Wrench,
+      path: '/admin/services',
+      color: 'bg-cyan-500'
+    },
+    {
       title: 'Products Management',
       description: 'Add, edit, and manage products and pricing',
       icon: Package,
@@ -166,6 +175,20 @@ const AdminDashboard = () => {
       icon: TrendingUp,
       path: '/admin/offers',
       color: 'bg-orange-500'
+    },
+    {
+      title: 'Update Stock',
+      description: 'Quickly update product stock status',
+      icon: RefreshCw,
+      path: '/admin/stock',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Update Service Rates',
+      description: 'Manage service rates, features and images',
+      icon: Wrench,
+      path: '/admin/service-rates',
+      color: 'bg-teal-500'
     },
     {
       title: 'Admin Management',
@@ -208,7 +231,7 @@ const AdminDashboard = () => {
               <div className="text-xl sm:text-2xl font-bold">{stats.totalOrders}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Pending Orders</CardTitle>
@@ -218,7 +241,7 @@ const AdminDashboard = () => {
               <div className="text-xl sm:text-2xl font-bold text-orange-600">{stats.pendingOrders}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Total Products</CardTitle>
@@ -228,7 +251,7 @@ const AdminDashboard = () => {
               <div className="text-xl sm:text-2xl font-bold">{stats.totalProducts}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>

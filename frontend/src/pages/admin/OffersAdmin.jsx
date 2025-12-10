@@ -17,7 +17,7 @@ const OffersAdmin = () => {
 	const [isAdmin, setIsAdmin] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [offers, setOffers] = useState([]);
-	const [form, setForm] = useState({ title: '', code: '', discountPercent: 0, active: true });
+	const [form, setForm] = useState({ title: '', code: '', discountPercent: 0, active: true, isHidden: false, minOrderValue: 0 });
 	const [editingId, setEditingId] = useState(null);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState(null);
@@ -61,7 +61,7 @@ const OffersAdmin = () => {
 	};
 
 	const resetForm = () => {
-		setForm({ title: '', code: '', discountPercent: 0, active: true });
+		setForm({ title: '', code: '', discountPercent: 0, active: true, isHidden: false, minOrderValue: 0 });
 		setEditingId(null);
 	};
 
@@ -99,7 +99,14 @@ const OffersAdmin = () => {
 
 	const editOffer = (offer) => {
 		setEditingId(offer.id);
-		setForm({ title: offer.title || '', code: offer.code || '', discountPercent: offer.discountPercent || 0, active: !!offer.active });
+		setForm({
+			title: offer.title || '',
+			code: offer.code || '',
+			discountPercent: offer.discountPercent || 0,
+			active: !!offer.active,
+			isHidden: !!offer.isHidden,
+			minOrderValue: offer.minOrderValue || 0
+		});
 	};
 
 	const removeOffer = async (id) => {
@@ -169,6 +176,17 @@ const OffersAdmin = () => {
 							<Input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
 							<Input placeholder="Code (e.g., SAVE10)" value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} required />
 							<Input placeholder="Discount %" type="number" min="0" max="100" value={form.discountPercent} onChange={e => setForm({ ...form, discountPercent: e.target.value })} required />
+							<Input placeholder="Min Order Value (₹)" type="number" min="0" value={form.minOrderValue} onChange={e => setForm({ ...form, minOrderValue: e.target.value })} />
+							<div className="flex items-center gap-2">
+								<input
+									type="checkbox"
+									id="isHidden"
+									checked={form.isHidden}
+									onChange={e => setForm({ ...form, isHidden: e.target.checked })}
+									className="w-4 h-4"
+								/>
+								<label htmlFor="isHidden" className="text-sm font-medium">Hidden Offer</label>
+							</div>
 							<div className="flex gap-2">
 								<Button type="submit" disabled={saving}>{saving ? 'Saving...' : (editingId ? 'Update' : 'Create')}</Button>
 								{editingId && (
@@ -190,6 +208,7 @@ const OffersAdmin = () => {
 								<div>Title</div>
 								<div>Code</div>
 								<div>Discount</div>
+								<div>Min Order</div>
 								<div>Active</div>
 								<div className="text-right pr-2">Actions</div>
 							</div>
@@ -199,8 +218,10 @@ const OffersAdmin = () => {
 										<div className="font-medium">{o.title}</div>
 										<div className="text-sm">{o.code}</div>
 										<div className="text-sm">{Number(o.discountPercent || 0)}%</div>
+										<div className="text-sm">₹{Number(o.minOrderValue || 0)}</div>
 										<div>
 											<Badge className={o.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-800 border-gray-200'}>{o.active ? 'Active' : 'Inactive'}</Badge>
+											{o.isHidden && <Badge className="ml-2 bg-purple-100 text-purple-800 border-purple-200">Hidden</Badge>}
 										</div>
 										<div className="flex md:justify-end items-center gap-2">
 											<Button variant="outline" size="sm" onClick={() => editOffer(o)}>

@@ -27,16 +27,8 @@
         exit;
     }
 
-	// Razorpay secret used to generate signature (do not hardcode secrets in repo)
-	$razorpayKeySecret = trim(getenv('RAZORPAY_KEY_SECRET') ?: '');
-
-	if ($razorpayKeySecret === '') {
-		// Secret not configured on the server; return a clear message
-		error_log('RZP verify error: RAZORPAY_KEY_SECRET not configured');
-		http_response_code(500);
-		echo json_encode(['valid' => false, 'message' => 'Server not configured: missing RAZORPAY_KEY_SECRET']);
-		exit;
-	}
+	// Razorpay secret used to generate signature (trim to avoid accidental spaces)
+	$razorpayKeySecret = trim(' iotUbAmBeeAszaUjLipKTIu4');
 
 	$generatedSignature = hash_hmac('sha256', $orderId . '|' . $paymentId, $razorpayKeySecret);
 

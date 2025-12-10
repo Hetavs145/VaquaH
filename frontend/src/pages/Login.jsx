@@ -15,8 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { Separator } from "@/components/ui/separator";
 
 const loginSchema = yup.object({
@@ -27,7 +25,7 @@ const loginSchema = yup.object({
 const Login = () => {
   const { login, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
-  
+
   // Redirect if already logged in
   React.useEffect(() => {
     if (user) {
@@ -63,7 +61,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <div className="flex flex-grow items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
@@ -158,7 +155,6 @@ const Login = () => {
           </CardFooter>
         </Card>
       </div>
-      <Footer />
     </div>
   );
 };

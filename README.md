@@ -1,56 +1,87 @@
+# VaquaH Cooling Service (v1.1.0)
 
-VaquaH Cooling Service
-A modern web app for discovering AC products and booking cooling services. It includes a product catalog, detailed pages, cart and checkout flow, service appointments, orders, contracts, and a user dashboard.
+A comprehensive web application for HVAC/Cooling services, enabling product purchases, service bookings, and annual maintenance contracts.
 
-Highlights
-Products: Rich catalog with images, specs, and feature highlights
-Commerce: Cart, checkout, order history and status
-Services: Appointment booking with confirmation and updates
-Contracts: Plan selection and contract management
-Experience: Fast, responsive, mobile‑first UI with accessible components
-Tech Overview
-Frontend
-React (Vite), React Router
-Tailwind CSS + Shadcn UI
-TanStack Query for client‑side caching and syncing
-Context-based state (Auth, Cart) and modular service layer
-Backend (Briefing, high‑level only)
-Node.js application that powers product, order, appointment, and contract workflows
-Layered architecture (routing/controllers → domain services → data access)
-Pluggable integrations for authentication, payments, and data storage
-Environment-driven configuration; no secrets stored in the repository
-Emphasis on input validation, consistent error handling, and observability hooks
-Project Structure
-src/components — Reusable UI blocks
-src/pages — Route-level pages
-src/context — Providers (Auth, Cart)
-src/services — Frontend data-access modules
-src/lib — App configuration and utilities
-src/utils — Non-UI helpers
-backend/ — Node.js server (domain services and HTTP handlers)
-Local Development
-Install dependencies
-npm install
-cd frontend && npm install
-cd ../backend && npm install
-Start concurrent dev servers
-npm run dev
-Build production assets
-npm run build
-Output is generated in frontend/dist.
+## 🚀 Key Features
 
-Deployment
-Frontend: Serve the static assets from frontend/dist on any static host/CDN. Enable SPA fallback to index.html.
-Backend: Deploy the Node.js app to your preferred host (HTTPS recommended). Configure all runtime secrets through the host’s secure settings.
-Security & Privacy
-No credentials are committed to the repo.
-Use environment variables/secrets managers for runtime configuration.
-Follow least‑privilege access for external services.
-Contributing
-Open issues/PRs with focused changes and clear rationale.
-Match the existing style and keep edits scoped.
-License
-See LICENSE for usage terms.
+### 🛒 E-Commerce Experience
+- **Product Catalog**: Browse AC units and parts with rich details, images, and specifications.
+- **Smart Search & Filtering**: Find products easily by category, price, or name.
+- **Shopping Cart**:
+  - Real-time total calculation.
+  - **Coupon System**: Apply discount codes (public or hidden).
+  - **Tiered Shipping**:
+    - **Standard**: Free for orders > ₹999 (on net total), else ₹50.
+    - **Express**: Flat ₹150 for urgent delivery.
+- **Wishlist**: Save favorite items for later.
+- **Secure Checkout**:
+  - Integrated **Razorpay** payment gateway.
+  - **Cash on Delivery (COD)** with partial advance payment logic for high-value orders (> ₹2000).
 
-Acknowledgements
-Built with React, Tailwind, Shadcn UI, TanStack Query, and a lightweight Node.js service layer.
+### 🛠️ Services & Maintenance
+- **Appointment Booking**: Schedule installation, repair, or maintenance services.
+- **AMC Plans**: View and purchase Annual Maintenance Contracts (Basic, Gold, Platinum).
+- **Service Tracking**: Monitor appointment status (Pending, Confirmed, Completed) from the dashboard.
+
+### 👤 User Dashboard
+- **Profile Management**: Update personal details and avatars.
+- **Order History**: View past purchases and their delivery status.
+- **Appointment History**: Track current and past service requests.
+
+### 💬 Smart Support
+- **AI Chatbot**: RAG-powered assistant to answer queries about services, pricing, and policies.
+- **Contact Center**: Direct click-to-call support and location details.
+- **Help Pages**: Comprehensive FAQs, Returns Policy, and Warranty information.
+
+## 💻 Tech Stack
+
+**Frontend:**
+- React (Vite)
+- Tailwind CSS & Shadcn UI
+- Framer Motion (Animations)
+- Lucide React (Icons)
+- React Router DOM
+- TanStack Query (State Management)
+
+**Backend:**
+- Node.js & Express
+- Firebase (Firestore & Auth)
+- Razorpay Integration
+- Natural (NLP for Chatbot)
+
+## 🛠️ Local Development
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
+
+2. **Start development servers**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 🚀 Deployment
+- **Frontend**: Deploy `frontend/dist` to Vercel, Netlify, or AWS S3.
+- **Backend**: Deploy to Render, Railway, or AWS EC2. Ensure environment variables are set.
+
+## 🔒 Security
+- Environment variables used for all sensitive keys.
+- No secrets committed to the repository.
+- Input validation on Checkout and Cart.
+
+## 🤝 Contributing
+Open issues or PRs with clear descriptions. Please follow the existing code style.
+
+## 📄 License
+All rights reserved. This project is proprietary. Unauthorized use, reproduction, or distribution without explicit permission is strictly prohibited.
+
+---
+Built with ❤️ by Hetav Shah.

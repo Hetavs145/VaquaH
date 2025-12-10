@@ -13,24 +13,16 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const statuses = [
-  'created', 'payment_pending', 'paid', 'success', 'shipping', 
-  'out_for_delivery', 'delivered', 'cod_pending', 'awaiting_advance', 
-  'advance_paid', 'cancelled', 'refunded'
+  'paid', 'confirmed', 'shipping', 'out_for_delivery', 'success', 'cancelled'
 ];
 
 const statusColors = {
-  created: 'bg-gray-100 text-gray-800',
-  payment_pending: 'bg-yellow-100 text-yellow-800',
   paid: 'bg-blue-100 text-blue-800',
-  success: 'bg-green-100 text-green-800',
+  confirmed: 'bg-indigo-100 text-indigo-800',
   shipping: 'bg-purple-100 text-purple-800',
-  out_for_delivery: 'bg-indigo-100 text-indigo-800',
-  delivered: 'bg-green-100 text-green-800',
-  cod_pending: 'bg-orange-100 text-orange-800',
-  awaiting_advance: 'bg-red-100 text-red-800',
-  advance_paid: 'bg-blue-100 text-blue-800',
-  cancelled: 'bg-red-100 text-red-800',
-  refunded: 'bg-gray-100 text-gray-800'
+  out_for_delivery: 'bg-yellow-100 text-yellow-800',
+  success: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800'
 };
 
 const OrdersAdmin = () => {
@@ -53,32 +45,38 @@ const OrdersAdmin = () => {
     const interval = setInterval(() => {
       const now = Date.now();
       const newCountdowns = {};
-      
+
       orders.forEach(order => {
-        if (order.status === 'success' && order.updatedAt) {
+        if ((order.status === 'success' || order.status === 'cancelled') && order.updatedAt) {
           const updatedTime = order.updatedAt.toDate ? order.updatedAt.toDate() : new Date(order.updatedAt);
           const elapsed = now - updatedTime.getTime();
-          const remaining = Math.max(0, 600000 - elapsed); // 10 minutes in milliseconds
-          
+          const remaining = Math.max(0, 864000000 - elapsed); // 10 days in milliseconds (10 * 24 * 60 * 60 * 1000)
+
           if (remaining > 0) {
             newCountdowns[order.id] = Math.ceil(remaining / 1000);
           }
         }
       });
-      
+
       setCountdowns(newCountdowns);
     }, 1000);
 
     return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, [orders]);
+
+  // Removed auto-delete effect as we are now hiding them instead
+  useEffect(() => {
+    // Optional: You could still keep a cleanup job, but the requirement is to hide after 10 days.
+  }, []);
 
   const checkAdminAccess = async () => {
     if (!user) return;
-    
+
     try {
       const status = await adminService.checkAdminStatus(user.uid);
       setAdminStatus(status);
-      
+
       if (status.isAdmin) {
         loadOrders();
       }
@@ -90,13 +88,25 @@ const OrdersAdmin = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const orders = await adminService.getAllOrders(
-        statusFilter === 'all' ? null : statusFilter, 
+      let fetchedOrders = await adminService.getAllOrders(
+        statusFilter === 'all' ? null : statusFilter,
         userIdFilter || null
       );
-      setOrders(orders);
+
+      // Filter out 'success' or 'cancelled' orders from the default list view ONLY if they are older than 10 days
+      if (statusFilter === 'all') {
+        const tenDaysAgo = Date.now() - 864000000; // 10 days in ms
+        fetchedOrders = fetchedOrders.filter(order => {
+          if (order.status !== 'success' && order.status !== 'cancelled') return true;
+          if (!order.updatedAt) return true; // Keep if no date
+          const updatedTime = order.updatedAt.toDate ? order.updatedAt.toDate().getTime() : new Date(order.updatedAt).getTime();
+          return updatedTime > tenDaysAgo;
+        });
+      }
+
+      setOrders(fetchedOrders);
       const shipping = {};
-      orders.forEach(o => { shipping[o.id] = o.shippingId || ''; });
+      fetchedOrders.forEach(o => { shipping[o.id] = o.shippingId || ''; });
       setShippingInput(shipping);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
@@ -112,7 +122,56 @@ const OrdersAdmin = () => {
 
   const updateStatus = async (orderId, nextStatus) => {
     if (!nextStatus) return;
-    
+
+    // Strict Status Flow Validation
+    const order = orders.find(o => o.id === orderId);
+    const currentStatus = order?.status;
+
+    // Lock Logic: Cannot change status if already success or cancelled
+    if (currentStatus === 'success' || currentStatus === 'cancelled') {
+      toast({
+        title: 'Action Locked',
+        description: `Order is already ${currentStatus} and cannot be changed.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (nextStatus === 'cancelled') {
+      // Allow cancellation from any status (except final ones, caught above)
+    } else {
+      // Define allowed transitions
+      const allowed = {
+        'paid': ['confirmed'],
+        'confirmed': ['shipping'],
+        'shipping': ['out_for_delivery'],
+        'out_for_delivery': ['success']
+      };
+
+      // Check if transition is allowed
+      if (allowed[currentStatus] && !allowed[currentStatus].includes(nextStatus)) {
+        toast({
+          title: 'Invalid Transition',
+          description: `Cannot move from ${currentStatus} to ${nextStatus}. Follow the strict flow.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Specific check for Shipping: Must have AWB
+      if (nextStatus === 'shipping') {
+        const shippingId = shippingInput[orderId] || order.shippingId;
+        if (!shippingId || shippingId.trim() === '') {
+          toast({
+            title: 'Missing AWB',
+            description: 'Please save a Shipping ID / AWB before moving to Shipping status.',
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+    }
+
     setUpdatingId(orderId);
     try {
       await adminService.updateOrderStatus(orderId, nextStatus, '', user.uid);
@@ -179,8 +238,8 @@ const OrdersAdmin = () => {
         <Alert className="mb-4 sm:mb-6 border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800 text-sm sm:text-base">
-            <strong>Note:</strong> Orders marked as "success" will be automatically deleted after 10 minutes. 
-            This helps maintain a clean order history and improves system performance.
+            <strong>Note:</strong> Orders marked as "success" or "cancelled" will be hidden from this list after 10 days.
+            This helps maintain a clean order history. Statuses "success" and "cancelled" are final and cannot be changed.
           </AlertDescription>
         </Alert>
 
@@ -256,16 +315,16 @@ const OrdersAdmin = () => {
                           <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
                             {order.status || 'created'}
                           </Badge>
-                          {order.status === 'success' && countdowns[order.id] !== undefined && (
+                          {['success', 'cancelled'].includes(order.status) && countdowns[order.id] !== undefined && (
                             <div className="flex items-center gap-1 text-xs text-orange-600 font-medium">
                               <Clock className="w-3 h-3" />
-                              Deletes in: {Math.floor(countdowns[order.id] / 60)}:{(countdowns[order.id] % 60).toString().padStart(2, '0')}
+                              Hides in: {Math.floor(countdowns[order.id] / 86400)}d {Math.floor((countdowns[order.id] % 86400) / 3600)}h
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Shipping ID / AWB */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start sm:items-center">
                       <div className="sm:col-span-2">
@@ -282,7 +341,7 @@ const OrdersAdmin = () => {
                         <Button variant="outline" className="w-full sm:w-auto" onClick={() => updateShipping(order.id)}>Save Shipping</Button>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <Select onValueChange={(value) => updateStatus(order.id, value)}>
                         <SelectTrigger className="w-48">
@@ -296,7 +355,7 @@ const OrdersAdmin = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button 
+                      <Button
                         disabled={updatingId === order.id}
                         onClick={() => updateStatus(order.id, 'success')}
                         className="bg-green-600 hover:bg-green-700"

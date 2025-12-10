@@ -33,7 +33,7 @@ const ServiceSection = () => {
   return (
     <section className="section-padding bg-white">
       <div className="container-custom">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-slide-up">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">Our Professional Services</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Keep your air conditioner in perfect condition with our comprehensive service packages.
@@ -41,17 +41,17 @@ const ServiceSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           {services.map((service) => (
-            <div 
-              key={service.id} 
-              className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+            <div
+              key={service.id}
+              className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow card-hover"
             >
               <div className="mb-4 h-48 overflow-hidden rounded-lg">
-                <img 
-                  src={service.image || "/placeholder.svg"} 
-                  alt={service.title} 
-                  className="w-full h-full object-cover"
+                <img
+                  src={service.image || "/placeholder.svg"}
+                  alt={service.title}
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                   onError={(e) => {
                     e.currentTarget.src = "/placeholder.svg";
                   }}

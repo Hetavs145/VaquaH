@@ -19,16 +19,16 @@ class ImageUploadService {
   }
 
   // Upload a single file to Firebase Storage and return its HTTPS URL
-  async uploadImage(file, productId = 'misc', imageIndex = 0) {
+  async uploadImage(file, id = 'misc', imageIndex = 0, folder = 'products') {
     try {
       this.validateImageFile(file);
-      // Sanitize productId to remove spaces and special characters
-      const safeProductId = productId.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/\s+/g, '_');
+      // Sanitize id to remove spaces and special characters
+      const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/\s+/g, '_');
       // Sanitize filename more aggressively
       const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/\s+/g, '_');
-      const path = `products/${safeProductId}/${Date.now()}_${imageIndex}_${safeName}`;
+      const path = `${folder}/${safeId}/${Date.now()}_${imageIndex}_${safeName}`;
       const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file, { 
+      await uploadBytes(storageRef, file, {
         contentType: file.type,
         customMetadata: {
           originalName: file.name,
@@ -39,7 +39,7 @@ class ImageUploadService {
       return { url, path };
     } catch (error) {
       console.error('Upload error details:', error);
-      
+
       // Provide more helpful error messages
       if (error.code === 'storage/unauthorized' || error.code === 'storage/canceled') {
         throw new Error('Upload failed: Please make sure you are logged in and have permission to upload images.');
@@ -54,9 +54,9 @@ class ImageUploadService {
   }
 
   // Upload multiple images; returns array of HTTPS URLs
-  async uploadMultipleImages(files, productId = 'misc') {
+  async uploadMultipleImages(files, id = 'misc', folder = 'products') {
     try {
-      const tasks = files.map((file, idx) => this.uploadImage(file, productId, idx));
+      const tasks = files.map((file, idx) => this.uploadImage(file, id, idx, folder));
       const results = await Promise.all(tasks);
       return results.map(r => r.url);
     } catch (error) {
@@ -88,7 +88,7 @@ class ImageUploadService {
   saveImageToLocal() {
     return Promise.resolve(null);
   }
-  removeImageFromLocal() {}
+  removeImageFromLocal() { }
   convertToJPG(file) { return Promise.resolve(file); }
   fileToBase64() { return Promise.resolve(null); }
   compressImage(file) { return Promise.resolve(file); }

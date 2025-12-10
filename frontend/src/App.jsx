@@ -10,17 +10,22 @@ import ProductDetail from "./pages/ProductDetail.jsx";
 import Contracts from "./pages/Contracts.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Cart from "./pages/Cart.jsx";
+import Wishlist from "./pages/Wishlist.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import OrdersAdmin from "./pages/admin/OrdersAdmin.jsx";
+import ServicesAdmin from "./pages/admin/ServicesAdmin.jsx";
 import AppointmentsAdmin from "./pages/admin/AppointmentsAdmin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import SetupAdmin from "./pages/admin/SetupAdmin.jsx";
 import AdminManagement from "./pages/admin/AdminManagement.jsx";
 import ProductsAdmin from "./pages/admin/ProductsAdmin.jsx";
 import UsersAdmin from "./pages/admin/UsersAdmin.jsx";
+
 import OffersAdmin from "./pages/admin/OffersAdmin.jsx";
+import StockAdmin from "./pages/admin/StockAdmin.jsx";
+import ServiceRatesAdmin from "./pages/admin/ServiceRatesAdmin.jsx";
 
 import AppointmentNew from "./pages/AppointmentNew.jsx";
 import Services from "./pages/Services.jsx";
@@ -35,36 +40,37 @@ import Returns from "./pages/Returns.jsx";
 import TrackOrder from "./pages/TrackOrder.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
+import Chatbot from "./components/Chatbot.jsx";
 
 const queryClient = new QueryClient();
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/login" state={{ from: window.location.pathname }} />;
   }
-  
+
   return <>{children}</>;
 };
 
 // Admin Route Component
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/login" state={{ from: window.location.pathname }} />;
   }
-  
+
   // Check if user is admin (this will be checked in the component itself)
   return <>{children}</>;
 };
@@ -86,7 +92,16 @@ const AppContent = () => {
               <Checkout />
             </ProtectedRoute>
           } />
-          <Route path="/cart" element={<Cart />} />
+          <Route path="/cart" element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path="/wishlist" element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={
@@ -94,7 +109,7 @@ const AppContent = () => {
               <Dashboard />
             </ProtectedRoute>
           } />
-          
+
           {/* Admin Routes */}
           <Route path="/admin" element={
             <AdminRoute>
@@ -104,6 +119,11 @@ const AppContent = () => {
           <Route path="/admin/orders" element={
             <AdminRoute>
               <OrdersAdmin />
+            </AdminRoute>
+          } />
+          <Route path="/admin/services" element={
+            <AdminRoute>
+              <ServicesAdmin />
             </AdminRoute>
           } />
           <Route path="/admin/appointments" element={
@@ -136,14 +156,25 @@ const AppContent = () => {
               <OffersAdmin />
             </AdminRoute>
           } />
+          <Route path="/admin/stock" element={
+            <AdminRoute>
+              <StockAdmin />
+            </AdminRoute>
+          } />
+          <Route path="/admin/service-rates" element={
+            <AdminRoute>
+              <ServiceRatesAdmin />
+            </AdminRoute>
+          } />
 
-          
+
           <Route path="/appointments/new" element={
             <ProtectedRoute>
               <AppointmentNew />
             </ProtectedRoute>
           } />
           <Route path="/services" element={<Services />} />
+
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faqs" element={<FAQs />} />
@@ -156,8 +187,9 @@ const AppContent = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Chatbot />
       </BrowserRouter>
-    </TooltipProvider>
+    </TooltipProvider >
   );
 };
 

@@ -1,16 +1,16 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query as fsQuery, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query as fsQuery,
+  where,
+  orderBy,
   limit,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -36,7 +36,7 @@ export const firestoreService = {
     try {
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
       } else {
@@ -93,22 +93,22 @@ export const firestoreService = {
   async find(collectionName, conditions = [], orderByField = null, limitCount = null) {
     try {
       let q = collection(db, collectionName);
-      
+
       // Apply where conditions
       conditions.forEach(condition => {
         q = fsQuery(q, where(condition.field, condition.operator, condition.value));
       });
-      
+
       // Apply ordering
       if (orderByField) {
         q = fsQuery(q, orderBy(orderByField));
       }
-      
+
       // Apply limit
       if (limitCount) {
         q = fsQuery(q, limit(limitCount));
       }
-      
+
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -244,5 +244,71 @@ export const appointmentService = {
 
   async deleteAppointment(id) {
     return await firestoreService.delete('appointments', id);
+  }
+};
+
+export const servicesService = {
+  async getAllServices() {
+    return await firestoreService.getAll('services');
+  },
+
+  async getServiceById(id) {
+    return await firestoreService.getById('services', id);
+  }
+};
+
+export const reviewService = {
+  async createReview(reviewData) {
+    return await firestoreService.create('reviews', reviewData);
+  },
+
+  async getReviews() {
+    // Get recent reviews, limit to 20 for now
+    return await firestoreService.find('reviews', [], 'createdAt', 20);
+  },
+
+  async getProductReviews(productId) {
+    return await firestoreService.find('reviews', [
+      { field: 'productId', operator: '==', value: productId }
+    ], 'createdAt');
+  },
+
+  async getUserReviews(userId) {
+    return await firestoreService.find('reviews', [
+      { field: 'userId', operator: '==', value: userId }
+    ]);
+  },
+
+  async addProductReview(reviewData) {
+    // 1. Create the review
+    const review = await firestoreService.create('reviews', reviewData);
+
+    // 2. Update product rating stats
+    try {
+      const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+
+      const productRef = doc(db, 'products', reviewData.productId);
+      const productSnap = await getDoc(productRef);
+
+      if (productSnap.exists()) {
+        const product = productSnap.data();
+        const currentRating = product.rating || 0;
+        const currentReviews = product.numReviews || 0;
+
+        const newReviews = currentReviews + 1;
+        const newRating = ((currentRating * currentReviews) + reviewData.rating) / newReviews;
+
+        await updateDoc(productRef, {
+          rating: Number(newRating.toFixed(1)),
+          numReviews: newReviews
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update product rating stats:', error);
+      // Don't fail the whole operation if stats update fails
+    }
+
+    return review;
   }
 };

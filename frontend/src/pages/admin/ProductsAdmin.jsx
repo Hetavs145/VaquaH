@@ -44,6 +44,11 @@ const ProductsAdmin = () => {
   // Line-by-line inputs state
   const [featuresList, setFeaturesList] = useState([]);
   const [specsList, setSpecsList] = useState([]); // [{ key: '', value: '' }]
+  const [fixedSpecs, setFixedSpecs] = useState({
+    brand: '',
+    capacity: '',
+    rating: ''
+  });
 
   useEffect(() => {
     checkAdminAccess();
@@ -51,11 +56,11 @@ const ProductsAdmin = () => {
 
   const checkAdminAccess = async () => {
     if (!user) return;
-    
+
     try {
       const status = await adminService.checkAdminStatus(user.uid);
       setAdminStatus(status);
-      
+
       if (status.isAdmin) {
         loadProducts();
       }
@@ -97,10 +102,10 @@ const ProductsAdmin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setUploading(true);
-      
+
       let finalFormData = { ...formData };
       // Build from line-by-line UI; fall back to textareas if present
       const builtFeatures = featuresList.length > 0
@@ -108,22 +113,43 @@ const ProductsAdmin = () => {
         : parseFeatures(featuresInput);
       const builtSpecs = specsList.length > 0
         ? specsList.reduce((acc, pair) => {
-            const key = (pair.key || '').trim();
-            const value = (pair.value || '').trim();
-            if (key && value) acc[key] = value;
-            return acc;
-          }, {})
+          const key = (pair.key || '').trim();
+          const value = (pair.value || '').trim();
+          if (key && value) acc[key] = value;
+          return acc;
+        }, {})
         : parseSpecs(specsInput);
       finalFormData.features = builtFeatures;
-      finalFormData.specifications = builtSpecs;
-      
+      finalFormData.features = builtFeatures;
+
+      // Merge fixed specs with dynamic specs
+      const mergedSpecs = {
+        'Brand': fixedSpecs.brand,
+        'Capacity': `${fixedSpecs.capacity} Ton`,
+        'Energy Rating': `${fixedSpecs.rating} Star`,
+        ...builtSpecs
+      };
+      finalFormData.specifications = mergedSpecs;
+      finalFormData.brand = fixedSpecs.brand; // Sync top-level brand
+
+      // Validation
+      if (!fixedSpecs.brand || !fixedSpecs.capacity || !fixedSpecs.rating) {
+        toast({
+          title: 'Missing Required Fields',
+          description: 'Please fill in Brand, Capacity, and Rating.',
+          variant: 'destructive'
+        });
+        setUploading(false);
+        return;
+      }
+
       if (!editingProduct && imageFiles.length > 0) {
         // Upload to Firebase Storage and store HTTPS URLs
         const storageUrls = await imageUploadService.uploadMultipleImages(imageFiles, finalFormData.name || 'product');
         finalFormData.images = storageUrls;
         finalFormData.imageUrl = storageUrls[0] || '';
       }
-      
+
       if (editingProduct) {
         let updatedImages = [...(finalFormData.images || [])];
         if (imageFiles.length > 0) {
@@ -132,14 +158,14 @@ const ProductsAdmin = () => {
         }
         finalFormData.images = updatedImages;
         finalFormData.imageUrl = updatedImages[0] || '';
-        
+
         await adminService.updateProduct(editingProduct.id, finalFormData);
         toast({ title: 'Success', description: 'Product updated successfully' });
       } else {
         const newProduct = await adminService.createProduct(finalFormData);
         toast({ title: 'Success', description: 'Product created successfully' });
       }
-      
+
       setIsDialogOpen(false);
       setEditingProduct(null);
       resetForm();
@@ -168,10 +194,26 @@ const ProductsAdmin = () => {
       specifications: product.specifications || {}
     });
     setFeaturesInput((product.features || []).join('\n'));
-    setSpecsInput(Object.entries(product.specifications || {}).map(([k,v]) => `${k}: ${v}`).join('\n'));
+    setSpecsInput(Object.entries(product.specifications || {}).map(([k, v]) => `${k}: ${v}`).join('\n'));
     // Populate line-by-line lists
     setFeaturesList([...(product.features || [])]);
-    setSpecsList(Object.entries(product.specifications || {}).map(([key, value]) => ({ key, value })));
+    // Extract fixed specs and populate dynamic specs list
+    const specs = product.specifications || {};
+    const brandKey = Object.keys(specs).find(k => k.toLowerCase().includes('brand'));
+    const capKey = Object.keys(specs).find(k => k.toLowerCase().includes('capacity') || k.toLowerCase().includes('tonnage'));
+    const rateKey = Object.keys(specs).find(k => k.toLowerCase().includes('energy') || k.toLowerCase().includes('star'));
+
+    setFixedSpecs({
+      brand: brandKey ? specs[brandKey] : (product.brand || ''),
+      capacity: capKey ? String(specs[capKey]).replace(/ton/i, '').trim() : '',
+      rating: rateKey ? String(specs[rateKey]).replace(/star/i, '').trim() : ''
+    });
+
+    const dynamicSpecs = Object.entries(specs)
+      .filter(([k]) => k !== brandKey && k !== capKey && k !== rateKey)
+      .map(([key, value]) => ({ key, value }));
+
+    setSpecsList(dynamicSpecs);
     setImagePreviews(productImages);
     setImageFiles([]);
     setIsDialogOpen(true);
@@ -179,7 +221,7 @@ const ProductsAdmin = () => {
 
   const handleDelete = async (productId) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    
+
     try {
       await adminService.deleteProduct(productId);
       // Remove images from local storage
@@ -201,7 +243,7 @@ const ProductsAdmin = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length + imagePreviews.length > 10) {
       toast({
         title: 'Error',
@@ -210,9 +252,9 @@ const ProductsAdmin = () => {
       });
       return;
     }
-    
+
     setImageFiles(prev => [...prev, ...files]);
-    
+
     // Create previews for new files
     files.forEach(file => {
       const reader = new FileReader();
@@ -251,6 +293,7 @@ const ProductsAdmin = () => {
     setImagePreviews([]);
     setFeaturesList([]);
     setSpecsList([]);
+    setFixedSpecs({ brand: '', capacity: '', rating: '' });
   };
 
   const getProductImages = (product) => {
@@ -300,7 +343,7 @@ const ProductsAdmin = () => {
             <h1 className="text-2xl sm:text-3xl font-bold">Products Management</h1>
             <Badge className="bg-green-100 text-green-800 border-green-200 w-fit">Admin</Badge>
           </div>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => { setEditingProduct(null); resetForm(); }} className="w-full sm:w-auto">
@@ -321,7 +364,7 @@ const ProductsAdmin = () => {
                     <label className="block text-sm font-medium mb-2">Product Name</label>
                     <Input
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Product name"
                       required
                     />
@@ -331,24 +374,24 @@ const ProductsAdmin = () => {
                     <Input
                       type="number"
                       value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="0.00"
                       step="0.01"
                       required
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Category</label>
                   <Input
                     value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     placeholder="e.g., Split AC, Window AC"
                     required
                   />
                 </div>
-                
+
                 {/* Features */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Features</label>
@@ -375,13 +418,56 @@ const ProductsAdmin = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Specifications */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Specifications</label>
+
+                  {/* Fixed Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Brand *</label>
+                      <Input
+                        value={fixedSpecs.brand}
+                        onChange={(e) => setFixedSpecs({ ...fixedSpecs, brand: e.target.value })}
+                        placeholder="e.g. Voltas"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Capacity (Ton) *</label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={fixedSpecs.capacity}
+                          onChange={(e) => setFixedSpecs({ ...fixedSpecs, capacity: e.target.value })}
+                          placeholder="e.g. 1.5"
+                          required
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs text-gray-400">Ton</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Energy Rating (Star) *</label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={fixedSpecs.rating}
+                          onChange={(e) => setFixedSpecs({ ...fixedSpecs, rating: e.target.value })}
+                          placeholder="e.g. 5"
+                          required
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs text-gray-400">Star</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     {specsList.length === 0 && (
-                      <div className="text-xs text-gray-500">Add specification key and value line by line.</div>
+                      <div className="text-xs text-gray-500">Add other specifications below (e.g. Condenser Coil, Warranty).</div>
                     )}
                     {specsList.map((pair, index) => (
                       <div key={index} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
@@ -413,7 +499,7 @@ const ProductsAdmin = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Product Images (Up to 10)</label>
                   {!editingProduct ? (
@@ -438,7 +524,7 @@ const ProductsAdmin = () => {
                           />
                         </label>
                       </div>
-                      
+
                       {/* Image Previews */}
                       {imagePreviews.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -469,7 +555,7 @@ const ProductsAdmin = () => {
                   ) : (
                     <div className="space-y-3">
                       <p className="text-sm text-gray-600">
-                        Current images: {imagePreviews.length} | 
+                        Current images: {imagePreviews.length} |
                         <span className="text-blue-600"> First image is the main product image</span>
                       </p>
                       {imagePreviews.length > 0 && (
@@ -493,25 +579,25 @@ const ProductsAdmin = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Description</label>
                   <Textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Product description"
                     rows={3}
                     required
                   />
                 </div>
-                
+
                 {/* Responsive checkbox layout */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center">
                     <input
                       type="checkbox"
                       checked={formData.featured}
-                      onChange={(e) => setFormData({...formData, featured: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                       className="mr-2"
                     />
                     Featured Product
@@ -520,18 +606,18 @@ const ProductsAdmin = () => {
                     <input
                       type="checkbox"
                       checked={formData.inStock}
-                      onChange={(e) => setFormData({...formData, inStock: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
                       className="mr-2"
                     />
                     In Stock
                   </label>
                 </div>
-                
+
                 <div className="text-sm text-gray-600">
                   <p>* All fields are required</p>
                   <p>* First uploaded image will be the main product image</p>
                 </div>
-                
+
                 {/* Responsive button layout */}
                 <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
@@ -563,7 +649,7 @@ const ProductsAdmin = () => {
                 {products.map((product) => {
                   const productImages = getProductImages(product);
                   const mainImage = productImages[0] || getPlaceholderImage();
-                  
+
                   return (
                     <Card key={product.id} className="overflow-hidden">
                       <div className="aspect-square overflow-hidden relative">
@@ -602,7 +688,7 @@ const ProductsAdmin = () => {
                         <p className="text-gray-600 text-sm mb-2">{product.category}</p>
                         <p className="text-lg font-bold text-green-600 mb-3">₹{Number(product.price || 0).toFixed(2)}</p>
                         <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                        
+
                         {/* Responsive button layout */}
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button
@@ -632,7 +718,7 @@ const ProductsAdmin = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Image Modal */}
       {showImageModal && (
         <ImageCarousel
@@ -642,7 +728,7 @@ const ProductsAdmin = () => {
           isModal={true}
         />
       )}
-      
+
       <Footer />
     </div>
   );

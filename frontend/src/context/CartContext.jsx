@@ -8,6 +8,15 @@ const initialState = {
     ? JSON.parse(localStorage.getItem('shippingAddress') || 'null')
     : null,
   paymentMethod: localStorage.getItem('paymentMethod') || null,
+  discount: {
+    code: null,
+    amount: 0,
+    amount: 0,
+    percent: 0
+  },
+  wishlist: localStorage.getItem('wishlist')
+    ? JSON.parse(localStorage.getItem('wishlist') || '[]')
+    : []
 };
 
 const cartReducer = (state, action) => {
@@ -59,6 +68,28 @@ const cartReducer = (state, action) => {
       return {
         ...state,
         cartItems: [],
+        discount: { code: null, amount: 0, percent: 0 }
+      };
+    case 'APPLY_DISCOUNT':
+      return {
+        ...state,
+        discount: action.payload
+      };
+    case 'REMOVE_DISCOUNT':
+      return {
+        ...state,
+        discount: { code: null, amount: 0, percent: 0 }
+      };
+    case 'ADD_TO_WISHLIST':
+      if (state.wishlist.find(item => item._id === action.payload._id)) return state;
+      return {
+        ...state,
+        wishlist: [action.payload, ...state.wishlist] // Add to beginning (latest first)
+      };
+    case 'REMOVE_FROM_WISHLIST':
+      return {
+        ...state,
+        wishlist: state.wishlist.filter(item => item._id !== action.payload)
       };
     default:
       return state;
@@ -87,7 +118,15 @@ export const CartProvider = ({ children }) => {
     if (state.paymentMethod) {
       localStorage.setItem('paymentMethod', state.paymentMethod);
     }
+    if (state.paymentMethod) {
+      localStorage.setItem('paymentMethod', state.paymentMethod);
+    }
   }, [state.paymentMethod]);
+
+  // Persist wishlist whenever it changes
+  React.useEffect(() => {
+    localStorage.setItem('wishlist', JSON.stringify(state.wishlist));
+  }, [state.wishlist]);
 
   const addToCart = (product, qty) => {
     dispatch({
@@ -129,6 +168,29 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem('cartItems');
   };
 
+  const applyDiscount = (discountData) => {
+    dispatch({
+      type: 'APPLY_DISCOUNT',
+      payload: discountData
+    });
+  };
+
+  const removeDiscount = () => {
+    dispatch({ type: 'REMOVE_DISCOUNT' });
+  };
+
+  const addToWishlist = (product) => {
+    dispatch({ type: 'ADD_TO_WISHLIST', payload: product });
+  };
+
+  const removeFromWishlist = (productId) => {
+    dispatch({ type: 'REMOVE_FROM_WISHLIST', payload: productId });
+  };
+
+  const isInWishlist = (productId) => {
+    return state.wishlist.some(item => item._id === productId);
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -139,6 +201,12 @@ export const CartProvider = ({ children }) => {
         saveShippingAddress,
         savePaymentMethod,
         clearCart,
+        applyDiscount,
+        applyDiscount,
+        removeDiscount,
+        addToWishlist,
+        removeFromWishlist,
+        isInWishlist
       }}
     >
       {children}

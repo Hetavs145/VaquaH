@@ -1,13 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminOrdersRouter from './routes/adminOrders.js';
 import adminUsersRouter from './routes/adminUsers.js';
-
-dotenv.config();
+import offersRoutes from './routes/offersRoutes.js';
+import chatbotRoutes from './routes/chatbotRoutes.js';
 
 const app = express();
 
@@ -47,6 +47,8 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/admin/users', adminUsersRouter);
+app.use('/api/offers', offersRoutes);
+app.use('/api/chat', chatbotRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

@@ -63,14 +63,19 @@ service cloud.firestore {
 
     // Appointments collection
     match /appointments/{docId} {
-      allow read, write: if isSignedIn() && (
-        (resource != null && resource.data.userId != null && isOwnerOrAdmin(resource.data.userId)) || 
-        isAdminCombined()
-      );
-      allow create: if isSignedIn() && (
-        isOwner(request.resource.data.userId) || 
-        isAdminCombined()
-      );
+      // Admins can do everything
+      allow read, write: if isAdminCombined();
+      
+      // Users can read their own appointments
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Users can create appointments for themselves
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Timeline subcollection (Admins only)
+      match /timeline/{timelineDocId} {
+        allow read, write: if isAdminCombined();
+      }
     }
 
     // Users collection
@@ -109,16 +114,23 @@ service cloud.firestore {
       allow write: if isSignedIn() && isAdminCombined(); // only admins can manage
     }
 
-    // Services collection (read-only for everyone)
+    // Services collection (read-only for everyone, write for admins)
     match /services/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isSignedIn() && isAdminCombined();
     }
 
     // Marketing assets collection (read-only for everyone)
     match /marketingAssets/{docId} {
       allow read: if true;
       allow write: if isSignedIn() && isAdminCombined();
+    }
+
+    // Reviews collection
+    match /reviews/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (isOwner(resource.data.userId) || isAdminCombined());
     }
   }
 }

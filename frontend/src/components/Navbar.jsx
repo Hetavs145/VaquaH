@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Menu, X, User, LogOut, Home } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, Home, LayoutDashboard, Package, Wrench, Tag, Percent, Settings, Users, BarChart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import SearchBar from './SearchBar';
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,42 +80,91 @@ const Navbar = () => {
             >
               Contracts
             </NavLink>
-            <Link to="/cart" className="relative p-2">
-              <ShoppingCart size={20} className="text-gray-700" />
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
-                {cartState.cartItems.length}
-              </span>
-            </Link>
-            
+
+            <NavLink
+              to="/contact"
+              className={({ isActive }) =>
+                `${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:text-vaquah-blue`
+              }
+            >
+              Contact
+            </NavLink>
+            {user && (
+              <Link to="/cart" className="relative p-2">
+                <ShoppingCart size={20} className="text-gray-700" />
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
+                  {cartState.cartItems.length}
+                </span>
+              </Link>
+            )}
+
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center">
-                    <User size={16} className="mr-2" />
-                    {user.name.split(' ')[0]}
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.photoURL} alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                    Dashboard
+                <DropdownMenuContent align="end" className="w-64 bg-white border-gray-100 shadow-xl rounded-xl p-2 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-3 py-2 border-b border-gray-100 mb-2">
+                    <p className="font-semibold text-gray-800">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                    <LayoutDashboard className="h-4 w-4 mr-2.5" />
+                    <span>Dashboard</span>
                   </DropdownMenuItem>
+
                   {user.isAdmin && (
                     <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate('/admin')}>
-                        Admin Dashboard
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2 mb-1">Admin Controls</div>
+
+                      <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <BarChart className="h-4 w-4 mr-2.5" />
+                        <span>Overview</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/orders')}>
-                        Manage Orders
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/orders')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <Package className="h-4 w-4 mr-2.5" />
+                        <span>Orders</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/products')}>
-                        Manage Products
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/services')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <Wrench className="h-4 w-4 mr-2.5" />
+                        <span>Services</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/products')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <Tag className="h-4 w-4 mr-2.5" />
+                        <span>Products</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/stock')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <LayoutDashboard className="h-4 w-4 mr-2.5" />
+                        <span>Stock</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/service-rates')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <Percent className="h-4 w-4 mr-2.5" />
+                        <span>Service Rates</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate('/admin/offers')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                        <Percent className="h-4 w-4 mr-2.5" />
+                        <span>Offers</span>
                       </DropdownMenuItem>
                     </>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 mr-2" /> Logout
+
+                  <DropdownMenuSeparator className="my-2 bg-gray-100" />
+
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700 rounded-lg px-3 py-2.5 transition-colors duration-200">
+                    <LogOut className="h-4 w-4 mr-2.5" />
+                    <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -122,7 +172,7 @@ const Navbar = () => {
               <Link to="/login">
                 <Button variant="outline" size="sm" className="flex items-center">
                   <User size={16} className="mr-2" />
-                  Login
+                  SignIn/SignUp
                 </Button>
               </Link>
             )}
@@ -139,12 +189,14 @@ const Navbar = () => {
             >
               <Home size={18} />
             </NavLink>
-            <Link to="/cart" className="relative p-2 mr-2">
-              <ShoppingCart size={20} className="text-gray-700" />
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
-                {cartState.cartItems.length}
-              </span>
-            </Link>
+            {user && (
+              <Link to="/cart" className="relative p-2 mr-2">
+                <ShoppingCart size={20} className="text-gray-700" />
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-vaquah-orange rounded-full">
+                  {cartState.cartItems.length}
+                </span>
+              </Link>
+            )}
             <button onClick={toggleMenu} className="text-gray-600">
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -172,6 +224,10 @@ const Navbar = () => {
             <NavLink to="/contracts" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
               Contracts
             </NavLink>
+
+            <NavLink to="/contact" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+              Contact
+            </NavLink>
             {user ? (
               <>
                 <NavLink to="/dashboard" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
@@ -185,12 +241,24 @@ const Navbar = () => {
                     <NavLink to="/admin/orders" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
                       Manage Orders
                     </NavLink>
+                    <NavLink to="/admin/services" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Manage Services
+                    </NavLink>
                     <NavLink to="/admin/products" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
                       Manage Products
                     </NavLink>
+                    <NavLink to="/admin/stock" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Update Stock
+                    </NavLink>
+                    <NavLink to="/admin/service-rates" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Update Service Rates
+                    </NavLink>
+                    <NavLink to="/admin/offers" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+                      Manage Offers
+                    </NavLink>
                   </>
                 )}
-                <button 
+                <button
                   onClick={handleLogout}
                   className="w-full text-left py-2 px-4 text-gray-600 hover:bg-vaquah-light-blue"
                 >
@@ -199,7 +267,7 @@ const Navbar = () => {
               </>
             ) : (
               <NavLink to="/login" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
-                Login
+                SignIn/SignUp
               </NavLink>
             )}
           </div>

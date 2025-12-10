@@ -8,8 +8,8 @@ const Terms = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft size={20} className="mr-2" />
@@ -32,7 +32,7 @@ const Terms = () => {
 
           {/* Content */}
           <div className="bg-white rounded-lg shadow-sm border p-8 space-y-8">
-            
+
             {/* Introduction */}
             <section>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
@@ -232,11 +232,10 @@ const Terms = () => {
             {/* Contact Information */}
             <section>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">16. Contact Information</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                If you have any questions about these Terms of Service, please contact us:
+              <p className="text-gray-600 leading-relaxed">
+                If you have any questions about these Terms, please contact us at <a href="mailto:contact@vaquah.in" className="text-vaquah-blue hover:underline">contact@vaquah.in</a>.
               </p>
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <p className="text-gray-700"><strong>Email:</strong> legal@vaquah.com</p>
                 <p className="text-gray-700"><strong>Phone:</strong> +91 98765 43210</p>
                 <p className="text-gray-700"><strong>Address:</strong> 123 Cooling Street, Mumbai, Maharashtra - 400001, India</p>
               </div>

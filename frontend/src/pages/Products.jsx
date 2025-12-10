@@ -76,23 +76,53 @@ const Products = () => {
     toast({ title: "Added to cart", description: `${product.name} has been added to your cart` });
   };
 
+  // Helper to get spec value case-insensitively
+  const getSpecValue = (product, keys) => {
+    if (!product.specifications) return null;
+    const specKeys = Object.keys(product.specifications);
+    for (const key of keys) {
+      const foundKey = specKeys.find(k => k.toLowerCase().includes(key.toLowerCase()));
+      if (foundKey) return product.specifications[foundKey];
+    }
+    return null;
+  };
+
   // Compute available filter options from products
   const brands = useMemo(() => {
     return ['all', ...Array.from(new Set(products.map(p => p.brand).filter(Boolean)))];
   }, [products]);
+
   const tonnages = useMemo(() => {
-    return ['all', ...Array.from(new Set(products.map(p => p.tonnage).filter(v => v !== undefined && v !== null)))];
-  }, [products]);
+    return ['1', '1.5', '2', '2.5', '3'];
+  }, []);
+
   const energies = useMemo(() => {
-    return ['all', ...Array.from(new Set(products.map(p => p.energyRating).filter(v => v !== undefined && v !== null)))];
-  }, [products]);
+    return ['1', '2', '3', '4', '5'];
+  }, []);
 
   // Apply filters & sorting
   const filteredAndSorted = useMemo(() => {
     let list = [...products];
     if (brandFilter !== 'all') list = list.filter(p => (p.brand || '').toLowerCase() === String(brandFilter).toLowerCase());
-    if (tonnageFilter !== 'all') list = list.filter(p => String(p.tonnage) === String(tonnageFilter));
-    if (energyFilter !== 'all') list = list.filter(p => String(p.energyRating) === String(energyFilter));
+
+    if (tonnageFilter !== 'all') {
+      list = list.filter(p => {
+        const val = getSpecValue(p, ['Capacity', 'Tonnage']);
+        // Normalize both values to numbers/strings without units for comparison
+        const productVal = val ? String(val).replace(/ton/i, '').trim() : '';
+        const filterVal = tonnageFilter.replace(/ton/i, '').trim();
+        return productVal === filterVal;
+      });
+    }
+
+    if (energyFilter !== 'all') {
+      list = list.filter(p => {
+        const val = getSpecValue(p, ['Energy', 'Star']);
+        const productVal = val ? String(val).replace(/star/i, '').trim() : '';
+        const filterVal = energyFilter.replace(/star/i, '').trim();
+        return productVal === filterVal;
+      });
+    }
     if (inverterFilter !== 'all') list = list.filter(p => Boolean(p.inverter) === (inverterFilter === 'true'));
     if (stockFilter !== 'all') list = list.filter(p => (p.inStock ?? (p.countInStock > 0)) === (stockFilter === 'true'));
 
@@ -119,51 +149,90 @@ const Products = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        <section className="bg-gradient-to-r from-vaquah-light-blue to-blue-100 py-8 sm:py-12">
-          <div className="container mx-auto px-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4 font-sans leading-tight" style={{fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'}}>
-              Our Products
-            </h1>
-            <p className="text-gray-600 text-center max-w-3xl mx-auto text-base sm:text-lg px-2">
+        {/* Hero Section */}
+        <div className="bg-vaquah-blue text-white py-16 animate-fade-in">
+          <div className="container-custom text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 animate-slide-up">Our Products</h1>
+            <p className="text-lg opacity-90 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
               Discover our range of energy-efficient split ACs designed for Indian homes and climate.
               Built with advanced technology for optimal cooling and electricity savings.
             </p>
           </div>
-        </section>
+        </div>
 
         <section className="py-8 sm:py-12">
           <div className="container mx-auto px-4">
             {/* Controls */}
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="flex gap-2 overflow-x-auto">
-                <select className="border rounded px-3 py-2" value={brandFilter} onChange={e => setBrandFilter(e.target.value)}>
-                  {brands.map(b => (<option key={b} value={b}>{b === 'all' ? 'All brands' : b}</option>))}
-                </select>
-                <select className="border rounded px-3 py-2" value={tonnageFilter} onChange={e => setTonnageFilter(e.target.value)}>
-                  {tonnages.map(t => (<option key={t} value={t}>{t === 'all' ? 'All tonnage' : `${t} Ton`}</option>))}
-                </select>
-                <select className="border rounded px-3 py-2" value={energyFilter} onChange={e => setEnergyFilter(e.target.value)}>
-                  {energies.map(en => (<option key={en} value={en}>{en === 'all' ? 'All ratings' : `${en} Star`}</option>))}
-                </select>
-                <select className="border rounded px-3 py-2" value={inverterFilter} onChange={e => setInverterFilter(e.target.value)}>
-                  <option value="all">All types</option>
-                  <option value="true">Inverter</option>
-                  <option value="false">Non-Inverter</option>
-                </select>
-                <select className="border rounded px-3 py-2" value={stockFilter} onChange={e => setStockFilter(e.target.value)}>
-                  <option value="all">Any stock</option>
-                  <option value="true">In Stock</option>
-                  <option value="false">Out of Stock</option>
-                </select>
-              </div>
-              <div className="md:col-span-2 flex md:justify-end">
-                <select className="border rounded px-3 py-2" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                  <option value="relevance">Sort: Relevance</option>
-                  <option value="price_low_high">Price: Low to High</option>
-                  <option value="price_high_low">Price: High to Low</option>
-                  <option value="rating">Rating</option>
-                  <option value="name">Name</option>
-                </select>
+            {/* Controls */}
+            <div className="mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+
+                {/* Filters Group */}
+                <div className="w-full md:w-auto flex flex-wrap gap-3 items-center">
+                  <div className="flex items-center gap-2 text-gray-600 font-medium mr-2">
+                    <span className="p-2 bg-blue-50 rounded-lg text-vaquah-blue">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    </span>
+                    Filters:
+                  </div>
+
+                  <select
+                    className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vaquah-blue/20 focus:border-vaquah-blue transition-all cursor-pointer hover:bg-gray-100"
+                    value={brandFilter}
+                    onChange={e => setBrandFilter(e.target.value)}
+                  >
+                    {brands.map(b => (<option key={b} value={b}>{b === 'all' ? 'All Brands' : b}</option>))}
+                  </select>
+
+                  <select
+                    className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vaquah-blue/20 focus:border-vaquah-blue transition-all cursor-pointer hover:bg-gray-100"
+                    value={tonnageFilter}
+                    onChange={e => setTonnageFilter(e.target.value)}
+                  >
+                    <option value="all">All Tonnage</option>
+                    {tonnages.map(t => (<option key={t} value={t}>{`${t} Ton`}</option>))}
+                  </select>
+
+                  <select
+                    className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vaquah-blue/20 focus:border-vaquah-blue transition-all cursor-pointer hover:bg-gray-100"
+                    value={energyFilter}
+                    onChange={e => setEnergyFilter(e.target.value)}
+                  >
+                    <option value="all">All Ratings</option>
+                    {energies.map(en => (<option key={en} value={en}>{en === 'all' ? 'All Ratings' : `${en} Star`}</option>))}
+                  </select>
+
+                  {(brandFilter !== 'all' || tonnageFilter !== 'all' || energyFilter !== 'all') && (
+                    <button
+                      onClick={() => {
+                        setBrandFilter('all');
+                        setTonnageFilter('all');
+                        setEnergyFilter('all');
+                        setInverterFilter('all');
+                        setStockFilter('all');
+                      }}
+                      className="text-sm text-red-500 hover:text-red-600 font-medium px-2"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort Group */}
+                <div className="w-full md:w-auto flex items-center gap-3">
+                  <span className="text-gray-500 text-sm hidden md:inline">Sort by:</span>
+                  <select
+                    className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-vaquah-blue/20 focus:border-vaquah-blue shadow-sm transition-all cursor-pointer"
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value)}
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="price_low_high">Price: Low to High</option>
+                    <option value="price_high_low">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                    <option value="name">Name (A-Z)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -175,9 +244,8 @@ const Products = () => {
             ) : filteredAndSorted.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No products found.</div>
             ) : (
-              <ProductCarousel 
-                title="All Products"
-                subtitle="Browse our complete collection of air conditioners and cooling solutions"
+              <ProductCarousel
+                title={null}
                 maxProducts={filteredAndSorted.length}
                 products={filteredAndSorted}
               />
