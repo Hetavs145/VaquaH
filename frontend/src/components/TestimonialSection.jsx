@@ -1,37 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Star, User, MapPin, Quote } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { reviewService, orderService } from '@/services/firestoreService';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { reviewService } from '@/services/firestoreService';
 
 const TestimonialSection = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [verifying, setVerifying] = useState(false);
 
-  const [formData, setFormData] = useState({
-    rating: 5,
-    quote: '',
-    location: ''
-  });
+  // Ref for auto-scroll
+  const containerRef = useRef(null);
 
   useEffect(() => {
     fetchReviews();
   }, []);
 
+  useEffect(() => {
+    // Simple Auto Scroll Logic
+    if (!loading && reviews.length > 3 && containerRef.current) {
+      const scrollInterval = setInterval(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollLeft += 1;
+          // Reset to start if reached end (naive implementation, for smoother infinite loop duplicate items is better)
+          if (containerRef.current.scrollLeft + containerRef.current.clientWidth >= containerRef.current.scrollWidth) {
+            containerRef.current.scrollLeft = 0;
+          }
+        }
+      }, 30); // Speed
+      return () => clearInterval(scrollInterval);
+    }
+  }, [loading, reviews]);
+
   const fetchReviews = async () => {
     try {
-      const fetchedReviews = await reviewService.getReviews();
+      const fetchedReviews = await reviewService.getLatestReviews();
       setReviews(fetchedReviews);
     } catch (error) {
       console.error('Failed to fetch reviews:', error);
@@ -40,97 +40,14 @@ const TestimonialSection = () => {
     }
   };
 
-  const handleWriteReviewClick = async () => {
-    if (!user) {
-      toast({
-        title: 'Sign in required',
-        description: 'Please sign in to write a review.',
-        variant: 'destructive'
-      });
-      navigate('/login');
-      return;
-    }
-
-    setVerifying(true);
-    try {
-      const orders = await orderService.getUserOrders(user.uid);
-      const hasAvailedService = orders.some(order =>
-        ['delivered', 'completed'].includes(order.status?.toLowerCase())
-      );
-
-      if (hasAvailedService) {
-        setIsDialogOpen(true);
-      } else {
-        toast({
-          title: 'Verification Failed',
-          description: 'You can only write a review for products or services you have availed and completed.',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      console.error('Verification error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to verify your order history. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.quote.trim()) return;
-
-    setSubmitting(true);
-    try {
-      await reviewService.createReview({
-        userId: user.uid,
-        name: user.displayName || 'Valued Customer',
-        location: formData.location || 'India',
-        quote: formData.quote,
-        rating: Number(formData.rating),
-        image: user.photoURL || null,
-        createdAt: new Date()
-      });
-
-      toast({
-        title: 'Review Submitted',
-        description: 'Thank you for your feedback!',
-      });
-
-      setIsDialogOpen(false);
-      setFormData({ rating: 5, quote: '', location: '' });
-      fetchReviews(); // Refresh list
-    } catch (error) {
-      console.error('Submit error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to submit review. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
-    <section className="section-padding bg-vaquah-light-blue">
+    <section className="section-padding bg-vaquah-light-blue overflow-hidden">
       <div className="container-custom">
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">What Our Customers Say</h2>
           <p className="text-gray-600 max-w-2xl mx-auto mb-6">
             Don't just take our word for it. Here's what our happy customers have to say about our products and services.
           </p>
-
-          <Button
-            onClick={handleWriteReviewClick}
-            disabled={verifying}
-            className="bg-vaquah-blue hover:bg-vaquah-dark-blue"
-          >
-            {verifying ? 'Verifying...' : 'Write a Review'}
-          </Button>
         </div>
 
         {loading ? (
@@ -140,9 +57,18 @@ const TestimonialSection = () => {
             <p className="text-gray-500">No reviews yet. Be the first to share your experience!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {reviews.map((testimonial) => (
-              <div key={testimonial.id} className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col h-full">
+          /* Auto Scrolling Container */
+          <div
+            ref={containerRef}
+            className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide"
+            style={{ scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
+          >
+            {/* Duplicate reviews to create a longer scrollable area if needed, or just map once */}
+            {[...reviews, ...reviews].map((testimonial, idx) => (
+              <div
+                key={`${testimonial.id}-${idx}`}
+                className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col min-w-[300px] md:min-w-[350px]"
+              >
                 <div className="flex items-center mb-4">
                   {Array(5).fill(0).map((_, index) => (
                     <Star
@@ -156,13 +82,20 @@ const TestimonialSection = () => {
 
                 <div className="relative mb-4 flex-grow">
                   <Quote size={24} className="text-blue-100 absolute -top-2 -left-2 -z-10" />
-                  <p className="text-gray-600 italic relative z-10">"{testimonial.quote}"</p>
+                  <p className="text-gray-600 italic relative z-10 text-sm md:text-base">
+                    "{testimonial.quote || (() => {
+                      const isService = testimonial.type === 'service';
+                      if (testimonial.rating >= 5) return isService ? "Great service!" : "Great product!";
+                      if (testimonial.rating >= 4) return isService ? "Good service!" : "Good product!";
+                      return "Happy customer!";
+                    })()}"
+                  </p>
                 </div>
 
                 <div className="flex items-center mt-auto pt-4 border-t border-gray-50">
-                  {testimonial.image ? (
+                  {testimonial.userImage ? (
                     <img
-                      src={testimonial.image}
+                      src={testimonial.userImage}
                       alt={testimonial.name}
                       className="w-10 h-10 rounded-full mr-3 object-cover"
                     />
@@ -183,66 +116,6 @@ const TestimonialSection = () => {
             ))}
           </div>
         )}
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Write a Review</DialogTitle>
-              <DialogDescription>
-                Share your experience with VaquaH. Your feedback helps us improve.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label>Rating</Label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      type="button"
-                      key={star}
-                      onClick={() => setFormData(prev => ({ ...prev, rating: star }))}
-                      className="focus:outline-none transition-transform hover:scale-110"
-                    >
-                      <Star
-                        size={24}
-                        fill={star <= formData.rating ? "currentColor" : "none"}
-                        className={star <= formData.rating ? "text-yellow-400" : "text-gray-300"}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Location (City)</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="quote">Your Review</Label>
-                <Textarea
-                  id="quote"
-                  required
-                  value={formData.quote}
-                  onChange={(e) => setFormData(prev => ({ ...prev, quote: e.target.value }))}
-                  placeholder="Tell us about your experience..."
-                  rows={4}
-                />
-              </div>
-
-              <DialogFooter>
-                <Button type="submit" disabled={submitting} className="bg-vaquah-blue hover:bg-vaquah-dark-blue">
-                  {submitting ? 'Submitting...' : 'Submit Review'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </section>
   );

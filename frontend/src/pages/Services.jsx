@@ -3,16 +3,16 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { 
-  Wrench, 
-  Thermometer, 
-  Settings, 
-  Clipboard, 
-  Zap, 
-  RefreshCcw, 
-  Shield, 
+import {
+  Wrench,
+  Thermometer,
+  Settings,
+  Clipboard,
+  Zap,
+  RefreshCcw,
+  Shield,
   Clock,
-  ChevronRight 
+  ChevronRight
 } from 'lucide-react';
 import { marketingService } from '@/services/marketingService';
 
@@ -43,6 +43,8 @@ const Services = () => {
         icon: it.iconKey && iconMap[it.iconKey] ? iconMap[it.iconKey] : null,
         price: it.price || '',
         image: it.imageUrl || it.image || '',
+        rating: it.rating,
+        numReviews: it.numReviews
       }));
       setServices(normalized);
       setLoading(false);
@@ -87,7 +89,7 @@ const Services = () => {
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">Professional AC Services for Your Comfort</h1>
               <p className="text-base sm:text-lg text-gray-700 mb-6 sm:mb-8 px-2">
-                From installation to maintenance, our expert technicians ensure your AC units 
+                From installation to maintenance, our expert technicians ensure your AC units
                 perform at their best throughout the year.
               </p>
               <Link to="/appointments/new">
@@ -105,21 +107,40 @@ const Services = () => {
             <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Our Services</h2>
             {loading ? (
               <div className="text-center text-gray-500">Loading services...</div>
+            ) : services.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="bg-blue-50 inline-block p-4 rounded-full mb-4">
+                  <Clock className="w-12 h-12 text-vaquah-blue" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  We are currently updating our service offerings. Stay tuned for our professional AC maintenance services.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {services.map((service) => (
                   <div key={service.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow">
                     <div className="mb-4 h-40 sm:h-48 overflow-hidden rounded-lg">
-                      <img 
-                        src={service.image || "/placeholder.svg"} 
-                        alt={service.name} 
+                      <img
+                        src={service.image || "/placeholder.svg"}
+                        alt={service.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
                     </div>
-                    <div className="mb-4">{service.icon}</div>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="mb-4">{service.icon}</div>
+                      {service.rating && (
+                        <div className="bg-green-50 text-green-700 py-1 px-2 rounded flex items-center gap-1">
+                          <span className="font-bold text-sm">{service.rating}</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                          <span className="text-xs text-gray-500">({service.numReviews || 0})</span>
+                        </div>
+                      )}
+                    </div>
                     <h3 className="text-lg sm:text-xl font-bold mb-2">{service.name}</h3>
                     <p className="text-gray-600 mb-4 text-sm sm:text-base">{service.description}</p>
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
@@ -141,7 +162,7 @@ const Services = () => {
         <section className="py-8 sm:py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">How It Works</h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
               <div className="text-center">
                 <div className="bg-vaquah-blue rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg sm:text-xl">1</div>
@@ -150,7 +171,7 @@ const Services = () => {
                   Choose a service and select your preferred date and time slot.
                 </p>
               </div>
-              
+
               <div className="text-center">
                 <div className="bg-vaquah-blue rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg sm:text-xl">2</div>
                 <h3 className="text-lg sm:text-xl font-bold mb-2">Expert Visit</h3>
@@ -158,7 +179,7 @@ const Services = () => {
                   Our certified technician will arrive at your location with all necessary equipment.
                 </p>
               </div>
-              
+
               <div className="text-center">
                 <div className="bg-vaquah-blue rounded-full w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg sm:text-xl">3</div>
                 <h3 className="text-lg sm:text-xl font-bold mb-2">Service & Support</h3>
@@ -167,7 +188,7 @@ const Services = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="text-center mt-8 sm:mt-12">
               <Link to="/appointments/new">
                 <Button className="bg-vaquah-blue hover:bg-vaquah-dark-blue">
@@ -182,7 +203,7 @@ const Services = () => {
         <section className="py-8 sm:py-16 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Why Choose VaquaH Services</h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {whyChooseUs.map((item, index) => (
                 <div key={index} className="bg-gray-50 p-4 sm:p-6 rounded-lg">

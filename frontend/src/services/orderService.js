@@ -11,10 +11,10 @@ export const orderService = {
   },
 
   payOrder: async (id, paymentResult) => {
-    return await firestoreOrderService.updateOrder(id, { 
-      isPaid: true, 
+    return await firestoreOrderService.updateOrder(id, {
+      isPaid: true,
       paidAt: new Date().toISOString(),
-      paymentResult 
+      paymentResult
     });
   },
 
@@ -24,7 +24,7 @@ export const orderService = {
   },
 
   verifyRazorpayPayment: async (payload) => {
-    const { data } = await api.post('/verify.php', payload);
+    const { data } = await api.post('/payments/razorpay/verify', payload);
     return data;
   },
 };

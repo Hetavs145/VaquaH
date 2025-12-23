@@ -71,7 +71,14 @@ const Chatbot = () => {
             setMessages(prev => [...prev, botMessage]);
         } catch (error) {
             console.error('Chat error:', error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble connecting right now. Please try again later." }]);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: "My digital brain is currently offline! 🧠🔌\n\nI seem to be having trouble connecting, but don't worry! Our human experts are always here to help you. 👨‍🔧",
+                options: [
+                    { label: '📞 Call Support', action: 'link', url: 'tel:+919999999999' },
+                    { label: '📧 Email Us', action: 'link', url: 'mailto:contact@vaquah.in' }
+                ]
+            }]);
         } finally {
             setIsLoading(false);
         }

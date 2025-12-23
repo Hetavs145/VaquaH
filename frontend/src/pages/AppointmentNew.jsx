@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { Calendar, Info, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { servicesService } from '@/services/firestoreService';
+import { marketingService } from '@/services/marketingService';
 
 const AppointmentNew = () => {
   const { user } = useAuth();
@@ -39,7 +39,8 @@ const AppointmentNew = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const fetchedServices = await servicesService.getAllServices();
+        // Use marketingService to get filtered/processed services list
+        const fetchedServices = await marketingService.getServices();
         setServices(fetchedServices);
       } catch (error) {
         console.error('Failed to fetch services:', error);
@@ -185,7 +186,15 @@ const AppointmentNew = () => {
           </div>
         ) : services.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No services available at the moment.</p>
+            <div className="text-center py-16">
+              <div className="bg-blue-50 inline-block p-4 rounded-full mb-4">
+                <Clock className="w-12 h-12 text-vaquah-blue" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                We are currently updating our service offerings. Please check back later or contact support.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>

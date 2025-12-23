@@ -177,7 +177,7 @@ class AdminService {
   }
 
   // Get all orders (admin only)
-  async getAllOrders(statusFilter = null, userIdFilter = null) {
+  async getAllOrders(statusFilter = null, userIdFilter = null, deliveryFilter = null) {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) {
@@ -192,16 +192,23 @@ class AdminService {
       let ordersRef = collection(db, 'orders');
       let q = ordersRef;
 
-      if (statusFilter) {
-        q = query(q, where('status', '==', statusFilter));
-      }
-      if (userIdFilter) {
-        q = query(q, where('userId', '==', userIdFilter));
-      }
-
       q = query(q, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (statusFilter && statusFilter !== 'all') {
+        orders = orders.filter(o => o.status === statusFilter);
+      }
+      if (userIdFilter) {
+        const term = userIdFilter.trim();
+        if (term) {
+          orders = orders.filter(o => o.userId && o.userId.includes(term));
+        }
+      }
+      if (deliveryFilter && deliveryFilter !== 'all') {
+        orders = orders.filter(o => (o.shippingMethod || 'standard') === deliveryFilter);
+      }
+
       return orders;
     } catch (error) {
       console.error('Error fetching admin orders:', error);
@@ -376,7 +383,7 @@ class AdminService {
   }
 
   // Get all appointments (admin only)
-  async getAllAppointments(statusFilter = null, userIdFilter = null) {
+  async getAllAppointments(statusFilter = null, userIdFilter = null, priorityFilter = null) {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) {
@@ -391,16 +398,23 @@ class AdminService {
       let appointmentsRef = collection(db, 'appointments');
       let q = appointmentsRef;
 
-      if (statusFilter) {
-        q = query(q, where('status', '==', statusFilter));
-      }
-      if (userIdFilter) {
-        q = query(q, where('userId', '==', userIdFilter));
-      }
-
       q = query(q, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      const appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (statusFilter && statusFilter !== 'all') {
+        appointments = appointments.filter(a => a.status === statusFilter);
+      }
+      if (userIdFilter) {
+        const term = userIdFilter.trim();
+        if (term) {
+          appointments = appointments.filter(a => a.userId && a.userId.includes(term));
+        }
+      }
+      if (priorityFilter && priorityFilter !== 'all') {
+        appointments = appointments.filter(a => (a.priority || 'standard') === priorityFilter);
+      }
+
       return appointments;
     } catch (error) {
       console.error('Error fetching admin appointments:', error);

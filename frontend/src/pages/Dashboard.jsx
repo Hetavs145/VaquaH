@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from 'react-router-dom';
-import { appointmentService, orderService } from '@/services/firestoreService';
 import { Calendar, ShoppingBag, Clock, User, AlertCircle, Phone } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { appointmentService, reviewService } from '@/services/firestoreService';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import OrderDetailsModal from '@/components/OrderDetailsModal';
+import StarRating from '@/components/StarRating';
+import confetti from 'canvas-confetti';
 
 const Dashboard = () => {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [appointments, setAppointments] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [reviews, setReviews] = useState([]);
     const [appointmentsLoading, setAppointmentsLoading] = useState(true);
     const [ordersLoading, setOrdersLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
+    const [timeRange, setTimeRange] = useState('1Y');
+    const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const [activeTab, setActiveTab] = useState('appointments');
 
     useEffect(() => {
         if (!loading && !user) {
@@ -33,8 +44,11 @@ const Dashboard = () => {
                     setAppointmentsLoading(true);
                     const appointmentsData = await appointmentService.getUserAppointments(user.uid);
                     setAppointments(appointmentsData || []);
+
+                    const userReviews = await reviewService.getUserReviews(user.uid);
+                    setReviews(userReviews || []);
                 } catch (error) {
-                    console.error('Error fetching appointments:', error);
+                    console.error('Error fetching data:', error);
                 } finally {
                     setAppointmentsLoading(false);
                 }
@@ -58,7 +72,11 @@ const Dashboard = () => {
             const ordersData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            }));
+            })).sort((a, b) => {
+                const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+                const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+                return dateB - dateA; // Latest first
+            });
 
             // Check for status changes and create notifications
             const newNotifications = [];
@@ -123,6 +141,64 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, [orders]);
 
+    const handleRate = async (itemId, type, rating, itemDetails) => {
+        if (!user) return;
+
+        // Optimistic update
+        const previousReviews = [...reviews];
+        setReviews(prev => {
+            const existingIndex = prev.findIndex(r => r.itemId === itemId);
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = { ...updated[existingIndex], rating };
+                return updated;
+            } else {
+                return [...prev, { itemId, rating, type, userId: user.uid }];
+            }
+        });
+
+        // Trigger confetti INSTANTLY
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+
+        toast({
+            title: 'Review Submitted!',
+            description: `Thank you for rating this ${type} ${rating} stars.`,
+            className: "bg-green-50 border-green-200 text-green-800"
+        });
+
+        try {
+            await reviewService.addReview({
+                userId: user.uid,
+                name: user.displayName || 'Valued Customer',
+                userImage: user.photoURL,
+                rating,
+                type,
+                itemId,
+                itemName: itemDetails.name || itemDetails.service || 'Item',
+                quote: '',
+                createdAt: new Date()
+            });
+
+            // Re-fetch to ensure sync (optional but good for consistency)
+            const userReviews = await reviewService.getUserReviews(user.uid);
+            setReviews(userReviews || []);
+
+        } catch (error) {
+            console.error('Rating failed:', error);
+            // Revert on error
+            setReviews(previousReviews);
+            toast({
+                title: 'Error',
+                description: 'Failed to save rating. Please try again.',
+                variant: 'destructive'
+            });
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -130,6 +206,46 @@ const Dashboard = () => {
             </div>
         );
     }
+
+    const filterByDateAndStatus = (items, type) => {
+        const now = new Date();
+        const cutoffDate = new Date();
+
+        switch (timeRange) {
+            case '1M': cutoffDate.setMonth(now.getMonth() - 1); break;
+            case '3M': cutoffDate.setMonth(now.getMonth() - 3); break;
+            case '6M': cutoffDate.setMonth(now.getMonth() - 6); break;
+            case '1Y': cutoffDate.setFullYear(now.getFullYear() - 1); break;
+            default: return items;
+        }
+
+        let filtered = items.filter(item => {
+            const dateField = item.date || item.createdAt;
+            const itemDate = dateField?.toDate ? dateField.toDate() : new Date(dateField || Date.now());
+            return itemDate >= cutoffDate;
+        });
+
+        // Status Group Definitions
+        const statusGroups = {
+            'completed': ['completed', 'success', 'delivered'],
+            'pending': ['pending', 'confirmed', 'in_progress', 'created', 'paid', 'rescheduled', 'processing'],
+            'cancelled': ['cancelled', 'rejected'],
+            'shipping': ['shipping', 'out_for_delivery']
+        };
+
+        // Apply status filter logic
+        if (orderStatusFilter !== 'ALL') {
+            const allowedStatuses = statusGroups[orderStatusFilter] || [];
+            filtered = filtered.filter(item =>
+                allowedStatuses.includes((item.status || '').toLowerCase())
+            );
+        }
+
+        return filtered;
+    };
+
+    const filteredAppointments = filterByDateAndStatus(appointments, 'appointments');
+    const filteredOrders = filterByDateAndStatus(orders, 'orders');
 
     return (
         <>
@@ -209,21 +325,64 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    <Tabs defaultValue="appointments" className="space-y-6">
-                        <TabsList className="bg-white p-1 shadow-sm border rounded-xl w-full sm:w-auto inline-flex">
-                            <TabsTrigger
-                                value="appointments"
-                                className="rounded-lg px-6 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
-                            >
-                                Appointments
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="orders"
-                                className="rounded-lg px-6 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
-                            >
-                                Orders
-                            </TabsTrigger>
-                        </TabsList>
+                    <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setOrderStatusFilter('ALL'); }} className="space-y-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <TabsList className="bg-white p-1 shadow-sm border rounded-xl w-full sm:w-auto inline-flex">
+                                <TabsTrigger
+                                    value="appointments"
+                                    className="rounded-lg px-6 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                                >
+                                    Appointments
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="orders"
+                                    className="rounded-lg px-6 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                                >
+                                    Orders
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                <Select value={timeRange} onValueChange={setTimeRange}>
+                                    <SelectTrigger className="w-full sm:w-[150px] bg-white border-gray-200">
+                                        <SelectValue placeholder="Time Range" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="1M">Last 1 Month</SelectItem>
+                                        <SelectItem value="3M">Last 3 Months</SelectItem>
+                                        <SelectItem value="6M">Last 6 Months</SelectItem>
+                                        <SelectItem value="1Y">Last 1 Year</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Only show Order Status Filter if on Orders tab or generic location */}
+                                <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
+                                    <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All Status</SelectItem>
+
+                                        {activeTab === 'appointments' && (
+                                            <>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                                <SelectItem value="pending">Pending / Confirmed</SelectItem>
+                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            </>
+                                        )}
+
+                                        {activeTab === 'orders' && (
+                                            <>
+                                                <SelectItem value="completed">Delivered</SelectItem>
+                                                <SelectItem value="shipping">Shipping / Out for Delivery</SelectItem>
+                                                <SelectItem value="pending">Processing</SelectItem>
+                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            </>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
                         <TabsContent value="appointments" className="animate-in fade-in-50 duration-300">
                             <Card className="border-none shadow-md bg-white overflow-hidden">
@@ -235,13 +394,13 @@ const Dashboard = () => {
                                         <div className="flex justify-center py-12">
                                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
                                         </div>
-                                    ) : appointments.length === 0 ? (
+                                    ) : filteredAppointments.length === 0 ? (
                                         <div className="text-center py-16 px-4">
                                             <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                                 <Calendar className="h-8 w-8 text-gray-400" />
                                             </div>
-                                            <h3 className="text-lg font-semibold text-gray-900">No appointments scheduled</h3>
-                                            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">Book a service with our expert technicians to ensure your AC runs perfectly.</p>
+                                            <h3 className="text-lg font-semibold text-gray-900">No appointments found</h3>
+                                            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">None in this time range.</p>
                                             <Button onClick={() => navigate('/appointments/new')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 shadow-lg shadow-blue-200">
                                                 Schedule Service
                                             </Button>
@@ -249,39 +408,28 @@ const Dashboard = () => {
                                     ) : (
                                         <div className="divide-y divide-gray-100">
                                             {/* Desktop Header */}
-                                            <div className="hidden md:grid grid-cols-5 p-4 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                <div>Service Details</div>
-                                                <div>Date & Time</div>
-                                                <div>Contact</div>
-                                                <div>Status</div>
-                                                <div className="text-right">Actions</div>
+                                            <div className="hidden md:grid grid-cols-6 p-4 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                <div className="col-span-1">Service Details</div>
+                                                <div className="col-span-1">Date & Time</div>
+                                                <div className="col-span-1">Contact</div>
+                                                <div className="col-span-1">Status</div>
+                                                <div className="col-span-1 text-center">Review</div>
+                                                <div className="col-span-1 text-right">Actions</div>
                                             </div>
 
-                                            {/* Sorting logic: Pending/Active first, then Completed/Cancelled. Within groups, sort by date desc */}
                                             {(() => {
-                                                const getStatusPriority = (status) => {
-                                                    const s = (status || '').toLowerCase();
-                                                    if (['completed', 'cancelled', 'rejected'].includes(s)) return 1;
-                                                    return 0;
-                                                };
+                                                const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+                                                    const getDate = (apt) => {
+                                                        if (apt.date) {
+                                                            return apt.date.toDate ? apt.date.toDate() : new Date(apt.date);
+                                                        }
+                                                        if (apt.createdAt) {
+                                                            return apt.createdAt.toDate ? apt.createdAt.toDate() : new Date(apt.createdAt);
+                                                        }
+                                                        return new Date(0);
+                                                    };
 
-                                                const getDate = (apt) => {
-                                                    if (apt.date) {
-                                                        return apt.date.toDate ? apt.date.toDate() : new Date(apt.date);
-                                                    }
-                                                    if (apt.createdAt) {
-                                                        return apt.createdAt.toDate ? apt.createdAt.toDate() : new Date(apt.createdAt);
-                                                    }
-                                                    return new Date(0);
-                                                };
-
-                                                const sortedAppointments = [...appointments].sort((a, b) => {
-                                                    // Primary sort: Status Priority (0 comes before 1)
-                                                    const priorityA = getStatusPriority(a.status);
-                                                    const priorityB = getStatusPriority(b.status);
-                                                    if (priorityA !== priorityB) return priorityA - priorityB;
-
-                                                    // Secondary sort: Date (Latest first)
+                                                    // Simple sort by date descending (Newest first)
                                                     return getDate(b) - getDate(a);
                                                 });
 
@@ -302,7 +450,7 @@ const Dashboard = () => {
                                                     };
 
                                                     return (
-                                                        <div key={aptId} className="group p-4 hover:bg-gray-50 transition-colors grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-0 items-center">
+                                                        <div key={aptId} className="group p-4 hover:bg-gray-50 transition-colors grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-0 items-center">
                                                             {/* Service */}
                                                             <div className="col-span-1">
                                                                 <p className="md:hidden text-xs text-gray-400 uppercase font-semibold mb-1">Service</p>
@@ -337,6 +485,19 @@ const Dashboard = () => {
                                                                 </span>
                                                             </div>
 
+                                                            {/* Review */}
+                                                            <div className="col-span-1 place-self-start md:place-self-center">
+                                                                <p className="md:hidden text-xs text-gray-400 uppercase font-semibold mb-1">Review</p>
+                                                                <StarRating
+                                                                    itemId={aptId}
+                                                                    type="service"
+                                                                    status={status}
+                                                                    itemDetails={apt}
+                                                                    reviews={reviews}
+                                                                    onRate={handleRate}
+                                                                />
+                                                            </div>
+
                                                             {/* Actions */}
                                                             <div className="col-span-1 text-right">
                                                                 <a href="tel:+919999999999" className="inline-block">
@@ -365,31 +526,31 @@ const Dashboard = () => {
                                         <div className="flex justify-center py-12">
                                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
                                         </div>
-                                    ) : orders.length === 0 ? (
+                                    ) : filteredOrders.length === 0 ? (
                                         <div className="text-center py-16 px-4">
                                             <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                                 <ShoppingBag className="h-8 w-8 text-gray-400" />
                                             </div>
-                                            <h3 className="text-lg font-semibold text-gray-900">No orders yet</h3>
-                                            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">Explore our range of premium AC products and accessories.</p>
+                                            <h3 className="text-lg font-semibold text-gray-900">No orders found</h3>
+                                            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">None in this time range.</p>
                                             <Button onClick={() => navigate('/products')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 shadow-lg shadow-blue-200">
                                                 Start Shopping
                                             </Button>
                                         </div>
                                     ) : (
                                         <div className="divide-y divide-gray-100">
-                                            {/* Desktop Header */}
+                                            {/* Desktop Header - Reduced columns since Review is moved to Modal */}
                                             <div className="hidden md:grid grid-cols-5 p-4 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                <div>Order Info</div>
-                                                <div>Date</div>
-                                                <div>Amount</div>
-                                                <div>Status</div>
-                                                <div className="text-right">Shipping</div>
+                                                <div className="col-span-1">Order Info</div>
+                                                <div className="col-span-1">Date</div>
+                                                <div className="col-span-1">Amount</div>
+                                                <div className="col-span-1">Status</div>
+                                                <div className="col-span-1 text-right">Actions</div>
                                             </div>
 
-                                            {orders.map((order) => {
+                                            {filteredOrders.map((order) => {
                                                 const orderId = order.id || order._id;
-                                                const orderDate = new Date((order.createdAt && order.createdAt.toDate ? order.createdAt.toDate() : order.createdAt) || Date.now()).toLocaleDateString();
+                                                const orderDateObj = new Date((order.createdAt && order.createdAt.toDate ? order.createdAt.toDate() : order.createdAt) || Date.now());
                                                 const status = order.status || 'created';
 
                                                 const statusStyles = {
@@ -414,7 +575,14 @@ const Dashboard = () => {
                                                         {/* Date */}
                                                         <div className="col-span-1">
                                                             <p className="md:hidden text-xs text-gray-400 uppercase font-semibold mb-1">Date</p>
-                                                            <div className="text-gray-700">{orderDate}</div>
+                                                            <div className="flex items-center gap-2 text-gray-700">
+                                                                <Calendar className="w-4 h-4 text-gray-400" />
+                                                                <span>{orderDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+                                                                <Clock className="w-4 h-4 text-gray-400" />
+                                                                <span>{orderDateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                            </div>
                                                         </div>
 
                                                         {/* Amount */}
@@ -439,8 +607,12 @@ const Dashboard = () => {
                                                         </div>
 
                                                         {/* Shipping/Actions */}
-                                                        <div className="col-span-1 text-right">
-                                                            {order.shippingId ? (
+                                                        <div className="col-span-1 text-right flex flex-col items-end gap-2">
+                                                            {['success', 'delivered', 'completed'].includes(status) ? (
+                                                                <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Delivered</span>
+                                                            ) : ['cancelled', 'rejected'].includes(status) ? (
+                                                                <span className="text-xs text-red-500 font-medium bg-red-50 px-2 py-1 rounded">Cancelled</span>
+                                                            ) : order.shippingId ? (
                                                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded text-xs text-gray-600 font-medium">
                                                                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                                                                     {order.shippingId}
@@ -448,6 +620,15 @@ const Dashboard = () => {
                                                             ) : (
                                                                 <span className="text-xs text-gray-400 italic">Processing</span>
                                                             )}
+
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 text-xs"
+                                                                onClick={() => setSelectedOrder(order)}
+                                                            >
+                                                                View Details
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 );
@@ -460,6 +641,15 @@ const Dashboard = () => {
                     </Tabs>
                 </div>
             </div>
+
+            <OrderDetailsModal
+                order={selectedOrder}
+                isOpen={!!selectedOrder}
+                onClose={() => setSelectedOrder(null)}
+                reviews={reviews}
+                onRate={handleRate}
+            />
+
             <Footer />
         </>
     );

@@ -1,4 +1,4 @@
-# VaquaH Cooling Service (v1.1.0)
+# VaquaH Cooling Service (v1.2.0)
 
 A comprehensive web application for HVAC/Cooling services, enabling product purchases, service bookings, and annual maintenance contracts.
 

@@ -11,9 +11,6 @@ import { productService } from '@/services/firestoreService';
 import { imageUploadService } from '@/services/imageUploadService';
 import ImageCarousel from '@/components/ImageCarousel';
 import { getPlaceholderImage } from '@/utils/placeholderImage';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -44,7 +41,7 @@ const ProductDetail = () => {
             _id: doc.id,
             name: doc.name,
             price: doc.price,
-            rating: doc.rating || 4.5,
+            rating: doc.rating || 0,
             image: finalImages[0] || getPlaceholderImage(),
             images: finalImages,
             description: doc.description || '',
@@ -52,8 +49,11 @@ const ProductDetail = () => {
             specifications: doc.specifications || {},
             brand: doc.brand || 'VaquaH',
             category: doc.category || 'Air Conditioners',
-            countInStock: doc.countInStock ?? 10,
+            inStock: doc.inStock, // Primary source of truth from Admin Panel
+            countInStock: doc.countInStock,
+            stock: doc.stock,
             numReviews: doc.numReviews || 0,
+            rating: doc.rating || 0,
           };
           setProduct(normalized);
         } else {
@@ -71,97 +71,24 @@ const ProductDetail = () => {
   // Review State
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
 
   // Fetch reviews
   useEffect(() => {
-    if (product?._id) {
+    if (product?.id || product?._id) {
       loadReviews();
     }
-  }, [product?._id]);
+  }, [product?.id, product?._id]);
 
   const loadReviews = async () => {
     try {
       const { reviewService } = await import('@/services/firestoreService');
-      const fetchedReviews = await reviewService.getProductReviews(product._id);
+      const productId = product.id || product._id;
+      const fetchedReviews = await reviewService.getProductReviews(productId);
       setReviews(fetchedReviews);
     } catch (error) {
       console.error('Failed to load reviews:', error);
     } finally {
       setReviewsLoading(false);
-    }
-  };
-
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to write a review.",
-        variant: "destructive"
-      });
-      navigate('/login', { state: { from: `/products/${id}` } });
-      return;
-    }
-
-    setSubmittingReview(true);
-
-    try {
-      // Verify purchase
-      const { orderService } = await import('@/services/firestoreService');
-      const orders = await orderService.getUserOrders(user.uid);
-
-      const hasPurchased = orders.some(order =>
-        // Check if order contains this product and is delivered/completed
-        order.items?.some(item => item._id === product._id || item.productId === product._id) &&
-        ['delivered', 'completed'].includes(order.status?.toLowerCase())
-      );
-
-      if (!hasPurchased) {
-        toast({
-          title: "Verification Failed",
-          description: "You can only review products you have purchased and received.",
-          variant: "destructive"
-        });
-        setSubmittingReview(false);
-        return;
-      }
-
-      // Submit review
-      const { reviewService } = await import('@/services/firestoreService');
-      await reviewService.addProductReview({
-        userId: user.uid,
-        productId: product._id,
-        name: user.displayName || 'Verified Buyer',
-        rating: reviewForm.rating,
-        comment: reviewForm.comment,
-        quote: reviewForm.comment, // for compatibility
-        createdAt: new Date()
-      });
-
-      toast({
-        title: "Review Submitted",
-        description: "Thank you for your feedback!",
-      });
-
-      setIsReviewDialogOpen(false);
-      setReviewForm({ rating: 5, comment: '' });
-      loadReviews(); // Reload reviews
-
-      // Update local product state to reflect new rating immediately (optimistic update)
-      // In a real app, we might want to re-fetch the product or calculate locally
-    } catch (error) {
-      console.error('Review submission error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit review. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setSubmittingReview(false);
     }
   };
 
@@ -267,18 +194,23 @@ const ProductDetail = () => {
                 </div>
                 <Button
                   onClick={handleAddToCart}
-                  className="bg-vaquah-blue hover:bg-vaquah-dark-blue"
+                  disabled={!product.inStock && !product.countInStock && !product.stock}
+                  className={`
+                    ${(!product.inStock && !product.countInStock && !product.stock)
+                      ? 'bg-gray-300 hover:bg-gray-300 cursor-not-allowed text-gray-500'
+                      : 'bg-vaquah-blue hover:bg-vaquah-dark-blue'}
+                  `}
                 >
                   <ShoppingCart size={18} className="mr-2" />
-                  Add to Cart
+                  {(!product.inStock && !product.countInStock && !product.stock) ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
               </div>
 
               <div className="mb-4">
                 <div className="text-sm text-gray-600">
                   <span className="font-medium">Availability:</span>
-                  {product.countInStock > 0 ? (
-                    <span className="text-green-600 ml-2">In Stock ({product.countInStock} units)</span>
+                  {(product.inStock || product.countInStock > 0 || product.stock > 0) ? (
+                    <span className="text-green-600 ml-2">In Stock</span>
                   ) : (
                     <span className="text-red-600 ml-2">Out of Stock</span>
                   )}
@@ -342,12 +274,6 @@ const ProductDetail = () => {
           <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Customer Reviews</h2>
-              <Button
-                onClick={() => setIsReviewDialogOpen(true)}
-                className="bg-vaquah-blue hover:bg-vaquah-dark-blue"
-              >
-                Write a Review
-              </Button>
             </div>
 
             {reviewsLoading ? (
@@ -355,7 +281,7 @@ const ProductDetail = () => {
             ) : reviews.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <p className="text-gray-500 mb-2">No reviews yet.</p>
-                <p className="text-sm text-gray-400">Be the first to review this product!</p>
+                <p className="text-sm text-gray-400">Order this product to be the first to rate it!</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -379,7 +305,8 @@ const ProductDetail = () => {
                           : 'Just now'}
                       </span>
                     </div>
-                    <p className="text-gray-700">{review.quote || review.comment}</p>
+                    {review.quote && <p className="text-gray-700">{review.quote}</p>}
+                    {review.comment && !review.quote && <p className="text-gray-700">{review.comment}</p>}
                   </div>
                 ))}
               </div>
@@ -387,58 +314,6 @@ const ProductDetail = () => {
           </div>
         </div>
       </main>
-
-      {/* Review Dialog */}
-      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Write a Review</DialogTitle>
-            <DialogDescription>
-              Share your thoughts on the {product.name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleReviewSubmit} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Rating</Label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
-                    className="focus:outline-none transition-transform hover:scale-110"
-                  >
-                    <Star
-                      size={24}
-                      fill={star <= reviewForm.rating ? "#FFC107" : "none"}
-                      stroke={star <= reviewForm.rating ? "#FFC107" : "#CBD5E1"}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="comment">Your Review</Label>
-              <Textarea
-                id="comment"
-                required
-                value={reviewForm.comment}
-                onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
-                placeholder="What did you like or dislike?"
-                rows={4}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button type="submit" disabled={submittingReview} className="bg-vaquah-blue hover:bg-vaquah-dark-blue">
-                {submittingReview ? 'Submitting...' : 'Submit Review'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>

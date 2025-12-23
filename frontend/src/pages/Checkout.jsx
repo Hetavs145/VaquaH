@@ -116,7 +116,8 @@ const Checkout = () => {
           name: ci.name,
           price: ci.price,
           qty: ci.qty,
-          type: ci.type || 'product'
+          type: ci.type || 'product',
+          image: ci.image // Added image
         })),
         shippingMethod,
         shippingCost,
@@ -172,7 +173,8 @@ const Checkout = () => {
           name: ci.name,
           price: ci.price,
           qty: ci.qty,
-          type: ci.type || 'product'
+          type: ci.type || 'product',
+          image: ci.image // Added image
         })),
         shippingMethod,
         shippingCost,
@@ -233,9 +235,14 @@ const Checkout = () => {
               <div className="border rounded-lg p-3 sm:p-4">
                 {cartItems.map((item, idx) => (
                   <div key={`${item._id || idx}-checkout`} className="flex justify-between items-center py-2">
-                    <div className="flex-1 min-w-0 mr-2">
-                      <span className="font-medium text-sm sm:text-base">{item.name}</span>
-                      <span className="text-gray-600 ml-2 text-sm">x {item.qty}</span>
+                    <div className="flex items-center flex-1 min-w-0 mr-2">
+                      <div className="w-12 h-12 mr-3 shrink-0 bg-white border rounded overflow-hidden">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5" />
+                      </div>
+                      <div>
+                        <span className="font-medium text-sm sm:text-base block">{item.name}</span>
+                        <span className="text-gray-600 text-sm">x {item.qty}</span>
+                      </div>
                     </div>
                     <span className="text-sm sm:text-base flex-shrink-0">₹{(item.price * item.qty).toFixed(2)}</span>
                   </div>
@@ -450,4 +457,4 @@ const Checkout = () => {
   );
 };
 
-export default Checkout; 
+export default Checkout;

@@ -16,7 +16,7 @@ const FAQs = () => {
       items: [
         {
           q: "What areas do you serve?",
-          a: "We currently serve the greater Mumbai area and surrounding suburbs. We are expanding to new locations soon!"
+          a: "We currently serve the greater Vadodara area and surrounding suburbs. We are expanding to new locations soon!"
         },
         {
           q: "How do I book a service?",

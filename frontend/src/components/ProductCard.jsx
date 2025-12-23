@@ -22,6 +22,7 @@ const ProductCard = ({
   specifications,
   features,
   numReviews = 0,
+  inStock = true,
 }) => {
   const navigate = useNavigate();
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
@@ -65,7 +66,7 @@ const ProductCard = ({
       if (v) specBadges.push(String(v));
     });
   }
-  const safeRating = typeof rating === 'number' ? rating : 4.2;
+  const safeRating = typeof rating === 'number' ? rating : 0;
 
   const handleAddToCart = () => {
     // Create a product object from the props with all required properties
@@ -217,11 +218,18 @@ const ProductCard = ({
 
             {/* Call to action */}
             <Button
-              className="w-full flex items-center justify-center bg-vaquah-blue hover:bg-vaquah-dark-blue text-sm sm:text-base"
-              onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
+              className={`w-full flex items-center justify-center text-sm sm:text-base ${!inStock
+                ? 'bg-gray-300 hover:bg-gray-300 cursor-not-allowed text-gray-500'
+                : 'bg-vaquah-blue hover:bg-vaquah-dark-blue'
+                }`}
+              disabled={!inStock}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (inStock) handleAddToCart();
+              }}
             >
               <ShoppingCart size={14} sm:size={16} className="mr-2" />
-              Add to Cart
+              {inStock ? 'Add to Cart' : 'Out of Stock'}
             </Button>
           </div>
         </div>

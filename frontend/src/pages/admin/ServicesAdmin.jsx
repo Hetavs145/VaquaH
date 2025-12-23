@@ -29,6 +29,7 @@ const ServicesAdmin = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('all');
+    const [priorityFilter, setPriorityFilter] = useState('all');
     const [userIdFilter, setUserIdFilter] = useState('');
     const [updatingId, setUpdatingId] = useState(null);
 
@@ -57,13 +58,7 @@ const ServicesAdmin = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-        return () => clearInterval(interval);
     }, [appointments]);
-
-    // Removed auto-delete effect as we are now hiding them instead
-    useEffect(() => {
-        // Optional: Keep for cleanup if needed, but UI will hide them.
-    }, []);
 
     useEffect(() => {
         checkAdminAccess();
@@ -87,14 +82,10 @@ const ServicesAdmin = () => {
     const loadAppointments = async () => {
         try {
             setLoading(true);
-            // Assuming adminService has a method to get all appointments, similar to getAllOrders
-            // If not, we might need to add it or use a similar method.
-            // For now, I'll assume getAllAppointments exists or I'll need to create it.
-            // Since I cannot see adminService, I will assume it needs to be added or use a generic fetch if available.
-            // Given the prompt "exact mange orders just the thing is it would be for service", I'll assume a similar structure.
             let appointmentsData = await adminService.getAllAppointments(
                 statusFilter === 'all' ? null : statusFilter,
-                userIdFilter || null
+                userIdFilter || null,
+                priorityFilter === 'all' ? null : priorityFilter
             );
 
             // Filter out 'completed' or 'cancelled' appointments from the default list view ONLY if they are older than 10 days
@@ -107,6 +98,38 @@ const ServicesAdmin = () => {
                     return updatedTime > tenDaysAgo;
                 });
             }
+
+            // Sorting Logic: 
+            // 1. Status: Active (Top) > Completed (Middle) > Cancelled (Bottom)
+            // 2. Priority: Urgent (Top in group) > Standard
+            // 3. Date: Latest first
+            appointmentsData.sort((a, b) => {
+                // 1. Status Priority
+                const getStatusPriority = (status) => {
+                    if (status === 'cancelled') return 2;
+                    if (status === 'completed') return 1;
+                    return 0; // Active
+                };
+
+                const statusA = getStatusPriority(a.status);
+                const statusB = getStatusPriority(b.status);
+                if (statusA !== statusB) return statusA - statusB;
+
+                // 2. Priority Level (Urgent > Standard)
+                const getPriorityScore = (p) => (p === 'urgent' ? 1 : 0);
+                const priorityA = getPriorityScore(a.priority);
+                const priorityB = getPriorityScore(b.priority);
+                if (priorityA !== priorityB) return priorityB - priorityA; // Higher score first
+
+                // 3. Date Descending
+                const getTime = (o) => {
+                    if (o.createdAt?.toDate) return o.createdAt.toDate().getTime();
+                    if (o.createdAt) return new Date(o.createdAt).getTime();
+                    if (o.date) return new Date(o.date).getTime();
+                    return 0;
+                };
+                return getTime(b) - getTime(a);
+            });
 
             setAppointments(appointmentsData);
         } catch (error) {
@@ -224,10 +247,10 @@ const ServicesAdmin = () => {
                 {/* Filters */}
                 <Card className="mb-4 sm:mb-6">
                     <CardHeader>
-                        <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
+                        <CardTitle className="text-base sm:text-lg text-center">Filters</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
                                 <label className="block text-sm font-medium mb-2">User ID Filter</label>
                                 <Input
@@ -253,7 +276,20 @@ const ServicesAdmin = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end sm:col-span-2 lg:col-span-1">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Priority Filter</label>
+                                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All priorities" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All priorities</SelectItem>
+                                        <SelectItem value="urgent">Urgent</SelectItem>
+                                        <SelectItem value="standard">Standard</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end">
                                 <Button onClick={loadAppointments} className="w-full text-sm sm:text-base">
                                     <RefreshCw className="w-4 h-4 mr-2" />
                                     Apply Filters

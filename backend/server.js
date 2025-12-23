@@ -50,6 +50,10 @@ app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/offers', offersRoutes);
 app.use('/api/chat', chatbotRoutes);
 
+// Initialize Services
+import { initCleanupService } from './services/cleanupService.js';
+initCleanupService();
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

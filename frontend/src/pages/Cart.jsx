@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Input } from '@/components/ui/input';
@@ -149,11 +149,13 @@ const Cart = () => {
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item, index) => (
               <div key={item._id || `cart-item-${index}`} className="bg-white border rounded-lg p-4 flex flex-col sm:flex-row items-center gap-4 shadow-sm">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-20 h-20 object-cover rounded"
-                />
+                <Link to={`/products/${item._id}`} className="shrink-0">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-20 h-20 object-contain bg-white p-1 rounded hover:opacity-90 transition-opacity"
+                  />
+                </Link>
                 <div className="flex-1 text-center sm:text-left">
                   <h3 className="font-semibold">{item.name}</h3>
                   <p className="text-gray-600">₹{item.price}</p>

@@ -11,9 +11,10 @@ import { adminService } from '@/services/adminService';
 import { toast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import OrderDetailsModal from '@/components/OrderDetailsModal';
 
 const statuses = [
-  'paid', 'confirmed', 'shipping', 'out_for_delivery', 'success', 'cancelled'
+  'confirmed', 'shipping', 'success', 'cancelled'
 ];
 
 const statusColors = {
@@ -30,11 +31,13 @@ const OrdersAdmin = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deliveryFilter, setDeliveryFilter] = useState('all');
   const [userIdFilter, setUserIdFilter] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [adminStatus, setAdminStatus] = useState(null);
   const [countdowns, setCountdowns] = useState({});
   const [shippingInput, setShippingInput] = useState({});
+  const [viewingOrder, setViewingOrder] = useState(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -90,7 +93,8 @@ const OrdersAdmin = () => {
       setLoading(true);
       let fetchedOrders = await adminService.getAllOrders(
         statusFilter === 'all' ? null : statusFilter,
-        userIdFilter || null
+        userIdFilter || null,
+        deliveryFilter === 'all' ? null : deliveryFilter
       );
 
       // Filter out 'success' or 'cancelled' orders from the default list view ONLY if they are older than 10 days
@@ -103,6 +107,41 @@ const OrdersAdmin = () => {
           return updatedTime > tenDaysAgo;
         });
       }
+
+      // Sorting Logic: Active (Top) > Success (Middle) > Cancelled (Bottom)
+      // Within groups: Express > Standard
+      // Then: Latest date first
+      fetchedOrders.sort((a, b) => {
+        const getStatusPriority = (status) => {
+          if (status === 'cancelled') return 2;
+          if (status === 'success') return 1;
+          return 0; // Active/Pending/etc
+        };
+
+        const statusA = getStatusPriority(a.status);
+        const statusB = getStatusPriority(b.status);
+
+        if (statusA !== statusB) {
+          return statusA - statusB; // Lower priority number = Higher in list
+        }
+
+        // Secondary Sort: Delivery Type (Express > Standard)
+        const getDeliveryPriority = (method) => (method === 'express' ? 1 : 0);
+        const deliveryA = getDeliveryPriority(a.shippingMethod);
+        const deliveryB = getDeliveryPriority(b.shippingMethod);
+
+        if (deliveryA !== deliveryB) {
+          return deliveryB - deliveryA; // Higher score (1 = express) first
+        }
+
+        // Tertiary Sort: Date Descending
+        const getTime = (o) => {
+          if (o.createdAt?.toDate) return o.createdAt.toDate().getTime();
+          if (o.createdAt) return new Date(o.createdAt).getTime();
+          return 0;
+        };
+        return getTime(b) - getTime(a);
+      });
 
       setOrders(fetchedOrders);
       const shipping = {};
@@ -246,10 +285,10 @@ const OrdersAdmin = () => {
         {/* Filters */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
+            <CardTitle className="text-base sm:text-lg text-center">Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">User ID Filter</label>
                 <Input
@@ -275,7 +314,20 @@ const OrdersAdmin = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end sm:col-span-2 lg:col-span-1">
+              <div>
+                <label className="block text-sm font-medium mb-2">Delivery Type</label>
+                <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="express">Express</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
                 <Button onClick={loadOrders} className="w-full text-sm sm:text-base">
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Apply Filters
@@ -300,13 +352,30 @@ const OrdersAdmin = () => {
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-3 sm:p-4 space-y-3">
+                  <div
+                    key={order.id}
+                    className={`border rounded-lg p-3 sm:p-4 space-y-3 transition-colors ${order.shippingMethod === 'express'
+                      ? 'border-amber-400 bg-amber-50/50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-sm sm:text-base">Order #{order.id}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-sm sm:text-base">Order #{order.id}</h3>
+                          {order.shippingMethod === 'express' && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <span role="img" aria-label="express">⚡</span> Express
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs sm:text-sm text-gray-600">User: {order.userId}</p>
                         <p className="text-xs sm:text-sm text-gray-600">
-                          Created: {order.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
+                          Created: {(() => {
+                            if (!order.createdAt) return 'N/A';
+                            const date = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+                            return date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                          })()}
                         </p>
                       </div>
                       <div className="text-left sm:text-right">
@@ -342,25 +411,34 @@ const OrdersAdmin = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Select onValueChange={(value) => updateStatus(order.id, value)}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Update status..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {statuses.map(status => (
-                            <SelectItem key={status} value={status}>
-                              {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex gap-2 justify-between">
+                      <div className="flex gap-2">
+                        <Select onValueChange={(value) => updateStatus(order.id, value)}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Update status..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statuses.map(status => (
+                              <SelectItem key={status} value={status}>
+                                {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          disabled={updatingId === order.id}
+                          onClick={() => updateStatus(order.id, 'success')}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {updatingId === order.id ? 'Updating...' : 'Mark Ready'}
+                        </Button>
+                      </div>
                       <Button
-                        disabled={updatingId === order.id}
-                        onClick={() => updateStatus(order.id, 'success')}
-                        className="bg-green-600 hover:bg-green-700"
+                        variant="secondary"
+                        onClick={() => setViewingOrder(order)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800"
                       >
-                        {updatingId === order.id ? 'Updating...' : 'Mark Ready'}
+                        View Items
                       </Button>
                     </div>
                   </div>
@@ -371,10 +449,14 @@ const OrdersAdmin = () => {
         </Card>
       </div>
       <Footer />
+
+      <OrderDetailsModal
+        order={viewingOrder}
+        isOpen={!!viewingOrder}
+        onClose={() => setViewingOrder(null)}
+      />
     </div>
   );
 };
 
 export default OrdersAdmin;
-
-

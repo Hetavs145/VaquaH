@@ -258,57 +258,100 @@ export const servicesService = {
 };
 
 export const reviewService = {
-  async createReview(reviewData) {
-    return await firestoreService.create('reviews', reviewData);
-  },
-
   async getReviews() {
-    // Get recent reviews, limit to 20 for now
-    return await firestoreService.find('reviews', [], 'createdAt', 20);
-  },
-
-  async getProductReviews(productId) {
-    return await firestoreService.find('reviews', [
-      { field: 'productId', operator: '==', value: productId }
-    ], 'createdAt');
+    return await firestoreService.getAll('reviews');
   },
 
   async getUserReviews(userId) {
-    return await firestoreService.find('reviews', [
-      { field: 'userId', operator: '==', value: userId }
-    ]);
+    return await firestoreService.find('reviews', [{ field: 'userId', operator: '==', value: userId }]);
   },
 
-  async addProductReview(reviewData) {
-    // 1. Create the review
-    const review = await firestoreService.create('reviews', reviewData);
+  async getLatestReviews() {
+    // Get latest 10 reviews for Home page scroller, descending by date
+    const q = fsQuery(collection(db, 'reviews'), orderBy('createdAt', 'desc'), limit(10));
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  },
 
-    // 2. Update product rating stats
-    try {
-      const { doc, getDoc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+  async addReview(reviewData) {
+    // 1. Check if review already exists for this user and item
+    const q = fsQuery(
+      collection(db, 'reviews'),
+      where('userId', '==', reviewData.userId),
+      where('itemId', '==', reviewData.itemId)
+    );
+    const existingSnap = await getDocs(q);
+    let reviewId;
+    let oldRating = 0;
+    let isUpdate = false;
 
-      const productRef = doc(db, 'products', reviewData.productId);
-      const productSnap = await getDoc(productRef);
+    if (!existingSnap.empty) {
+      // Update existing review
+      isUpdate = true;
+      const existingDoc = existingSnap.docs[0];
+      reviewId = existingDoc.id;
+      oldRating = existingDoc.data().rating || 0;
 
-      if (productSnap.exists()) {
-        const product = productSnap.data();
-        const currentRating = product.rating || 0;
-        const currentReviews = product.numReviews || 0;
+      const updatePayload = {
+        rating: reviewData.rating,
+        updatedAt: serverTimestamp()
+      };
 
-        const newReviews = currentReviews + 1;
-        const newRating = ((currentRating * currentReviews) + reviewData.rating) / newReviews;
-
-        await updateDoc(productRef, {
-          rating: Number(newRating.toFixed(1)),
-          numReviews: newReviews
-        });
+      // Only update quote if provided (allows star-only updates without wiping text)
+      if (reviewData.quote !== undefined && reviewData.quote !== '') {
+        updatePayload.quote = reviewData.quote;
       }
-    } catch (error) {
-      console.error('Failed to update product rating stats:', error);
-      // Don't fail the whole operation if stats update fails
+
+      await updateDoc(doc(db, 'reviews', reviewId), updatePayload);
+    } else {
+      // Create new review
+      const reviewPayload = {
+        ...reviewData,
+        createdAt: serverTimestamp()
+      };
+      const reviewRef = await addDoc(collection(db, 'reviews'), reviewPayload);
+      reviewId = reviewRef.id;
     }
 
-    return review;
+    // 2. Identify target (Product or Service) and update stats
+    const targetCollection = reviewData.type === 'service' ? 'services' : 'products';
+    const targetId = reviewData.itemId;
+
+    if (targetCollection && targetId) {
+      try {
+        const itemRef = doc(db, targetCollection, targetId);
+        const itemSnap = await getDoc(itemRef);
+
+        if (itemSnap.exists()) {
+          const item = itemSnap.data();
+          const currentRating = Number(item.rating) || 0;
+          const currentReviews = Number(item.numReviews) || 0;
+
+          let newRating, newReviews;
+
+          if (isUpdate) {
+            // Adjust average: remove old rating, add new rating
+            // (avg * count - old + new) / count
+            const oldTotal = currentRating * currentReviews;
+            newRating = (oldTotal - oldRating + Number(reviewData.rating)) / currentReviews;
+            newReviews = currentReviews; // Count doesn't change
+          } else {
+            // Add new rating: (avg * count + new) / (count + 1)
+            const oldTotal = currentRating * currentReviews;
+            newRating = (oldTotal + Number(reviewData.rating)) / (currentReviews + 1);
+            newReviews = currentReviews + 1;
+          }
+
+          await updateDoc(itemRef, {
+            rating: Number(newRating.toFixed(1)),
+            numReviews: newReviews
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to update stats for ${targetCollection} ${targetId}:`, err);
+      }
+    }
+
+    return { id: reviewId, ...reviewData };
   }
 };

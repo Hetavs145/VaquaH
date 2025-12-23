@@ -242,7 +242,15 @@ const Products = () => {
                 Loading products...
               </div>
             ) : filteredAndSorted.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">No products found.</div>
+              <div className="text-center py-16">
+                <div className="bg-blue-50 inline-block p-4 rounded-full mb-4">
+                  <Clock className="w-12 h-12 text-vaquah-blue" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  We are currently updating our product inventory. Please check back later for our latest energy-efficient ACs.
+                </p>
+              </div>
             ) : (
               <ProductCarousel
                 title={null}
