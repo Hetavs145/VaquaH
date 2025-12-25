@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ShoppingBag, Clock, User, AlertCircle, Phone } from 'lucide-react';
-import { appointmentService, reviewService } from '@/services/firestoreService';
+import { appointmentService, reviewService, servicesService } from '@/services/firestoreService';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Navbar from '@/components/Navbar';
@@ -42,8 +42,21 @@ const Dashboard = () => {
             if (user) {
                 try {
                     setAppointmentsLoading(true);
+                    // Fetch services to map legacy appointments
+                    const servicesList = await servicesService.getAllServices();
+                    const serviceMap = servicesList.reduce((acc, curr) => {
+                        acc[curr.name] = curr.id;
+                        return acc;
+                    }, {});
+
                     const appointmentsData = await appointmentService.getUserAppointments(user.uid);
-                    setAppointments(appointmentsData || []);
+                    // Map serviceId for legacy appointments
+                    const enrichedAppointments = (appointmentsData || []).map(apt => ({
+                        ...apt,
+                        serviceId: apt.serviceId || serviceMap[apt.service] || serviceMap[apt.serviceType]
+                    }));
+
+                    setAppointments(enrichedAppointments);
 
                     const userReviews = await reviewService.getUserReviews(user.uid);
                     setReviews(userReviews || []);
@@ -489,7 +502,7 @@ const Dashboard = () => {
                                                             <div className="col-span-1 place-self-start md:place-self-center">
                                                                 <p className="md:hidden text-xs text-gray-400 uppercase font-semibold mb-1">Review</p>
                                                                 <StarRating
-                                                                    itemId={aptId}
+                                                                    itemId={apt.serviceId || aptId}
                                                                     type="service"
                                                                     status={status}
                                                                     itemDetails={apt}

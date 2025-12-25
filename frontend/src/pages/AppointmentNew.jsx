@@ -1,40 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
-import { Calendar, Info, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle, Star } from 'lucide-react';
 import { marketingService } from '@/services/marketingService';
+import BookingDialog from '@/components/BookingDialog';
 
 const AppointmentNew = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
 
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const [formData, setFormData] = useState({
-    date: '',
-    time: '',
-    description: '',
-    priority: 'normal',
-    contactPhone: '',
-    alternatePhone: '',
-    address: ''
-  });
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -55,40 +39,7 @@ const AppointmentNew = () => {
     };
 
     fetchServices();
-  }, []);
-
-  const timeSlots = [
-    '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM',
-    '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'
-  ];
-
-  const handlePhoneChange = (e, field) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) value = value.slice(0, 10);
-
-    let formatted = value;
-    if (value.length > 5) {
-      formatted = `${value.slice(0, 5)} ${value.slice(5)}`;
-    }
-
-    setFormData(prev => ({ ...prev, [field]: formatted }));
-  };
-
-  const handleInputChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const validatePhone = (phone) => {
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length === 10;
-  };
-
-  const getEstimatedCost = () => {
-    if (!selectedService) return 0;
-    const basePrice = Number(selectedService.price) || 0;
-    return formData.priority === 'urgent' ? basePrice * 2 : basePrice;
-  };
+  }, [user]);
 
   const handleBookClick = (service) => {
     if (!user) {
@@ -102,63 +53,6 @@ const AppointmentNew = () => {
     }
     setSelectedService(service);
     setIsDialogOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    if (!validatePhone(formData.contactPhone)) {
-      toast({
-        title: 'Invalid phone number',
-        description: 'Please enter a valid 10-digit Indian phone number',
-        variant: 'destructive'
-      });
-      setSubmitting(false);
-      return;
-    }
-
-    const estCost = getEstimatedCost();
-    const depositAmount = +(estCost * 0.20).toFixed(2);
-
-    const appointmentItem = {
-      _id: `appt_${Date.now()}`,
-      name: `${selectedService.name} (${formData.priority}) - 20% Deposit`,
-      type: 'appointment',
-      price: depositAmount,
-      image: selectedService.imageUrl || 'https://images.unsplash.com/photo-1581092921461-eab62e97a783?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-      serviceDetails: {
-        service: selectedService.name,
-        serviceId: selectedService.id,
-        date: formData.date,
-        time: formData.time,
-        description: formData.description,
-        priority: formData.priority,
-        contactPhone: formData.contactPhone.replace(/\D/g, ''),
-        alternatePhone: formData.alternatePhone.replace(/\D/g, ''),
-        address: formData.address,
-        estimatedCost: estCost,
-        depositAmount: depositAmount
-      }
-    };
-
-    addToCart(appointmentItem, 1);
-
-    toast({
-      title: 'Added to Cart',
-      description: 'Appointment added to your cart. Please proceed to checkout.',
-    });
-
-    setIsDialogOpen(false);
-    navigate('/cart');
-    setSubmitting(false);
-  };
-
-  const getMinDate = () => new Date().toISOString().split('T')[0];
-  const getMaxDate = () => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().split('T')[0];
   };
 
   return (
@@ -201,17 +95,34 @@ const AppointmentNew = () => {
             {services.map((service) => (
               <Card key={service.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full overflow-hidden group">
                 <div className="h-48 overflow-hidden relative">
-                  <img
-                    src={service.imageUrl || 'https://images.unsplash.com/photo-1581092921461-eab62e97a783?w=500&auto=format&fit=crop&q=60'}
-                    alt={service.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold text-vaquah-blue shadow-sm">
-                    Starts ₹{service.price}
-                  </div>
+                  <Link to={`/services/${service.id}`}>
+                    <img
+                      src={service.imageUrl || 'https://images.unsplash.com/photo-1581092921461-eab62e97a783?w=500&auto=format&fit=crop&q=60'}
+                      alt={service.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold text-vaquah-blue shadow-sm">
+                      Starts ₹{service.price}
+                    </div>
+                  </Link>
                 </div>
                 <CardHeader>
-                  <CardTitle className="text-xl text-gray-800">{service.name}</CardTitle>
+                  <Link to={`/services/${service.id}`}>
+                    <CardTitle className="text-xl text-gray-800 hover:text-vaquah-blue transition-colors mb-1">{service.name}</CardTitle>
+                  </Link>
+                  <div className="flex items-center mb-2">
+                    {service.numReviews > 0 ? (
+                      <>
+                        <div className="bg-green-50 text-green-700 py-0.5 px-2 rounded flex items-center">
+                          <Star size={12} fill="currentColor" className="mr-1" />
+                          <span className="text-xs font-medium">{service.rating}</span>
+                        </div>
+                        <span className="text-xs text-gray-400 ml-1">({service.numReviews})</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">No reviews yet</span>
+                    )}
+                  </div>
                   <CardDescription className="line-clamp-2">{service.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
@@ -242,133 +153,11 @@ const AppointmentNew = () => {
         )}
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Book {selectedService?.name}</DialogTitle>
-            <DialogDescription>
-              Complete the form below to schedule your appointment. A 20% deposit is required to confirm.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Preferred Date *</Label>
-                <Input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  min={getMinDate()}
-                  max={getMaxDate()}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Preferred Time *</Label>
-                <Select
-                  name="time"
-                  value={formData.time}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, time: value }))}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">Contact Phone *</Label>
-                <Input
-                  type="tel"
-                  id="contactPhone"
-                  value={formData.contactPhone}
-                  onChange={(e) => handlePhoneChange(e, 'contactPhone')}
-                  required
-                  placeholder="99999 99999"
-                  maxLength={11}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alternatePhone">Alternate Phone</Label>
-                <Input
-                  type="tel"
-                  id="alternatePhone"
-                  value={formData.alternatePhone}
-                  onChange={(e) => handlePhoneChange(e, 'alternatePhone')}
-                  placeholder="Optional"
-                  maxLength={11}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Service Address *</Label>
-              <Textarea
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter complete address"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Issue Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Describe the issue or service needed"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                name="priority"
-                value={formData.priority}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normal (Standard Rate)</SelectItem>
-                  <SelectItem value="urgent">Urgent (2x Rate)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg flex items-start gap-3">
-              <Info className="text-blue-600 mt-1 flex-shrink-0" size={20} />
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold">Estimated Total: ₹{getEstimatedCost().toFixed(2)}</p>
-                <p>Deposit Required (20%): ₹{(getEstimatedCost() * 0.20).toFixed(2)}</p>
-                <p className="text-xs mt-1 opacity-80">Remaining balance payable after service completion.</p>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full bg-vaquah-blue hover:bg-vaquah-dark-blue" disabled={submitting}>
-              {submitting ? 'Processing...' : `Pay Deposit & Book (₹${(getEstimatedCost() * 0.20).toFixed(2)})`}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <BookingDialog
+        service={selectedService}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
 
       <Footer />
     </div>

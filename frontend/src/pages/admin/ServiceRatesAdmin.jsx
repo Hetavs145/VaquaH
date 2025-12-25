@@ -24,6 +24,7 @@ const ServiceRatesAdmin = () => {
         name: '',
         description: '',
         price: '', // Base price
+        visitingCharge: '100', // Default visiting charge
         category: '',
         imageUrl: '',
         features: []
@@ -112,6 +113,7 @@ const ServiceRatesAdmin = () => {
             name: service.name || '',
             description: service.description || '',
             price: service.price || '',
+            visitingCharge: service.visitingCharge || '100',
             category: service.category || '',
             imageUrl: service.imageUrl || '',
             features: service.features || []
@@ -159,6 +161,7 @@ const ServiceRatesAdmin = () => {
             name: '',
             description: '',
             price: '',
+            visitingCharge: '100',
             category: '',
             imageUrl: '',
             features: []
@@ -235,6 +238,17 @@ const ServiceRatesAdmin = () => {
                                             value={formData.price}
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                             placeholder="0.00"
+                                            step="0.01"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Visiting Charge (₹)</label>
+                                        <Input
+                                            type="number"
+                                            value={formData.visitingCharge}
+                                            onChange={(e) => setFormData({ ...formData, visitingCharge: e.target.value })}
+                                            placeholder="100.00"
                                             step="0.01"
                                             required
                                         />

@@ -28,43 +28,90 @@ const Checkout = () => {
     state: '',
     zipCode: ''
   });
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
 
-  const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.qty), 0);
+  // Separate items
+  const productItems = cartItems.filter(item => item.type !== 'appointment');
+  const appointmentItems = cartItems.filter(item => item.type === 'appointment');
+  const hasProducts = productItems.length > 0;
+  const hasServices = appointmentItems.length > 0;
+
+  // Auto-fill from appointment if available
+  React.useEffect(() => {
+    if (hasServices && appointmentItems.length > 0) {
+      const appt = appointmentItems[0];
+      const details = appt.serviceDetails || {};
+
+      setFormData(prev => ({
+        ...prev,
+        firstName: details.fullName?.split(' ')[0] || user?.displayName?.split(' ')[0] || prev.firstName,
+        lastName: details.fullName?.split(' ')[1] || user?.displayName?.split(' ')[1] || prev.lastName,
+        email: details.email || user?.email || prev.email,
+        phone: details.contactPhone || prev.phone,
+        address: details.address || prev.address,
+        city: details.city || prev.city,
+        state: details.state || prev.state,
+        zipCode: details.zipCode || prev.zipCode
+      }));
+    } else if (user) {
+      // Just user basics if no service
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.displayName?.split(' ')[0] || prev.firstName,
+        lastName: user.displayName?.split(' ')[1] || prev.lastName,
+        email: user.email || prev.email
+      }));
+    }
+  }, [hasServices, user]);
+
+  const handlePhoneChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) value = value.slice(0, 10);
+    setFormData(prev => ({ ...prev, phone: value }));
   };
+
+  const productSubtotal = productItems.reduce((total, item) => total + (item.price * item.qty), 0);
+  const visitingChargesTotal = appointmentItems.reduce((total, item) => total + (item.price * item.qty), 0);
 
   const calculateShipping = () => {
     if (shippingMethod === 'express') return 150;
-    // Standard: Logic: Free above 999 on POST-DISCOUNT amount
-    const sub = calculateSubtotal();
+    // Standard: Free above 999 on POST-DISCOUNT PRODUCT amount
+    if (!hasProducts) return 0; // No shipping for services only
+
+    // Discount applies only to products
     const discountAmount = discount?.amount || 0;
-    const totalAfterDiscount = Math.max(0, sub - discountAmount);
-    return totalAfterDiscount > 999 ? 0 : 50;
+    const actualDiscount = Math.min(discountAmount, productSubtotal);
+    const productTotalAfterDiscount = Math.max(0, productSubtotal - actualDiscount);
+
+    return productTotalAfterDiscount > 999 ? 0 : 50;
   };
 
   const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
     const discountAmount = discount?.amount || 0;
+    const actualDiscount = Math.min(discountAmount, productSubtotal);
     const shippingCost = calculateShipping();
-    return Math.max(0, subtotal - discountAmount) + shippingCost;
+
+    // Total = (Product - Discount) + Visiting + Shipping
+    return Math.max(0, productSubtotal - actualDiscount) + visitingChargesTotal + shippingCost;
   };
 
-  // Helper for UI calculation of "Add X more"
-  const getSubtotalAfterDiscount = () => {
-    const sub = calculateSubtotal();
-    const discountAmount = discount?.amount || 0;
-    return Math.max(0, sub - discountAmount);
-  };
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
 
-  const codAdvanceThreshold = 2000;
   const payableAmount = useMemo(() => {
     const total = calculateTotal();
-    if (paymentMethod === 'cod' && total > codAdvanceThreshold) {
-      return +(total * 0.25).toFixed(2);
+
+    if (paymentMethod === 'cod') {
+      // Logic: 100% of Visiting Charge + 25% of (Product Total + Shipping)
+      const discountAmount = discount?.amount || 0;
+      const actualDiscount = Math.min(discountAmount, productSubtotal);
+      const shippingCost = calculateShipping();
+      const productSideTotal = Math.max(0, productSubtotal - actualDiscount) + shippingCost;
+
+      const advance = Math.round((productSideTotal * 0.25) + visitingChargesTotal);
+      return advance;
     }
+
     return total;
-  }, [paymentMethod, cartItems, shippingMethod, discount]); // Added discount dependency
+  }, [paymentMethod, cartItems, shippingMethod, discount]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -79,6 +126,7 @@ const Checkout = () => {
       await appointmentService.createAppointment({
         userId: userId,
         service: item.serviceDetails.service,
+        serviceId: item.serviceDetails.serviceId,
         date: item.serviceDetails.date,
         time: item.serviceDetails.time,
         description: item.serviceDetails.description,
@@ -99,9 +147,15 @@ const Checkout = () => {
       const { orderService } = await import('@/services/firestoreService');
       const total = calculateTotal();
       const shippingCost = calculateShipping();
+
+      // Calculate split for tracking
+      const discountAmount = discount?.amount || 0;
+      const actualDiscount = Math.min(discountAmount, productSubtotal);
+      const productSideTotal = Math.max(0, productSubtotal - actualDiscount) + shippingCost;
+
       const isCOD = paymentMethod === 'cod';
-      const isAdvanceRequired = isCOD && total > codAdvanceThreshold;
-      const amountPaid = isCOD && isAdvanceRequired ? +(total * 0.25).toFixed(2) : total;
+      const isAdvanceRequired = isCOD;
+      const amountPaid = isCOD ? payableAmount : total;
 
       // Create appointments for appointment items
       const appointmentItems = cartItems.filter(item => item.type === 'appointment');
@@ -124,10 +178,10 @@ const Checkout = () => {
         totalPrice: total,
         isPaid: !isCOD, // fully paid only for online full payments
         paymentId,
-        status: isCOD ? (isAdvanceRequired ? 'advance_paid' : 'cod_pending') : 'paid',
+        status: isCOD ? 'advance_paid' : 'paid',
         paymentMethod: isCOD ? 'COD' : 'Razorpay',
         advanceRequired: isAdvanceRequired,
-        advanceAmount: isAdvanceRequired ? +(total * 0.25).toFixed(2) : 0,
+        advanceAmount: isCOD ? amountPaid : 0,
         amountPaid,
       };
       await orderService.createOrder(orderPayload);
@@ -139,68 +193,32 @@ const Checkout = () => {
     }
   };
 
-  const handlePlaceOrderCOD = async () => {
-    try {
-      const { orderService } = await import('@/services/firestoreService');
-      const total = calculateTotal();
-      const shippingCost = calculateShipping();
-      const isAdvanceRequired = total > codAdvanceThreshold;
-
-      // Create appointments for appointment items
-      const appointmentItems = cartItems.filter(item => item.type === 'appointment');
-      for (const item of appointmentItems) {
-        // For COD, we might want to mark paymentStatus as 'pending'
-        const { appointmentService } = await import('@/services/firestoreService');
-        await appointmentService.createAppointment({
-          userId: user?.uid || 'guest',
-          service: item.serviceDetails.service,
-          date: item.serviceDetails.date,
-          time: item.serviceDetails.time,
-          description: item.serviceDetails.description,
-          priority: item.serviceDetails.priority,
-          contactPhone: item.serviceDetails.contactPhone,
-          alternatePhone: item.serviceDetails.alternatePhone,
-          address: item.serviceDetails.address,
-          status: 'pending',
-          paymentStatus: 'cod_pending'
-        });
-      }
-
-      const orderPayload = {
-        userId: user?.uid || 'guest',
-        items: cartItems.map(ci => ({
-          id: ci._id || ci.id,
-          name: ci.name,
-          price: ci.price,
-          qty: ci.qty,
-          type: ci.type || 'product',
-          image: ci.image // Added image
-        })),
-        shippingMethod,
-        shippingCost,
-        totalPrice: total,
-        isPaid: false,
-        paymentId: null,
-        status: isAdvanceRequired ? 'awaiting_advance' : 'cod_pending',
-        paymentMethod: 'COD',
-        advanceRequired: isAdvanceRequired,
-        advanceAmount: isAdvanceRequired ? +(total * 0.25).toFixed(2) : 0,
-        amountPaid: 0,
-      };
-      await orderService.createOrder(orderPayload);
-    } catch (e) {
-      console.error('Failed to save COD order:', e);
-    } finally {
-      clearCart();
-      navigate('/dashboard');
-    }
-  };
-
   const handlePaymentCancel = () => {
     // Optionally handle cancel flow
   };
 
-  const shippingIncomplete = !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.zipCode;
+  const validatePhone = (phone) => {
+    return phone && phone.replace(/\D/g, '').length === 10;
+  };
+
+  const isFormValid = () => {
+    // If only services, we rely on the data we already have (or pre-filled).
+    if (!hasProducts && hasServices) return true;
+
+    // Otherwise (Products only or Mixed), we need full details
+    return (
+      formData.firstName &&
+      formData.lastName &&
+      formData.email &&
+      validatePhone(formData.phone) &&
+      formData.address &&
+      formData.city &&
+      formData.state &&
+      formData.zipCode
+    );
+  };
+
+  const shippingIncomplete = !isFormValid();
 
   if (cartItems.length === 0) {
     return (
@@ -260,12 +278,12 @@ const Checkout = () => {
                       <SelectItem value="express">Express Delivery (₹150)</SelectItem>
                     </SelectContent>
                   </Select>
-                  {shippingMethod === 'standard' && getSubtotalAfterDiscount() <= 999 && (
+                  {shippingMethod === 'standard' && productSubtotal <= 999 && hasProducts && (
                     <p className="text-xs text-blue-600 mt-1">
-                      Add ₹{(1000 - getSubtotalAfterDiscount()).toFixed(2)} more for free delivery
+                      Add ₹{(1000 - productSubtotal).toFixed(2)} more for free delivery
                     </p>
                   )}
-                  {shippingMethod === 'standard' && getSubtotalAfterDiscount() > 999 && (
+                  {shippingMethod === 'standard' && productSubtotal > 999 && (
                     <p className="text-xs text-green-600 mt-1">
                       Free delivery applied!
                     </p>
@@ -274,9 +292,15 @@ const Checkout = () => {
 
                 <hr className="my-4" />
                 <div className="flex justify-between font-semibold text-base sm:text-lg">
-                  <span>Subtotal:</span>
-                  <span>₹{calculateSubtotal().toFixed(2)}</span>
+                  <span>Product Subtotal:</span>
+                  <span>₹{productSubtotal.toFixed(2)}</span>
                 </div>
+                {hasServices && (
+                  <div className="flex justify-between font-semibold text-base sm:text-lg text-blue-800">
+                    <span>Visiting Charges:</span>
+                    <span>₹{visitingChargesTotal.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-gray-600 mt-1">
                   <span>Shipping:</span>
                   <span className={calculateShipping() === 0 ? "text-green-600 font-medium" : ""}>
@@ -294,115 +318,135 @@ const Checkout = () => {
                   <span>₹{calculateTotal().toFixed(2)}</span>
                 </div>
 
-                {paymentMethod === 'cod' && calculateTotal() > codAdvanceThreshold && (
-                  <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-1">
-                    <span>Advance Payable Now (25%):</span>
-                    <span>₹{(calculateTotal() * 0.25).toFixed(2)}</span>
+                {paymentMethod === 'cod' && (
+                  <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-1 bg-yellow-50 p-2 rounded">
+                    <span>Advance Payable Now:</span>
+                    <span className="font-bold">₹{payableAmount.toFixed(2)}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Shipping Form */}
+            {/* Shipping Form or Pre-filled Info */}
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold mb-4">Shipping Details</h2>
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">
+                {(!hasProducts && hasServices) ? "Contact Details" : "Shipping Details"}
+              </h2>
+
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                    />
+                {(!hasProducts && hasServices) ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <p className="text-sm text-blue-800 mb-4">
+                      Your contact details have been captured from your appointment booking.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                      <div><span className="font-medium">Name:</span> {formData.firstName} {formData.lastName}</div>
+                      <div><span className="font-medium">Phone:</span> {formData.phone}</div>
+                      <div className="col-span-2"><span className="font-medium">Email:</span> {formData.email}</div>
+                      <div className="col-span-2"><span className="font-medium">Address:</span> {formData.address}, {formData.city}, {formData.state} {formData.zipCode}</div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">First Name</label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Last Name</label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Phone</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handlePhoneChange}
+                        required
+                        placeholder="Enter your 10 digit mobile number (+91)"
+                        className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Address</label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">ZIP Code</label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">City</label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">State</label>
+                        <input
+                          type="text"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">ZIP Code</label>
+                        <input
+                          type="text"
+                          name="zipCode"
+                          value={formData.zipCode}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full border rounded px-3 py-2 text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Payment method selection with COD 25% advance */}
                 <div className="mt-6 space-y-3">
@@ -412,28 +456,40 @@ const Checkout = () => {
                       <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} className="accent-vaquah-blue" />
                       <span>Razorpay (Recommended)</span>
                     </label>
-                    <label className="flex items-center gap-3 text-sm sm:text-base">
-                      <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-vaquah-blue" />
-                      <span>Cash on Delivery (COD) - Advance 25% for orders above ₹2000</span>
+                    <label className={`flex items-start gap-3 text-sm sm:text-base ${!hasProducts ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cod"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => {
+                          if (!hasProducts) return;
+                          setPaymentMethod('cod');
+                        }}
+                        className="accent-vaquah-blue mt-1"
+                        disabled={!hasProducts}
+                      />
+                      <div className="flex flex-col">
+                        <span>Cash on Delivery (COD)</span>
+                        {!hasProducts ? (
+                          <span className="text-xs text-red-500">Not available for service-only orders. Please pay visiting charge online.</span>
+                        ) : (
+                          <span className="text-xs text-gray-500">Requires advance payment of visiting charges + 25% of product value.</span>
+                        )}
+                      </div>
                     </label>
                   </div>
                 </div>
 
                 <div className="pt-2 space-y-3">
-                  {paymentMethod === 'cod' && calculateTotal() <= codAdvanceThreshold ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        if (shippingIncomplete) {
-                          return alert('Please fill all shipping details before proceeding.');
-                        }
-                        handlePlaceOrderCOD();
-                      }}
-                      className="w-full bg-vaquah-blue text-white py-2 px-4 rounded hover:bg-vaquah-dark-blue text-sm sm:text-base"
+                  {paymentMethod === 'cod' ? (
+                    <PaymentGateway
+                      amount={payableAmount}
+                      onSuccess={(pid) => { handlePaymentSuccess(pid); }}
+                      onCancel={handlePaymentCancel}
                       disabled={shippingIncomplete}
-                    >
-                      Place COD Order (Pay on Delivery)
-                    </button>
+                      disabledReason={'Please fill all shipping details before proceeding.'}
+                    />
                   ) : (
                     <PaymentGateway
                       amount={payableAmount}
@@ -443,8 +499,13 @@ const Checkout = () => {
                       disabledReason={'Please fill all shipping details before proceeding.'}
                     />
                   )}
-                  {paymentMethod === 'cod' && calculateTotal() > codAdvanceThreshold && (
-                    <p className="text-xs sm:text-sm text-gray-600">You will be charged an advance of ₹{(calculateTotal() * 0.25).toFixed(2)} now. Remaining amount payable on delivery.</p>
+
+                  {/* Explainer */}
+                  {paymentMethod === 'cod' && (
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      You are paying an advance of <b>₹{payableAmount.toFixed(2)}</b> now.
+                      The remaining balance (₹{(calculateTotal() - payableAmount).toFixed(2)}) will be payable on delivery.
+                    </p>
                   )}
                 </div>
               </form>
@@ -453,7 +514,7 @@ const Checkout = () => {
         </div>
       </div>
       <Footer />
-    </div>
+    </div >
   );
 };
 

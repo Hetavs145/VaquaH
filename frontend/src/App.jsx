@@ -7,6 +7,7 @@ import Index from "./pages/Index.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Products from "./pages/Products.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
+import ServiceDetail from "./pages/ServiceDetail.jsx";
 import Contracts from "./pages/Contracts.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Cart from "./pages/Cart.jsx";
@@ -87,6 +88,7 @@ const AppContent = () => {
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/checkout" element={
             <ProtectedRoute>

@@ -11,6 +11,7 @@ import { productService } from '@/services/firestoreService';
 import { imageUploadService } from '@/services/imageUploadService';
 import ImageCarousel from '@/components/ImageCarousel';
 import { getPlaceholderImage } from '@/utils/placeholderImage';
+import ReviewCard from '@/components/ReviewCard';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -271,47 +272,26 @@ const ProductDetail = () => {
             </div>
           </div>
           {/* Reviews Section */}
-          <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Customer Reviews</h2>
-            </div>
-
-            {reviewsLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading reviews...</div>
-            ) : reviews.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-gray-500 mb-2">No reviews yet.</p>
-                <p className="text-sm text-gray-400">Order this product to be the first to rate it!</p>
+          {reviews.length > 0 && (
+            <div className="mt-12 bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Customer Reviews</h2>
               </div>
-            ) : (
-              <div className="space-y-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {reviews.map((review) => (
-                  <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0">
-                    <div className="flex items-center mb-2">
-                      <div className="flex mr-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            fill={i < review.rating ? "#FFC107" : "none"}
-                            stroke={i < review.rating ? "#FFC107" : "#E2E8F0"}
-                          />
-                        ))}
-                      </div>
-                      <span className="font-semibold text-gray-900 mr-2">{review.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {review.createdAt?.seconds
-                          ? new Date(review.createdAt.seconds * 1000).toLocaleDateString()
-                          : 'Just now'}
-                      </span>
-                    </div>
-                    {review.quote && <p className="text-gray-700">{review.quote}</p>}
-                    {review.comment && !review.quote && <p className="text-gray-700">{review.comment}</p>}
-                  </div>
+                  <ReviewCard
+                    key={review.id}
+                    review={{
+                      ...review,
+                      type: 'product'
+                    }}
+                    className="border border-gray-100 shadow-sm"
+                  />
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </main>
 

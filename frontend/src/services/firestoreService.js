@@ -266,6 +266,10 @@ export const reviewService = {
     return await firestoreService.find('reviews', [{ field: 'userId', operator: '==', value: userId }]);
   },
 
+  async getProductReviews(itemId) {
+    return await firestoreService.find('reviews', [{ field: 'itemId', operator: '==', value: itemId }]);
+  },
+
   async getLatestReviews() {
     // Get latest 10 reviews for Home page scroller, descending by date
     const q = fsQuery(collection(db, 'reviews'), orderBy('createdAt', 'desc'), limit(10));

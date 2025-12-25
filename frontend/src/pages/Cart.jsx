@@ -46,23 +46,32 @@ const Cart = () => {
 
   const [shippingMethod, setShippingMethod] = useState('standard');
 
-  const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.qty), 0);
-  };
+  // Separate items by type
+  const productItems = cartItems.filter(item => item.type !== 'appointment');
+  const appointmentItems = cartItems.filter(item => item.type === 'appointment');
 
-  const subtotal = calculateSubtotal();
+  const productSubtotal = productItems.reduce((total, item) => total + (item.price * item.qty), 0);
+  const visitingChargesTotal = appointmentItems.reduce((total, item) => total + (item.price * item.qty), 0);
+
+  // Discount applies only to products
   const discountAmount = discount?.amount || 0;
-  // Net price for shipping threshold is subtotal - discount
-  const totalAfterDiscount = Math.max(0, subtotal - discountAmount);
+  // Ensure discount doesn't exceed product subtotal
+  const actualDiscount = Math.min(discountAmount, productSubtotal);
+
+  const productTotalAfterDiscount = Math.max(0, productSubtotal - actualDiscount);
 
   const calculateShipping = () => {
     if (shippingMethod === 'express') return 150;
-    // Standard: Free above 999 on the POST-DISCOUNT amount
-    return totalAfterDiscount > 999 ? 0 : 50;
+    // Standard: Free above 999 on the POST-DISCOUNT PRODUCT amount
+    // If no products, shipping logic might depend on business rule. Assuming standard logic applies to physical goods.
+    if (productItems.length === 0) return 0;
+    return productTotalAfterDiscount > 999 ? 0 : 50;
   };
 
   const shippingCost = calculateShipping();
-  const total = totalAfterDiscount + shippingCost; // Shipping added after discount
+
+  // Total = (Products - Discount) + Visiting Charges + Shipping
+  const total = productTotalAfterDiscount + visitingChargesTotal + shippingCost;
 
   const handleApplyCoupon = async (codeToApply) => {
     const code = codeToApply || couponCode;
@@ -73,7 +82,7 @@ const Cart = () => {
       const response = await fetch('http://localhost:5001/api/offers/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, amount: subtotal })
+        body: JSON.stringify({ code, amount: productSubtotal })
       });
 
       const data = await response.json();
@@ -88,7 +97,7 @@ const Cart = () => {
       }
 
       const offer = data;
-      const discountVal = (subtotal * offer.discountPercent) / 100;
+      const discountVal = (productSubtotal * offer.discountPercent) / 100;
 
       applyDiscount({
         code: offer.code,
@@ -149,7 +158,7 @@ const Cart = () => {
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item, index) => (
               <div key={item._id || `cart-item-${index}`} className="bg-white border rounded-lg p-4 flex flex-col sm:flex-row items-center gap-4 shadow-sm">
-                <Link to={`/products/${item._id}`} className="shrink-0">
+                <Link to={item.type === 'appointment' ? `/services/${item.serviceDetails?.serviceId}` : `/products/${item._id}`} className="shrink-0">
                   <img
                     src={item.image}
                     alt={item.name}
@@ -199,12 +208,12 @@ const Cart = () => {
                     <SelectItem value="express">Express Delivery (₹150)</SelectItem>
                   </SelectContent>
                 </Select>
-                {shippingMethod === 'standard' && totalAfterDiscount <= 999 && (
+                {shippingMethod === 'standard' && productTotalAfterDiscount <= 999 && productItems.length > 0 && (
                   <p className="text-xs text-blue-600 mt-1">
-                    Add ₹{(1000 - totalAfterDiscount).toFixed(2)} more for free delivery
+                    Add ₹{(1000 - productTotalAfterDiscount).toFixed(2)} more for free delivery
                   </p>
                 )}
-                {shippingMethod === 'standard' && totalAfterDiscount > 999 && (
+                {shippingMethod === 'standard' && productTotalAfterDiscount > 999 && (
                   <p className="text-xs text-green-600 mt-1">
                     Free delivery applied!
                   </p>
@@ -222,7 +231,7 @@ const Cart = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {availableOffers.map(offer => {
-                      const isEligible = subtotal >= (offer.minOrderValue || 0);
+                      const isEligible = productSubtotal >= (offer.minOrderValue || 0);
                       return (
                         <SelectItem
                           key={offer.id}
@@ -275,9 +284,17 @@ const Cart = () => {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
+                  <span className="text-gray-600">Product Subtotal</span>
+                  <span>₹{productSubtotal.toFixed(2)}</span>
                 </div>
+
+                {visitingChargesTotal > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Visiting Charges</span>
+                    <span>₹{visitingChargesTotal.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping ({shippingMethod === 'standard' ? 'Standard' : 'Express'})</span>
                   <span className={shippingCost === 0 ? "text-green-600" : ""}>
@@ -287,7 +304,7 @@ const Cart = () => {
                 {discount.code && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount ({discount.percent}%)</span>
-                    <span>-₹{discount.amount.toFixed(2)}</span>
+                    <span>-₹{actualDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <hr className="my-2" />
