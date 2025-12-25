@@ -2,6 +2,12 @@
 
 A comprehensive web application for HVAC/Cooling services, enabling product purchases, service bookings, and annual maintenance contracts.
 
+## 🔄 Updates
+
+All updates from v1.2.0 onwards are documented in `UPDATE.md`. 📝  
+
+Refer to it for the latest changes!😉
+
 ## 🚀 Key Features
 
 ### 🛒 E-Commerce Experience
