@@ -144,7 +144,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, reviews, onRate }) => {
                                             ₹{(item.price * item.qty).toFixed(2)}
                                         </div>
 
-                                        {onRate && (
+                                        {onRate && ['delivered', 'completed', 'success'].includes((order.status || '').toLowerCase()) && (
                                             <div className="flex flex-col items-end">
                                                 <span className="text-[10px] text-gray-400 uppercase font-semibold">Rate Product</span>
                                                 <StarRating

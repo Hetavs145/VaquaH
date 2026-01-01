@@ -1,6 +1,22 @@
 # VaquaH Updates Log
 
-## v1.3.0 - UI Standardization & Service Enhancements (Current)
+## v1.3.1 - Experience & Stability Improvements (Current)
+**Released: January 1, 2026**
+
+### 📐 UI/UX Improvements
+- **Banner Optimization**: Updated the main Hero Banner to better direct users to products.
+    - Changed "Book Service" call-to-action on product-focused slides to "View Products".
+    - Redirects users directly to the products catalog for a seamless shopping experience.
+
+### 🐛 Bug Fixes
+- **Product Filter Stability**: Fixed a crash on the Products page that occurred when a filter selection (e.g., Tonnage) returned no results.
+    - Added missing component imports to correctly display the "Coming Soon" styling.
+- **Review Visibility**: Corrected an issue where review stars were displaying for "Pending" appointments and "Processing" orders.
+    - Stars are now strictly hidden until the service is completed or the order is delivered to prevent confusion.
+
+---
+
+## v1.3.0 - UI Standardization & Service Enhancements
 **Released: December 25, 2025**
 
 ### 🚀 New Features

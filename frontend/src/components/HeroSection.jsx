@@ -13,15 +13,15 @@ const HeroSection = () => {
       image: "https://assistor.in/uploads/services/17123933957.jpg",
       title: "Beat the Heat with Premium Split ACs",
       subtitle: "Experience ultimate cooling comfort with energy-efficient split air conditioners. Get expert installation and maintenance services.",
-      ctaText: "Shop Now",
+      ctaText: "View Products",
       ctaLink: "/products"
     },
     {
       image: "https://www.shutterstock.com/image-photo/young-family-couple-enjoying-life-600nw-2382535801.jpg",
       title: "Professional AC Installation & Service",
       subtitle: "Expert technicians for installation, maintenance, and repair of all AC brands. 24/7 emergency service available.",
-      ctaText: "Book Service",
-      ctaLink: "/appointments/new"
+      ctaText: "View Products",
+      ctaLink: "/products"
     },
     {
       image: "https://static.wixstatic.com/media/ade29c_24e1ba8f67a241b5a6a44f04a96fdbd0~mv2.png/v1/fill/w_580,h_580,fp_0.50_0.50,q_85,usm_0.66_1.00_0.01,enc_auto/ade29c_24e1ba8f67a241b5a6a44f04a96fdbd0~mv2.png",
@@ -168,8 +168,8 @@ const HeroSection = () => {
                 key={index}
                 onClick={() => goToSlide(index)}
                 className={`w-3 h-3 rounded-full transition-all ${index === currentSlide
-                    ? 'bg-white'
-                    : 'bg-white/50 hover:bg-white/75'
+                  ? 'bg-white'
+                  : 'bg-white/50 hover:bg-white/75'
                   }`}
               />
             ))}

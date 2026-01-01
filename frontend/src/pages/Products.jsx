@@ -6,7 +6,7 @@ import { productService } from '@/services/firestoreService';
 import { imageUploadService } from '@/services/imageUploadService';
 import { getPlaceholderImage } from '@/utils/placeholderImage';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';

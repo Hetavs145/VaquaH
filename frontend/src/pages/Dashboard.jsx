@@ -501,14 +501,18 @@ const Dashboard = () => {
                                                             {/* Review */}
                                                             <div className="col-span-1 place-self-start md:place-self-center">
                                                                 <p className="md:hidden text-xs text-gray-400 uppercase font-semibold mb-1">Review</p>
-                                                                <StarRating
-                                                                    itemId={apt.serviceId || aptId}
-                                                                    type="service"
-                                                                    status={status}
-                                                                    itemDetails={apt}
-                                                                    reviews={reviews}
-                                                                    onRate={handleRate}
-                                                                />
+                                                                {['completed', 'success'].includes((status || '').toLowerCase()) ? (
+                                                                    <StarRating
+                                                                        itemId={apt.serviceId || aptId}
+                                                                        type="service"
+                                                                        status={status}
+                                                                        itemDetails={apt}
+                                                                        reviews={reviews}
+                                                                        onRate={handleRate}
+                                                                    />
+                                                                ) : (
+                                                                    <span className="text-xs text-gray-400 italic">Not available</span>
+                                                                )}
                                                             </div>
 
                                                             {/* Actions */}
