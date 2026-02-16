@@ -170,15 +170,21 @@ const Cart = () => {
                   <p className="text-gray-600">₹{item.price}</p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
                     <label className="text-sm">Qty:</label>
-                    <select
-                      value={item.qty}
-                      onChange={(e) => updateQuantity(item._id, parseInt(e.target.value))}
-                      className="border rounded px-2 py-1 text-sm"
+                    <Select
+                      value={item.qty.toString()}
+                      onValueChange={(val) => updateQuantity(item._id, parseInt(val))}
                     >
-                      {[1, 2, 3, 4, 5].map(num => (
-                        <option key={num} value={num}>{num}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-20 h-8">
+                        <SelectValue placeholder={item.qty} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5].map(num => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <button

@@ -53,23 +53,8 @@
     </style>
 
     <!-- Preload LCP hero image only on home page -->
-    <script>
-      // Only preload hero image on home page to avoid unused preload warnings
-      if (window.location.pathname === '/' || window.location.pathname === '/home') {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
-        link.href = 'https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=80&w=800';
-        link.imagesrcset = `
-          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=70&w=480 480w,
-          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=75&w=800 800w,
-          https://images.unsplash.com/photo-1621617003570-050caddcba61?auto=format&fit=crop&q=75&w=1200 1200w
-        `;
-        link.imagesizes = '(max-width: 768px) 90vw, 50vw';
-        link.fetchpriority = 'high';
-        document.head.appendChild(link);
-      }
-    </script>
+    <!-- Preload LCP hero image only on home page if needed -->
+    <!-- Removed obsolete Unsplash preload script -->
   </head>
 
   <body>

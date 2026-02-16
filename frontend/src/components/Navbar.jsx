@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Menu, X, User, LogOut, Home, LayoutDashboard, Package, Wrench, Tag, Percent, Settings, Users, BarChart } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { ShoppingCart, Menu, X, User, LogOut, Home, LayoutDashboard, Package, Wrench, Tag, Percent, Settings, Users, BarChart, Mic, Hand, BookOpen } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { useCart } from '@/context/CartContext';
+import { useAssistant } from '@/context/AssistantContext';
 import SearchBar from './SearchBar';
 import {
   DropdownMenu,
@@ -18,8 +19,13 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { state: cartState } = useCart();
+  const { openAssistant, isGestureModeEnabled, toggleGestureMode, isListening } = useAssistant();
   const navigate = useNavigate();
   const location = useLocation();
+
+  if (user) {
+    console.log("Navbar User:", user);
+  }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -81,6 +87,7 @@ const Navbar = () => {
               Contracts
             </NavLink>
 
+
             <NavLink
               to="/contact"
               className={({ isActive }) =>
@@ -89,6 +96,24 @@ const Navbar = () => {
             >
               Contact
             </NavLink>
+
+            {/* Assistant Controls */}
+            <button
+              onClick={openAssistant}
+              className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${isListening ? 'text-vaquah-blue bg-blue-50 animate-pulse' : 'text-gray-600'}`}
+              title="Voice Assistant"
+            >
+              <Mic size={20} />
+            </button>
+
+            <button
+              onClick={toggleGestureMode}
+              className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${isGestureModeEnabled ? 'text-green-500 bg-green-50' : 'text-gray-600'}`}
+              title="Enable Gestures"
+            >
+              <Hand size={20} />
+            </button>
+
             {user && (
               <Link to="/cart" className="relative p-2">
                 <ShoppingCart size={20} className="text-gray-700" />
@@ -101,9 +126,9 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.photoURL} alt={user.name} />
+                  <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8 flex items-center justify-center">
+                      <AvatarImage src={user.photoURL} alt={user.name} referrerPolicy="no-referrer" />
                       <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -117,6 +142,11 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
                     <LayoutDashboard className="h-4 w-4 mr-2.5" />
                     <span>Dashboard</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => navigate('/guide')} className="cursor-pointer hover:bg-blue-50 hover:text-vaquah-blue focus:bg-blue-50 focus:text-vaquah-blue rounded-lg px-3 py-2.5 transition-colors duration-200 mb-1">
+                    <BookOpen className="h-4 w-4 mr-2.5" />
+                    <span>Voice & Gesture Guide</span>
                   </DropdownMenuItem>
 
                   {user.isAdmin && (
@@ -169,12 +199,20 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/login">
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <User size={16} className="mr-2" />
-                  SignIn/SignUp
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link to="/guide">
+                  <Button variant="ghost" size="sm" className="hidden md:flex items-center text-gray-600 hover:text-vaquah-blue">
+                    <BookOpen size={18} className="mr-2" />
+                    Guide
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="flex items-center">
+                    <User size={16} className="mr-2" />
+                    SignIn/SignUp
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
 
@@ -225,9 +263,29 @@ const Navbar = () => {
               Contracts
             </NavLink>
 
+            <NavLink to="/guide" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
+              Guide
+            </NavLink>
             <NavLink to="/contact" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>
               Contact
             </NavLink>
+
+            <button
+              onClick={openAssistant}
+              className={`flex items-center w-full text-left py-2 px-4 ${isListening ? 'text-vaquah-blue bg-blue-50' : 'text-gray-600'} hover:bg-vaquah-light-blue`}
+            >
+              <Mic size={18} className="mr-2" />
+              Voice Assistant
+            </button>
+
+            <button
+              onClick={toggleGestureMode}
+              className={`flex items-center w-full text-left py-2 px-4 ${isGestureModeEnabled ? 'text-green-500 bg-green-50' : 'text-gray-600'} hover:bg-vaquah-light-blue`}
+            >
+              <Hand size={18} className="mr-2" />
+              {isGestureModeEnabled ? 'Disable Gestures' : 'Enable Gestures'}
+            </button>
+
             {user ? (
               <>
                 <NavLink to="/dashboard" className={({ isActive }) => `block py-2 px-4 ${isActive ? 'text-vaquah-blue' : 'text-gray-600'} hover:bg-vaquah-light-blue`}>

@@ -40,8 +40,15 @@ import Warranty from "./pages/Warranty.jsx";
 import Shipping from "./pages/Shipping.jsx";
 import Returns from "./pages/Returns.jsx";
 import TrackOrder from "./pages/TrackOrder.jsx";
-import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import Guide from "./pages/Guide.jsx";
+import { AuthProvider, useAuth } from "@/context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
+import { AssistantProvider, useAssistant } from "./context/AssistantContext.jsx";
+import { Suspense, lazy } from 'react';
+// Lazy load potentially heavy assistant components
+const AssistantOverlay = lazy(() => import("./components/assistant/AssistantOverlay.jsx"));
+const GestureController = lazy(() => import("./components/assistant/GestureController.jsx"));
+const VoiceController = lazy(() => import("./components/assistant/VoiceController.jsx"));
 import Chatbot from "./components/Chatbot.jsx";
 
 const queryClient = new QueryClient();
@@ -79,6 +86,8 @@ const AdminRoute = ({ children }) => {
 
 // Main App Component
 const AppContent = () => {
+  const { isGestureModeEnabled } = useAssistant();
+
   return (
     <TooltipProvider>
       <Toaster />
@@ -188,10 +197,16 @@ const AppContent = () => {
           <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/guide" element={<Guide />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Chatbot />
+        <Suspense fallback={null}>
+          <AssistantOverlay />
+          {isGestureModeEnabled && <GestureController />}
+          <VoiceController />
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider >
   );
@@ -201,7 +216,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <CartProvider>
-        <AppContent />
+        <AssistantProvider>
+          <AppContent />
+        </AssistantProvider>
       </CartProvider>
     </AuthProvider>
   </QueryClientProvider>

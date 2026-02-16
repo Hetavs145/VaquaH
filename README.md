@@ -1,4 +1,4 @@
-# VaquaH Cooling Service (v1.3.1)
+# VaquaH Cooling Service (v2.0.1)
 
 A comprehensive web application for HVAC/Cooling services, enabling product purchases, service bookings, and annual maintenance contracts.
 
@@ -38,6 +38,14 @@ Refer to it for the latest changes!😉
 - **AI Chatbot**: RAG-powered assistant to answer queries about services, pricing, and policies.
 - **Contact Center**: Direct click-to-call support and location details.
 - **Help Pages**: Comprehensive FAQs, Returns Policy, and Warranty information.
+
+### 🧠 Innovation: Hands-Free Experience
+- **Voice Control**: Navigate the site ("Go to Cart"), scroll, or ask questions just by speaking. Say "VaquaH" to wake up the assistant.
+- **Gesture Navigation**: Browse without touching your device.
+  - **Virtual Cursor**: Use your index finger as a mouse.
+  - **Pinch-to-Click**: Select items easily.
+  - **Swipe**: Navigate back or forward with a fist swipe.
+  - **Scroll**: Use 2 fingers to scroll up, 3 fingers to get down.
 
 ## 💻 Tech Stack
 

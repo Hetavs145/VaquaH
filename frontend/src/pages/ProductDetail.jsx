@@ -54,7 +54,6 @@ const ProductDetail = () => {
             countInStock: doc.countInStock,
             stock: doc.stock,
             numReviews: doc.numReviews || 0,
-            rating: doc.rating || 0,
           };
           setProduct(normalized);
         } else {

@@ -53,7 +53,6 @@ const Chatbot = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: userMessage.content,
-                    message: userMessage.content,
                     history: messages.slice(-5), // Send last 5 messages for context
                     user: user ? { name: user.name, email: user.email, id: user.uid } : null
                 })

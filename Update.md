@@ -1,6 +1,30 @@
 # VaquaH Updates Log
 
-## v1.3.1 - Experience & Stability Improvements (Current)
+## v2.0.1 - The "Hands-Free" Update (Current)
+**Released: February 16, 2026**
+
+### 🧠 Innovation: Voice & Gesture Control
+- **Voice Assistant**: Say "VaquaH" to wake up the assistant. Navigate pages ("Go to Cart"), scroll, or ask questions hands-free.
+- **Gesture Navigation**: Control the interface using hand gestures via webcam.
+    - **Virtual Cursor**: Index finger tracking.
+    - **Pinch-to-Click**: Select items without a mouse.
+    - **Swipe Navigation**: Fist swipe left/right to navigate back or forward.
+    - **Scroll Control**: Use 2 fingers to scroll up, 3 fingers to scroll down.
+- **Privacy First**: Camera and Microphone are only active when explicitly enabled. Processing is done locally (gestures) or securely (voice).
+
+### ⚡ Refactors & Improvements
+- **Unified Services Interface**: Refactored `Services.jsx` and `AppointmentNew.jsx` to use a shared `ServiceListing` component.
+    - Ensures identical design and booking data across the entire site.
+- **Performance**: Implemented Lazy Loading for AI models (MediaPipe) to keep initial load times fast.
+- **Backend Stability**: Fixed critical dependency corruptions (`natural`, `node-cron`) ensuring 100% server uptime.
+
+### 🐛 Bug Fixes
+- **Syntax Errors**: Resolved build-breaking syntax errors in `AppointmentNew.jsx`.
+- **Port Conflicts**: Implemented stricter port management for the backend development server.
+
+---
+
+## v1.3.1 - Experience & Stability Improvements
 **Released: January 1, 2026**
 
 ### 📐 UI/UX Improvements

@@ -1,6 +1,7 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -28,6 +29,6 @@ if (!getApps().length) {
 
 export const adminAuth = getAuth();
 export const db = getFirestore();
-export const AdminFieldValue = FieldValue;
+export const AdminFieldValue = admin.firestore.FieldValue;
 
 

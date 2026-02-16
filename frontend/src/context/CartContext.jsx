@@ -11,7 +11,6 @@ const initialState = {
   discount: {
     code: null,
     amount: 0,
-    amount: 0,
     percent: 0
   },
   wishlist: localStorage.getItem('wishlist')
@@ -201,7 +200,6 @@ export const CartProvider = ({ children }) => {
         saveShippingAddress,
         savePaymentMethod,
         clearCart,
-        applyDiscount,
         applyDiscount,
         removeDiscount,
         addToWishlist,

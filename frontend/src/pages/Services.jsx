@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { marketingService } from '@/services/marketingService';
+import ServiceListing from '@/components/ServiceListing';
 
 const Services = () => {
   const [services, setServices] = React.useState([]);
@@ -104,57 +105,7 @@ const Services = () => {
         {/* Services section */}
         <section className="py-8 sm:py-16 bg-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Our Services</h2>
-            {loading ? (
-              <div className="text-center text-gray-500">Loading services...</div>
-            ) : services.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="bg-blue-50 inline-block p-4 rounded-full mb-4">
-                  <Clock className="w-12 h-12 text-vaquah-blue" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  We are currently updating our service offerings. Stay tuned for our professional AC maintenance services.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {services.map((service) => (
-                  <div key={service.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow">
-                    <div className="mb-4 h-40 sm:h-48 overflow-hidden rounded-lg">
-                      <img
-                        src={service.image || "/placeholder.svg"}
-                        alt={service.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="mb-4">{service.icon}</div>
-                      {service.rating && (
-                        <div className="bg-green-50 text-green-700 py-1 px-2 rounded flex items-center gap-1">
-                          <span className="font-bold text-sm">{service.rating}</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                          <span className="text-xs text-gray-500">({service.numReviews || 0})</span>
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-bold mb-2">{service.name}</h3>
-                    <p className="text-gray-600 mb-4 text-sm sm:text-base">{service.description}</p>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
-                      <span className="font-semibold text-vaquah-blue text-sm sm:text-base">{service.price}</span>
-                      <Link to="/appointments/new">
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                          Book Now <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ServiceListing showTitle={true} />
           </div>
         </section>
 
