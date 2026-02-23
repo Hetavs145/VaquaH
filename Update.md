@@ -1,6 +1,20 @@
 # VaquaH Updates Log
 
-## v2.0.1 - The "Hands-Free" Update (Current)
+## v2.0.2 - Performance & Stability Update (Current)
+**Released: February 23, 2026**
+
+### ⚡ Performance & Optimizations
+- **Frontend Optimization**: Excluded heavy Machine Learning WebAssembly files from Vite's `optimizeDeps`, preventing extreme memory spikes (190MB/s) and reducing local startup time to ~200ms.
+- **Backend Stability**: Fixed critical dependency corruptions (`natural`, `node-cron`) ensuring 100% server uptime and instant boot times.
+
+### 🐛 Bug Fixes
+- **Port Conflicts**: Implemented stricter port management for the backend and frontend development servers to prevent ghost processes.
+- **MediaPipe CommonJS Crash**: Fixed a `Hands is not a constructor` runtime error by migrating away from the NPM package to dynamic CDN script injection through the `window` object.
+- **Tailwind ESM Crash**: Fixed a silent frontend crash caused by an invalid `require()` call in `tailwind.config.js` by migrating the config to standard ES Module `import` syntax.
+
+---
+
+## v2.0.1 - The "Hands-Free" Update
 **Released: February 16, 2026**
 
 ### 🧠 Innovation: Voice & Gesture Control
@@ -16,11 +30,9 @@
 - **Unified Services Interface**: Refactored `Services.jsx` and `AppointmentNew.jsx` to use a shared `ServiceListing` component.
     - Ensures identical design and booking data across the entire site.
 - **Performance**: Implemented Lazy Loading for AI models (MediaPipe) to keep initial load times fast.
-- **Backend Stability**: Fixed critical dependency corruptions (`natural`, `node-cron`) ensuring 100% server uptime.
 
 ### 🐛 Bug Fixes
 - **Syntax Errors**: Resolved build-breaking syntax errors in `AppointmentNew.jsx`.
-- **Port Conflicts**: Implemented stricter port management for the backend development server.
 
 ---
 

@@ -45,6 +45,11 @@ export default defineConfig(({ mode }) => ({
       'yup',
       '@hookform/resolvers/yup',
     ],
+    exclude: [
+      '@mediapipe/hands',
+      '@mediapipe/camera_utils',
+      '@mediapipe/drawing_utils'
+    ]
   },
   esbuild: {
     target: 'es2020',

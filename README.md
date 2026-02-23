@@ -1,4 +1,4 @@
-# VaquaH Cooling Service (v2.0.1)
+# VaquaH Cooling Service (v2.0.2)
 
 A comprehensive web application for HVAC/Cooling services, enabling product purchases, service bookings, and annual maintenance contracts.
 
@@ -56,12 +56,13 @@ Refer to it for the latest changes!😉
 - Lucide React (Icons)
 - React Router DOM
 - TanStack Query (State Management)
+- Google MediaPipe (Gesture Tracking via CDN)
 
 **Backend:**
 - Node.js & Express
 - Firebase (Firestore & Auth)
 - Razorpay Integration
-- Natural (NLP for Chatbot)
+- Google Generative AI (LLM Chatbot)
 
 ## 🛠️ Local Development
 

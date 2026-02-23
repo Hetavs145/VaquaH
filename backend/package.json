@@ -1,6 +1,6 @@
 {
   "name": "vaquah-backend",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "module",
   "scripts": {
     "start": "node server.js",
@@ -16,12 +16,11 @@
     "firebase-admin": "^13.4.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
-    "natural": "^8.1.0",
     "node-cron": "^4.2.1",
     "ollama": "^0.6.3",
     "razorpay": "^2.9.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.11"
   }
 }

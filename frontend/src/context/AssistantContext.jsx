@@ -8,7 +8,7 @@ export const AssistantProvider = ({ children }) => {
     const [isAssistantOpen, setIsAssistantOpen] = useState(false);
     const [isListening, setIsListening] = useState(false); // Actively processing command
     const [isWakeWordListening, setIsWakeWordListening] = useState(true); // Passive listening for "VaquaH"
-    const [isGestureModeEnabled, setIsGestureModeEnabled] = useState(true);
+    const [isGestureModeEnabled, setIsGestureModeEnabled] = useState(false);
 
     // 'idle' | 'listening' | 'processing' | 'speaking' | 'error'
     const [assistantState, setAssistantState] = useState('idle');

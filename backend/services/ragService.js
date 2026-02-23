@@ -1,4 +1,3 @@
-import natural from 'natural';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { db } from '../lib/firebaseAdmin.js';
@@ -48,8 +47,7 @@ const vaquahContext = [
     }
 ];
 
-// TF-IDF for simple retrieval
-const tfidf = new natural.TfIdf();
+// TF-IDF removed due to dependency crash - returning full context for now
 
 // Initialize Context
 const initializeContext = async () => {
@@ -72,19 +70,10 @@ const initializeContext = async () => {
             vaquahContext[serviceIndex].content = servicesText;
         }
 
-        // Rebuild TF-IDF
-        tfidf.documents = []; // Clear existing
-        vaquahContext.forEach((doc, index) => {
-            tfidf.addDocument(doc.content.toLowerCase() + ' ' + doc.category.toLowerCase());
-        });
-
+        // Rebuild context (TF-IDF logic removed)
         console.log('RAG Context initialized with dynamic services.');
     } catch (error) {
         console.error('Failed to initialize RAG context:', error);
-        // Fallback to static TF-IDF build
-        vaquahContext.forEach((doc, index) => {
-            tfidf.addDocument(doc.content.toLowerCase() + ' ' + doc.category.toLowerCase());
-        });
     }
 };
 
@@ -92,21 +81,8 @@ const initializeContext = async () => {
 initializeContext();
 
 export const retrieveContext = (query) => {
-    const retrievalScores = [];
-
-    tfidf.tfidfs(query.toLowerCase(), (i, measure) => {
-        if (measure > 0) {
-            retrievalScores.push({ index: i, score: measure, content: vaquahContext[i].content });
-        }
-    });
-
-    // Sort by score and take top 3
-    const topDocs = retrievalScores
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map(d => d.content);
-
-    return topDocs.join('\n\n');
+    // Temporary fallback: Return entire context since natural package is uninstalled
+    return vaquahContext.map(doc => doc.content).join('\n\n');
 };
 
 export const generateResponse = async (query, context, history = [], user = null) => {

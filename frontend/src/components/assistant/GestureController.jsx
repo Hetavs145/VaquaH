@@ -33,17 +33,39 @@ const GestureController = () => {
         let camera = null;
         let hands = null;
 
+        const loadScript = (src) => {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.crossOrigin = "anonymous";
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        };
+
         const loadMediaPipe = async () => {
             if (!isGestureModeEnabled) return;
 
             try {
-                const mpHands = await import('@mediapipe/hands');
-                const Hands = mpHands.Hands || (mpHands.default && mpHands.default.Hands) || mpHands.default;
-
-                const mpCamera = await import('@mediapipe/camera_utils');
-                const Camera = mpCamera.Camera || (mpCamera.default && mpCamera.default.Camera) || mpCamera.default;
+                // Dynamically load official MediaPipe CDN scripts to bypass Vite CommonJS bugs
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js');
+                await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');
 
                 if (!isMounted) return;
+
+                const Hands = window.Hands;
+                const Camera = window.Camera;
+
+                if (!Hands || !Camera) {
+                    throw new Error("MediaPipe libraries failed to attach to the window object.");
+                }
 
                 const onResults = (results) => {
                     if (!isMounted) return;
@@ -88,7 +110,7 @@ const GestureController = () => {
                     if (isMounted) updatePermission('camera', 'granted');
                 }
             } catch (error) {
-                console.error("Failed to load MediaPipe:", error);
+                console.error("Failed to load MediaPipe via CDN:", error);
                 if (isMounted) updatePermission('camera', 'denied');
             }
         };
