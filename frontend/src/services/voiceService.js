@@ -2,6 +2,57 @@ import { useState, useEffect, useRef } from 'react';
 import { useAssistant } from '../context/AssistantContext';
 import { ASSISTANT_ACTIONS, dispatchAssistantAction } from './assistantActions';
 import { useNavigate } from 'react-router-dom';
+import api from './api';
+
+// ---- TTS Playback ----
+let currentAudio = null;
+
+export const speakResponse = async (text) => {
+    // Stop any current playback
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+
+    try {
+        const response = await api.post('/voice/tts', { text }, { responseType: 'blob' });
+        const audioUrl = URL.createObjectURL(response.data);
+        const audio = new Audio(audioUrl);
+        currentAudio = audio;
+
+        return new Promise((resolve) => {
+            audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                currentAudio = null;
+                resolve();
+            };
+            audio.onerror = () => {
+                URL.revokeObjectURL(audioUrl);
+                currentAudio = null;
+                resolve();
+            };
+            audio.play().catch(() => resolve());
+        });
+    } catch {
+        // Fallback: browser speechSynthesis
+        if ('speechSynthesis' in window) {
+            return new Promise((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onend = resolve;
+                utterance.onerror = resolve;
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+    }
+};
+
+export const stopSpeaking = () => {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+};
 
 export const useVoiceRecognition = () => {
     const {
@@ -13,7 +64,10 @@ export const useVoiceRecognition = () => {
         isWakeWordListening,
         permissions,
         updatePermission,
-        setAssistantState
+        setAssistantState,
+        isMuted,
+        setLastTranscript,
+        setLastResponse,
     } = useAssistant();
 
     const navigate = useNavigate();
@@ -99,7 +153,7 @@ export const useVoiceRecognition = () => {
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             console.log("Voice Command:", transcript);
-
+            setLastTranscript(transcript);
             setAssistantState('processing');
 
             const action = parseIntent(transcript);
@@ -108,10 +162,22 @@ export const useVoiceRecognition = () => {
                     closeAssistant();
                 } else {
                     dispatchAssistantAction(action, navigate);
-                    // Provide feedback?
                 }
             } else {
-                console.log("No intent match");
+                // No nav intent — send to chatbot for a conversational answer
+                (async () => {
+                    try {
+                        const { data } = await api.post('/chat', { message: transcript });
+                        const reply = data.response || "Sorry, I didn't get that.";
+                        setLastResponse(reply);
+                        setAssistantState('speaking');
+                        if (!isMuted) await speakResponse(reply);
+                        setAssistantState('idle');
+                    } catch {
+                        setLastResponse("I couldn't reach the server right now.");
+                        setAssistantState('error');
+                    }
+                })();
             }
         };
 

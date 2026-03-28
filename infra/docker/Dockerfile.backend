@@ -1,0 +1,18 @@
+FROM node:18-alpine
+WORKDIR /app
+
+# Install deps first for layer caching
+COPY backend/package.json backend/package-lock.json* ./
+RUN npm ci --ignore-scripts
+
+COPY backend/ .
+
+# The embedding model downloads on first run (~80MB).
+# Pre-download it during build so containers start instantly.
+RUN node -e "import('@xenova/transformers').then(m => m.pipeline('feature-extraction','Xenova/all-MiniLM-L6-v2')).then(()=>console.log('model cached'))" || true
+
+EXPOSE 5001
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://localhost:5001/health || exit 1
+
+CMD ["node", "server.js"]

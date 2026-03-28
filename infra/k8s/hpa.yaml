@@ -1,0 +1,74 @@
+# Horizontal Pod Autoscaler — works alongside the AI agent.
+# HPA handles the reactive baseline; the AI agent handles predictive scaling.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vaquah-backend-hpa
+  namespace: vaquah
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vaquah-backend
+  minReplicas: 1
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+---
+# RBAC — give the agent permission to scale deployments
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scaler-agent
+  namespace: vaquah
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scaler-role
+  namespace: vaquah
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scaler-binding
+  namespace: vaquah
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scaler-role
+subjects:
+  - kind: ServiceAccount
+    name: scaler-agent
+    namespace: vaquah

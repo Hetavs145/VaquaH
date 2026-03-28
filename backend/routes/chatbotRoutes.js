@@ -56,8 +56,8 @@ router.post('/', async (req, res) => {
         }
 
         // 4. RAG / LLM Generation (Slow Path)
-        // Retrieve context
-        const context = retrieveContext(cleanMessage);
+        // Retrieve context (async vector search)
+        const context = await retrieveContext(cleanMessage);
 
         // Generate response
         const aiResponse = await generateResponse(message, context, history || [], user);

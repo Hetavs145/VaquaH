@@ -117,9 +117,6 @@ export const CartProvider = ({ children }) => {
     if (state.paymentMethod) {
       localStorage.setItem('paymentMethod', state.paymentMethod);
     }
-    if (state.paymentMethod) {
-      localStorage.setItem('paymentMethod', state.paymentMethod);
-    }
   }, [state.paymentMethod]);
 
   // Persist wishlist whenever it changes

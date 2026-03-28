@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaquah-backend
+  namespace: vaquah
+  labels:
+    app: vaquah-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vaquah-backend
+  template:
+    metadata:
+      labels:
+        app: vaquah-backend
+    spec:
+      containers:
+        - name: backend
+          image: vaquah/backend:latest
+          ports:
+            - containerPort: 5001
+          envFrom:
+            - secretRef:
+                name: vaquah-secrets
+            - configMapRef:
+                name: vaquah-config
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaquah-frontend
+  namespace: vaquah
+  labels:
+    app: vaquah-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaquah-frontend
+  template:
+    metadata:
+      labels:
+        app: vaquah-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: vaquah/frontend:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaquah-scaler-agent
+  namespace: vaquah
+  labels:
+    app: vaquah-scaler-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaquah-scaler-agent
+  template:
+    metadata:
+      labels:
+        app: vaquah-scaler-agent
+    spec:
+      serviceAccountName: scaler-agent
+      containers:
+        - name: agent
+          image: vaquah/scaler-agent:latest
+          ports:
+            - containerPort: 8090
+          envFrom:
+            - secretRef:
+                name: vaquah-secrets
+            - configMapRef:
+                name: vaquah-config
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

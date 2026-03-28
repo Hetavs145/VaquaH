@@ -9,6 +9,9 @@ export const AssistantProvider = ({ children }) => {
     const [isListening, setIsListening] = useState(false); // Actively processing command
     const [isWakeWordListening, setIsWakeWordListening] = useState(true); // Passive listening for "VaquaH"
     const [isGestureModeEnabled, setIsGestureModeEnabled] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [lastTranscript, setLastTranscript] = useState('');
+    const [lastResponse, setLastResponse] = useState('');
 
     // 'idle' | 'listening' | 'processing' | 'speaking' | 'error'
     const [assistantState, setAssistantState] = useState('idle');
@@ -59,7 +62,13 @@ export const AssistantProvider = ({ children }) => {
         assistantState,
         setAssistantState,
         permissions,
-        updatePermission
+        updatePermission,
+        isMuted,
+        setIsMuted,
+        lastTranscript,
+        setLastTranscript,
+        lastResponse,
+        setLastResponse,
     };
 
     return (

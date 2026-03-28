@@ -82,6 +82,23 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Token refresh - refresh token every 55 minutes (tokens expire at 60 min)
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const token = await currentUser.getIdToken(true);
+          try { localStorage.setItem('userToken', token); } catch (_) {}
+        }
+      } catch (error) {
+        console.error('Token refresh error:', error);
+      }
+    }, 55 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const login = async (email, password) => {
     try {
       setLoading(true);

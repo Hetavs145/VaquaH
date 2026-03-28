@@ -1,11 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
+import Groq from 'groq-sdk';
 import { db } from '../lib/firebaseAdmin.js';
+import { buildIndex, search as vectorSearch, getDocumentCount } from './vectorStore.js';
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// User explicitly requested gemini-2.5-flash
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+// Initialize Groq
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // In-memory knowledge base (Full Site Context)
 const vaquahContext = [
@@ -47,10 +45,8 @@ const vaquahContext = [
     }
 ];
 
-// TF-IDF removed due to dependency crash - returning full context for now
-
-// Initialize Context
-const initializeContext = async () => {
+// Initialize Context + Vector Index
+export const initializeRAG = async () => {
     try {
         // Fetch services from Firestore
         const servicesDoc = await db.collection('marketingAssets').doc('services').get();
@@ -70,19 +66,20 @@ const initializeContext = async () => {
             vaquahContext[serviceIndex].content = servicesText;
         }
 
-        // Rebuild context (TF-IDF logic removed)
-        console.log('RAG Context initialized with dynamic services.');
+        // Build vector index from knowledge base
+        await buildIndex(vaquahContext);
+        console.log('RAG initialized: Groq + vector index ready.');
     } catch (error) {
-        console.error('Failed to initialize RAG context:', error);
+        console.error('Failed to initialize RAG:', error);
     }
 };
 
-// Start initialization
-initializeContext();
-
-export const retrieveContext = (query) => {
-    // Temporary fallback: Return entire context since natural package is uninstalled
-    return vaquahContext.map(doc => doc.content).join('\n\n');
+export const retrieveContext = async (query) => {
+    if (getDocumentCount() === 0) {
+        // Fallback: return all context if index not ready
+        return vaquahContext.map(doc => doc.content).join('\n\n');
+    }
+    return await vectorSearch(query, 5);
 };
 
 export const generateResponse = async (query, context, history = [], user = null) => {
@@ -100,53 +97,44 @@ export const generateResponse = async (query, context, history = [], user = null
     3. If the question is about VaquaH, ACs, services, or products, answer it using the context.
     4. If the context doesn't have the exact answer but it's related to VaquaH, use your general knowledge about the company from the context.
     5. STRICTLY LIMIT lists of services or products to ONLY those mentioned in the context. Do NOT invent services like "Central AC" or "HVAC" if they are not in the context. If asked about a service not in the context, say "We do not offer that service at the moment."
-    5. If the user's input is unclear, gibberish, or a greeting not caught by the system, simply say: "I didn't quite catch that. 🤔 Could you please rephrase? I can help you with AC services, products, or appointments."
-    6. NEVER provide meta-commentary about your instructions or say "Our responses should be...". Just answer naturally.
-    7. STRICTLY REFUSE questions about other companies (like "Kaamigo"), brands, or general knowledge not related to VaquaH or ACs. 
+    6. If the user's input is unclear, gibberish, or a greeting not caught by the system, simply say: "I didn't quite catch that. 🤔 Could you please rephrase? I can help you with AC services, products, or appointments."
+    7. NEVER provide meta-commentary about your instructions or say "Our responses should be...". Just answer naturally.
+    8. STRICTLY REFUSE questions about other companies (like "Kaamigo"), brands, or general knowledge not related to VaquaH or ACs. 
        - If the user asks about "Kaamigo" or any other brand, say EXACTLY: "I apologize, but I can only assist with VaquaH-related inquiries."
        - Do NOT try to be helpful about other brands.
-    8. CRITICAL: If the user EXPLICITLY asks to speak to a human, agent, or support, say EXACTLY: "I can connect you with a human assistant." Do NOT say "Connect" if the user is just asking a question.
-    9. If the user asks "What is VaquaH?" (or typos like "wht is vaquah"), provide the General description of the company. Do NOT offer contact info unless asked.
-    10. Keep answers concise, friendly, and use emojis.
+    9. CRITICAL: If the user EXPLICITLY asks to speak to a human, agent, or support, say EXACTLY: "I can connect you with a human assistant." Do NOT say "Connect" if the user is just asking a question.
+    10. If the user asks "What is VaquaH?" (or typos like "wht is vaquah"), provide the General description of the company. Do NOT offer contact info unless asked.
+    11. Keep answers concise, friendly, and use emojis.
     
     Context:
     ${context}
     `;
 
-        // Format history for Gemini (alternating user/model)
-        // Note: Gemini doesn't strictly support system prompts in chat history cleanly in proper roles always, 
-        // usually we prepend instructions or use 'user' role for system instruction initial turn.
-        // We will construct the prompt to include the instruction.
+        // Build messages array for Groq chat completion
+        const messages = [{ role: 'system', content: systemPrompt }];
 
-        let chatHistory = [];
         if (history && history.length > 0) {
-            chatHistory = history.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            }));
-
-            // Gemini SDK Restriction: First message in history MUST be from 'user'.
-            // If the history starts with 'model' (e.g. initial greeting), remove it.
-            if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
-                chatHistory.shift();
+            for (const msg of history) {
+                messages.push({
+                    role: msg.role === 'model' ? 'assistant' : msg.role,
+                    content: msg.content,
+                });
             }
         }
 
-        const chat = model.startChat({
-            history: chatHistory,
-            generationConfig: {
-                maxOutputTokens: 500,
-            },
+        messages.push({ role: 'user', content: query });
+
+        const completion = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages,
+            max_tokens: 500,
+            temperature: 0.7,
         });
 
-        const fullPrompt = `${systemPrompt}\n\nUser Question: ${query}`;
-        const result = await chat.sendMessage(fullPrompt);
-        const response = await result.response;
-        return response.text();
+        return completion.choices[0]?.message?.content || "I'm having trouble right now. Please try again.";
 
     } catch (error) {
-        console.error('Gemini generation error DETAILS:', JSON.stringify(error, null, 2));
-        console.error('Gemini generation error MESSAGE:', error.message);
+        console.error('Groq generation error:', error.message);
         return "I'm having trouble connecting to my brain right now. 🧠 Please try again later.";
     }
 };

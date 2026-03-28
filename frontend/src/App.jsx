@@ -80,7 +80,10 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: window.location.pathname }} />;
   }
 
-  // Check if user is admin (this will be checked in the component itself)
+  if (!user.isAdmin) {
+    return <Navigate to="/" />;
+  }
+
   return <>{children}</>;
 };
 
@@ -202,7 +205,7 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Chatbot />
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><div className="text-white">Loading assistant...</div></div>}>
           <AssistantOverlay />
           {isGestureModeEnabled && <GestureController />}
           <VoiceController />

@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
 
 const BOT_AVATAR = "/bot-avatar.png";
 
@@ -48,17 +49,11 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5001/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: userMessage.content,
-                    history: messages.slice(-5), // Send last 5 messages for context
-                    user: user ? { name: user.name, email: user.email, id: user.uid } : null
-                })
+            const { data } = await api.post('/chat', {
+                message: userMessage.content,
+                history: messages.slice(-5),
+                user: user ? { name: user.name, email: user.email, id: user.uid } : null
             });
-
-            const data = await response.json();
 
             const botMessage = {
                 role: 'assistant',

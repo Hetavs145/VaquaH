@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaquah-config
+  namespace: vaquah
+data:
+  VITE_API_BASE_URL: "/api"
+  BACKEND_SERVICE: "backend"
+  MIN_REPLICAS: "1"
+  MAX_REPLICAS: "6"
+  CHECK_INTERVAL: "30"
+  DOCKER_MODE: "kubernetes"
+  K8S_NAMESPACE: "vaquah"
+  K8S_DEPLOYMENT: "vaquah-backend"

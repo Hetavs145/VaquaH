@@ -8,6 +8,8 @@ import adminOrdersRouter from './routes/adminOrders.js';
 import adminUsersRouter from './routes/adminUsers.js';
 import offersRoutes from './routes/offersRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
+import voiceRoutes from './routes/voiceRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
 
 const app = express();
 
@@ -49,12 +51,19 @@ app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/offers', offersRoutes);
 app.use('/api/chat', chatbotRoutes);
+app.use('/api/voice', voiceRoutes);
+app.use('/api/health', healthRoutes);
 
 // Initialize Services
 import { initCleanupService } from './services/cleanupService.js';
+import { initializeRAG } from './services/ragService.js';
+import { initHealthMonitor } from './services/healthMonitor.js';
 initCleanupService();
+initHealthMonitor();
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  // Build vector index after server starts (non-blocking for first request)
+  await initializeRAG();
 });

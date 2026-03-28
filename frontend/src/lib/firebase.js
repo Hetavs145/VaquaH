@@ -13,6 +13,13 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate required Firebase config
+const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'appId'];
+const missing = requiredKeys.filter(k => !firebaseConfig[k]);
+if (missing.length > 0) {
+  console.error(`Missing Firebase config: ${missing.join(', ')}. Check your .env file.`);
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
