@@ -1,6 +1,50 @@
 # VaquaH Updates Log
 
-## v2.0.2 - Performance & Stability Update (Current)
+## v3.0.0 - AI & Infrastructure Overhaul (Current)
+**Released: June 2025**
+
+### 🤖 Groq RAG Chatbot (Replaced Google Generative AI)
+- **LLM Migration**: Replaced Google Generative AI with **Groq `llama-3.3-70b-versatile`** for faster, free-tier inference.
+- **Local Embeddings**: Added `@xenova/transformers` with `all-MiniLM-L6-v2` model for 384-dimensional vector embeddings — runs entirely on the server, no external API calls.
+- **Vector Store**: Built an in-memory vector store with cosine similarity search, 512-char chunking with 50-char overlap, returning top-5 relevant context per query.
+- **Async RAG Pipeline**: `retrieveContext()` is now async with real semantic search instead of dumping all context into the prompt.
+
+### 🎙️ Voice Services (TTS & STT)
+- **Text-to-Speech**: Server-side TTS using `msedge-tts` with `en-IN-NeerjaNeural` voice — returns audio buffer over API, with browser `speechSynthesis` fallback.
+- **Speech-to-Text**: Groq Whisper `whisper-large-v3-turbo` for server-side transcription via file upload.
+- **Voice Routes**: New `/api/voice/tts`, `/api/voice/stt`, `/api/voice/voices` endpoints.
+- **Frontend Integration**: AssistantOverlay now supports mic input, mute toggle, transcript display, and auto-speaks chatbot responses.
+
+### 🏥 Health Monitoring
+- **Health Monitor Service**: Automated 60-second checks collecting CPU usage, memory stats, uptime, and Firestore connectivity.
+- **Rolling History**: Maintains 60-entry check history in memory for trend analysis.
+- **REST API**: `/api/health/status` (quick), `/api/health/detailed` (full metrics), `/api/health/history` (trend data).
+
+### 🐳 Docker & Kubernetes Infrastructure
+- **Multi-Stage Dockerfiles**: Frontend (Vite build → Nginx 1.27 alpine), Backend (Node 18 alpine with pre-cached embedding model + healthcheck), AI Agent (Python 3.11 slim).
+- **Docker Compose**: Full orchestration — Nginx reverse proxy with `least_conn` load balancing, backend with 2 replicas, AI scaler agent with Docker socket access.
+- **Nginx Configuration**: SPA fallback routing, gzip compression, 30-day static asset caching, reverse proxy for API/agent routes.
+- **Kubernetes Manifests**: Namespace, ConfigMap, Deployments (backend 2 replicas, frontend, agent), ClusterIP + NodePort services, HPA (CPU 70%, Memory 80%), RBAC (ServiceAccount, Role, RoleBinding).
+
+### 🧠 AI-Driven Autoscaler Agent
+- **LangGraph Workflow**: StateGraph with 5 nodes — collect_metrics → analyze → llm_decide (Groq) → conditional execute → report.
+- **Metrics Collection**: Docker container stats, app health endpoints, host CPU/memory via psutil.
+- **Intelligent Scaling**: Groq LLM analyzes metrics and decides scale up/down/none with reasoning.
+- **Cooldown Protection**: 120-second cooldown between scaling events to prevent oscillation.
+- **REST Dashboard**: `/agent/status`, `/agent/decisions`, `/agent/metrics`, `/agent/scale` (manual), `/agent/graph` (workflow visualization).
+- **Background Loop**: Runs every 30 seconds, collecting metrics and making autonomous scaling decisions.
+
+### 🐛 Bug Fixes
+- **Chatbot API URL**: Fixed hardcoded `localhost` in `Chatbot.jsx` — now uses `api.post('/chat')` with configured base URL.
+- **CartContext Duplicate**: Removed duplicate payment method localStorage block in `CartContext.jsx`.
+- **AdminRoute Guard**: Fixed `AdminRoute` to properly check `user.isAdmin` before granting access.
+- **Suspense Fallback**: Added proper loading fallback to `Suspense` wrapper in `App.jsx`.
+- **Firebase Config Validation**: Added environment variable validation in `firebase.js` to catch missing config early.
+- **Token Refresh**: Implemented 55-minute automatic Firebase Auth token refresh in `AuthContext.jsx` to prevent session expiry.
+
+---
+
+## v2.0.2 - Performance & Stability Update
 **Released: February 23, 2026**
 
 ### ⚡ Performance & Optimizations
