@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { retrieveContext, generateResponse } from '../services/ragService.js';
+import { logTurn } from '../services/conversationLog.js';
 
 const router = Router();
 
@@ -15,6 +16,24 @@ const GREETING_RESPONSES = [
 ];
 
 router.post('/', async (req, res) => {
+    // Log every reply sent from this route to Firestore (non-blocking)
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+        const { message, user, sessionId } = req.body || {};
+        if (message && body?.response) {
+            logTurn({
+                sessionId,
+                channel: 'chat',
+                user,
+                messages: [
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: body.response },
+                ],
+            });
+        }
+        return originalJson(body);
+    };
+
     try {
         const { message, history, user } = req.body;
 

@@ -1,10 +1,10 @@
-import Groq from 'groq-sdk';
+import { getGroq } from '../lib/llm.js';
 import fs from 'fs';
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export const transcribeAudio = async (filePath) => {
   try {
+    const groq = getGroq();
+    if (!groq) throw new Error('GROQ_API_KEY not set (server STT unavailable; the browser uses local Whisper instead)');
     const transcription = await groq.audio.transcriptions.create({
       file: fs.createReadStream(filePath),
       model: 'whisper-large-v3-turbo',
