@@ -1,9 +1,6 @@
-import Groq from 'groq-sdk';
+import { chatComplete } from '../lib/llm.js';
 import { db } from '../lib/firebaseAdmin.js';
 import { buildIndex, search as vectorSearch, getDocumentCount } from './vectorStore.js';
-
-// Initialize Groq
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // In-memory knowledge base (Full Site Context)
 const vaquahContext = [
@@ -124,17 +121,11 @@ export const generateResponse = async (query, context, history = [], user = null
 
         messages.push({ role: 'user', content: query });
 
-        const completion = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
-            messages,
-            max_tokens: 500,
-            temperature: 0.7,
-        });
-
-        return completion.choices[0]?.message?.content || "I'm having trouble right now. Please try again.";
+        const content = await chatComplete(messages, { maxTokens: 500, temperature: 0.7 });
+        return content || "I'm having trouble right now. Please try again.";
 
     } catch (error) {
-        console.error('Groq generation error:', error.message);
+        console.error('LLM generation error:', error.message);
         return "I'm having trouble connecting to my brain right now. 🧠 Please try again later.";
     }
 };

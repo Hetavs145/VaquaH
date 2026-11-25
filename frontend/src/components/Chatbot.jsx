@@ -25,6 +25,17 @@ const Chatbot = () => {
         ];
     });
     const [input, setInput] = useState('');
+    const [sessionId] = useState(() => {
+        try {
+            const existing = sessionStorage.getItem('vaquah_chat_session');
+            if (existing) return existing;
+            const id = `chat_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+            sessionStorage.setItem('vaquah_chat_session', id);
+            return id;
+        } catch {
+            return `chat_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        }
+    });
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef(null);
 
@@ -52,6 +63,7 @@ const Chatbot = () => {
             const { data } = await api.post('/chat', {
                 message: userMessage.content,
                 history: messages.slice(-5),
+                sessionId,
                 user: user ? { name: user.name, email: user.email, id: user.uid } : null
             });
 

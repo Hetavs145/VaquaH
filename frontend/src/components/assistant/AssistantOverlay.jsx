@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAssistant } from '../../context/AssistantContext';
 import VoiceSphere from './VoiceSphere';
-import { X, Volume2, VolumeX, Mic } from 'lucide-react';
-import { speakResponse, stopSpeaking } from '../../services/voiceService';
+import { X, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { stopSpeaking } from '../../services/voiceService';
+
+const STATE_LABEL = {
+    listening: 'Listening… just talk',
+    processing: 'Thinking…',
+    speaking: 'Speaking… (talk to interrupt)',
+    error: 'Something went wrong',
+    idle: 'Paused — tap the mic to talk',
+};
 
 const AssistantOverlay = () => {
     const {
@@ -11,78 +19,98 @@ const AssistantOverlay = () => {
         assistantState,
         isMuted,
         setIsMuted,
-        lastTranscript,
-        lastResponse,
+        isListening,
         setIsListening,
+        conversation,
+        sttStatus,
+        voiceError,
     } = useAssistant();
-    const [greeting, setGreeting] = useState('');
+    const scrollRef = useRef(null);
 
     useEffect(() => {
-        if (isAssistantOpen) {
-            const msg = "Hello, how may I help you?";
-            setGreeting(msg);
-            if (!isMuted) speakResponse(msg);
-        } else {
-            setGreeting('');
-            stopSpeaking();
-        }
-    }, [isAssistantOpen]);
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    }, [conversation]);
+
+    useEffect(() => {
+        if (!isAssistantOpen) return undefined;
+        const onKey = (e) => { if (e.key === 'Escape') closeAssistant(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isAssistantOpen, closeAssistant]);
 
     if (!isAssistantOpen) return null;
 
-    const stateLabel = {
-        listening: 'Listening...',
-        processing: 'Processing...',
-        speaking: 'Speaking...',
-        error: 'Something went wrong',
-        idle: 'Tap the mic to speak',
-    };
+    const modelLoading = sttStatus?.state === 'loading';
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div
+            data-assistant-overlay
+            role="dialog"
+            aria-label="VaquaH voice assistant"
+            className="fixed z-50 bottom-4 right-4 left-4 sm:left-auto sm:w-[380px] max-h-[80vh] flex flex-col rounded-2xl bg-slate-950/90 text-white shadow-2xl backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300"
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-3">
+                <button
+                    onClick={() => { setIsMuted((m) => !m); if (!isMuted) stopSpeaking(); }}
+                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    title={isMuted ? 'Unmute voice replies' : 'Mute voice replies'}
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
+                >
+                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+                <span className="text-sm font-medium tracking-wide">VaquaH Voice</span>
+                <button
+                    onClick={closeAssistant}
+                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    aria-label="Close assistant"
+                >
+                    <X size={20} />
+                </button>
+            </div>
 
-            <button
-                onClick={closeAssistant}
-                className="absolute top-6 right-6 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-            >
-                <X size={32} />
-            </button>
-
-            {/* Mute toggle */}
-            <button
-                onClick={() => { setIsMuted(m => !m); if (!isMuted) stopSpeaking(); }}
-                className="absolute top-6 left-6 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                title={isMuted ? 'Unmute' : 'Mute'}
-            >
-                {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
-            </button>
-
-            <div className="flex flex-col items-center space-y-8 max-w-lg px-4">
-                <div className="text-center space-y-2">
-                    <h2 className="text-3xl md:text-4xl font-light text-white tracking-wide">
-                        {lastResponse || greeting}
-                    </h2>
-                    {lastTranscript && (
-                        <p className="text-cyan-300/80 text-base italic">
-                            &ldquo;{lastTranscript}&rdquo;
-                        </p>
-                    )}
-                    <p className="text-white/50 text-sm">
-                        {stateLabel[assistantState] || 'Ready'}
+            {/* Transcript */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2 min-h-[60px] max-h-[40vh]">
+                {conversation.length === 0 && (
+                    <p className="text-center text-white/50 text-sm py-2">
+                        Ask anything, or say things like &ldquo;show me split ACs&rdquo;, &ldquo;book a service&rdquo; or &ldquo;open my cart&rdquo;.
                     </p>
-                </div>
+                )}
+                {conversation.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === 'user' ? 'bg-cyan-600/40' : 'bg-white/10'}`}>
+                            {m.content}
+                            {m.actions?.length > 0 && (
+                                <div className="mt-1 text-[11px] text-cyan-200/70">
+                                    {m.actions.map((a) => a.path || a.query || a.text || a.direction || a.type).join(' → ')}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
 
-                <div className="relative cursor-pointer" onClick={() => setIsListening(true)}>
+            {/* Sphere + status */}
+            <div className="flex flex-col items-center pb-4 pt-1">
+                <div
+                    className="w-36 h-36 cursor-pointer [&_canvas]:w-full [&_canvas]:h-full"
+                    onClick={() => setIsListening(true)}
+                    title="Tap to talk"
+                >
                     <VoiceSphere />
                 </div>
-
-                {/* Mic button for manual trigger */}
+                <p className="text-white/60 text-xs h-4" aria-live="polite">
+                    {voiceError || (modelLoading
+                        ? `Loading speech model… ${sttStatus.progress || 0}% (first time only)`
+                        : STATE_LABEL[assistantState] || 'Ready')}
+                </p>
                 <button
-                    onClick={() => setIsListening(true)}
-                    className="p-4 rounded-full bg-cyan-600/30 hover:bg-cyan-600/50 text-white transition-colors"
-                    disabled={assistantState === 'processing' || assistantState === 'speaking'}
+                    onClick={() => setIsListening((l) => !l)}
+                    className={`mt-3 p-3 rounded-full transition-colors ${isListening ? 'bg-cyan-600/40 hover:bg-cyan-600/60' : 'bg-red-600/40 hover:bg-red-600/60'}`}
+                    aria-label={isListening ? 'Pause listening' : 'Resume listening'}
+                    title={isListening ? 'Pause listening' : 'Resume listening'}
                 >
-                    <Mic size={24} />
+                    {isListening ? <Mic size={20} /> : <MicOff size={20} />}
                 </button>
             </div>
         </div>

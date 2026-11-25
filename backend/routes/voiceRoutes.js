@@ -4,6 +4,8 @@ import os from 'os';
 import path from 'path';
 import { synthesizeSpeech, listVoices } from '../services/ttsService.js';
 import { transcribeAudio } from '../services/sttService.js';
+import { runAgent } from '../services/agentService.js';
+import { logTurn } from '../services/conversationLog.js';
 
 const router = Router();
 
@@ -51,6 +53,44 @@ router.post('/stt', upload.single('audio'), async (req, res) => {
   } catch (error) {
     console.error('STT route error:', error.message);
     res.status(500).json({ message: 'STT failed' });
+  }
+});
+
+// POST /api/voice/agent — Voice agent: answers + returns website actions to execute
+router.post('/agent', async (req, res) => {
+  try {
+    const { message, history, page, pageElements, user, sessionId } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ message: 'message is required' });
+    }
+    if (message.length > 2000) {
+      return res.status(400).json({ message: 'message must be under 2000 characters' });
+    }
+
+    const result = await runAgent({
+      message: message.trim(),
+      history,
+      page: typeof page === 'string' ? page.slice(0, 200) : '/',
+      pageElements: Array.isArray(pageElements) ? pageElements.filter(e => typeof e === 'string').map(e => e.slice(0, 80)) : [],
+      user,
+    });
+
+    // Log asynchronously; don't make the user wait on Firestore
+    logTurn({
+      sessionId,
+      channel: 'voice',
+      user,
+      page,
+      messages: [
+        { role: 'user', content: message.trim() },
+        { role: 'assistant', content: result.reply, actions: result.actions },
+      ],
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Agent route error:', error.message);
+    res.status(500).json({ message: 'Agent failed' });
   }
 });
 

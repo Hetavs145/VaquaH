@@ -12,6 +12,12 @@ export const AssistantProvider = ({ children }) => {
     const [isMuted, setIsMuted] = useState(false);
     const [lastTranscript, setLastTranscript] = useState('');
     const [lastResponse, setLastResponse] = useState('');
+    // Full transcript of the current voice session: [{ role, content, actions? }]
+    const [conversation, setConversation] = useState([]);
+    const [sessionId, setSessionId] = useState(null);
+    // Local Whisper model status: { state: 'idle'|'loading'|'ready'|'error', progress }
+    const [sttStatus, setSttStatus] = useState({ state: 'idle', progress: 0 });
+    const [voiceError, setVoiceError] = useState('');
 
     // 'idle' | 'listening' | 'processing' | 'speaking' | 'error'
     const [assistantState, setAssistantState] = useState('idle');
@@ -30,6 +36,11 @@ export const AssistantProvider = ({ children }) => {
     };
 
     const openAssistant = () => {
+        setSessionId(`voice_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`);
+        setConversation([]);
+        setLastTranscript('');
+        setLastResponse('');
+        setVoiceError('');
         setIsAssistantOpen(true);
         setAssistantState('listening');
         setIsListening(true);
@@ -69,6 +80,13 @@ export const AssistantProvider = ({ children }) => {
         setLastTranscript,
         lastResponse,
         setLastResponse,
+        conversation,
+        setConversation,
+        sessionId,
+        sttStatus,
+        setSttStatus,
+        voiceError,
+        setVoiceError,
     };
 
     return (

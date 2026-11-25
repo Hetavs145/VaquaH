@@ -550,7 +550,13 @@ Same as [Section 4 above](#frontend--vercel). Use Render's backend URL for `VITE
 | `FIREBASE_PRIVATE_KEY` | ✅ | Service account private key (with `\n` line breaks) |
 | `RAZORPAY_KEY_ID` | ✅ | Razorpay key (test or live) |
 | `RAZORPAY_KEY_SECRET` | ✅ | Razorpay secret |
-| `GROQ_API_KEY` | ✅ | Groq API key for LLM + STT |
+| `OPENCODE_API_KEY` | ✅* | OpenCode Zen key — primary LLM for chat + voice agent |
+| `OPENCODE_MODELS` | ❌ | Default `deepseek-v4.1-flash-free` |
+| `OPENROUTER_API_KEY` | ✅* | OpenRouter key — fallback LLM |
+| `OPENROUTER_MODELS` | ❌ | Default `google/gemma-4-26b-a4b-it:free,google/gemma-4-31b-it:free` |
+| `GROQ_API_KEY` | ❌ | Optional last LLM fallback + server-side Whisper STT fallback |
+
+\* At least one LLM key is required. Speech-to-text runs in the browser (open-source Whisper), TTS uses free Edge voices — neither needs a key.
 | `PORT` | ❌ | Server port (default: 5001) |
 | `NODE_ENV` | ❌ | `production` or `development` |
 
